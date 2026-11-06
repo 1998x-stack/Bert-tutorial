@@ -1,0 +1,14 @@
+### 2026-11-06 12:22 UTC — ChatGPT Portfolio Iteration
+- Run ID: portfolio-20261106T122245-b7e2
+- Repo / Base SHA: 1998x-stack/Bert-tutorial / 37e22589fbb30dca81ab155032dc41174e3d5396
+- Historical context: Default branch docs/improvements.md returned 404; no prior history. PR search returned none; two commits observed.
+- Product problem & expected user value: README instructs opening index.html directly; file:// fetch of courses.json can fail, hiding all 28 chapters. Offline opening should show the complete catalog.
+- Engineering diagnosis & evidence: index.html unconditionally fetched courses.json; browser file origin can block it. HTTP behavior must remain unchanged.
+- Options & decision: P2 offline load (benefit 5, correctness 4, evidence 5, testability 3, cost 2, risk 2 = 13); P2 error recovery (3+2+4+3-2-2=8); P3 schema validation (2+3+3+3-2-2=7). Chose offline load.
+- Changes: index.html embeds the canonical JSON snapshot and uses it only for file://; HTTP retains fetch. tests/offline-catalog.test.cjs checks data parity, chapter links, mode routing.
+- Validation: C: source/JSON structural assertions run in connector JavaScript; D: Node tests written but not executed in project runtime; browser E2E not run. No A-grade behavior test or CI claim.
+- Security & regression review: No credentials or deployment changes. Static embedded JSON uses script type application/json; HTTP path preserved. Risk of data drift mitigated by parity test.
+- Risk & rollback: Offline JSON duplication requires parity on future updates; close Draft PR or revert commits to roll back.
+- Follow-up: Run node --test tests/offline-catalog.test.cjs and Chrome file:// plus HTTP browser E2E before merging.
+- Commit: pending
+- PR: pending
