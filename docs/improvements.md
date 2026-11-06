@@ -10,5 +10,5 @@
 - Security & regression review: No credentials or deployment changes. Static embedded JSON uses script type application/json; HTTP path preserved. Risk of data drift mitigated by parity test.
 - Risk & rollback: Offline JSON duplication requires parity on future updates; close Draft PR or revert commits to roll back.
 - Follow-up: Run node --test tests/offline-catalog.test.cjs and Chrome file:// plus HTTP browser E2E before merging.
-- Commit: pending
-- PR: pending
+- Commit: 105ae74b46719100ba06ade4dec0374ae27109cf (pre-history-finalization HEAD)
+- PR: https://github.com/1998x-stack/Bert-tutorial/pull/1
