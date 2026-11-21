@@ -7,7 +7,7 @@
 <header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 07</p><h1>BERT 微调实战：数据契约、任务头、训练循环与评估</h1><p class="article-dek">微调不是把模型名换成某个 checkpoint 就结束。数据字段、tokenizer、标签映射、padding、损失掩码、验证集和测试集的使用方式，决定实验是否正确、是否可复现。</p><div class="article-meta"><span>阅读约 25 分钟</span><span>主题：Dataset / Trainer / Evaluation</span><span>核心问题：怎样避免“训练跑完但实验无效”</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
 <article class="article-body">
 <section id="contract"><h2>1. 先定义数据契约，而不是先写 Trainer</h2>
-<p>同一个 BERT Encoder 可以适配多种任务，但每种任务需要明确的数据字段和监督对象。数据契约至少要说明：一条样本代表什么、输入文本字段是什么、标签如何编码、缺失值如何处理、样本唯一 ID 如何追踪，以及训练/验证/测试如何划分。</p>
+<p>同一个 BERT Encoder 可以适配多种任务，但每种任务需要明确的数据字段和监督对象。数据契约至少要说明：一条样本代表什么、输入文本字段是什么、标签如何编码、缺失值如何处理、样本唯一 ID 如何追踪，以及训练/验证/测试如何划分。</p><figure><img src="../assets/diagrams/07-finetuning-pipeline.svg" alt="原始记录先切分，再 tokenizer、collator、Encoder 加任务头，验证集选模型后在测试集最终评估"><figcaption>图 7. 微调流程的顺序很重要：先定义数据与切分，再把样本变成模型输入，测试集不参与模型选择。</figcaption></figure>
 <div class="table-wrap"><table><thead><tr><th>任务</th><th>每条样本的输入</th><th>标签结构</th><th>模型输出</th></tr></thead><tbody>
 <tr><td>单句分类</td><td><code>text</code></td><td>一个类别 ID</td><td>[CLS] 上的类别 logits</td></tr>
 <tr><td>句对分类</td><td><code>text_a</code>、<code>text_b</code></td><td>一个类别 ID</td><td>拼接序列的类别 logits</td></tr>
