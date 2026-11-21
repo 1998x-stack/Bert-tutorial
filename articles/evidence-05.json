@@ -1,29 +1,11 @@
-[
-  {
-    "id": "ref-1",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1810.04805",
-    "locator": "BERT original paper, Section 3.1",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-2",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://huggingface.co/docs/transformers/model_doc/bert#transformers.BertTokenizer",
-    "locator": "Hugging Face BERT tokenizer documentation",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-3",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://huggingface.co/learn/nlp-course/chapter6/6",
-    "locator": "WordPiece tokenization notes",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  }
-]
+{
+  "article_id": "05",
+  "title": "BERT WordPiece 与输入表示",
+  "claims": [
+    {"id":"05-C01","claim":"BERT 原始论文使用 30,000 token 的 WordPiece 词表，输入表示由 token、segment 与 position embedding 相加得到。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Section 3, Input/Output Representations","status":"verified","verification_note":"30,000 词表描述原始论文的英文 BERT 配置；其他 checkpoint 的词表可能不同。"},
+    {"id":"05-C02","claim":"官方 BERT tokenizer 推理时使用 greedy longest-match-first WordPiece 切分，并为非词首片段使用 ## 前缀。","source_url":"https://github.com/google-research/bert/blob/master/tokenization.py","locator":"WordpieceTokenizer.tokenize","status":"verified","verification_note":"明确区分推理切分过程与 WordPiece 词表训练算法。"},
+    {"id":"05-C03","claim":"Google 发布的 BERT Chinese 模型采用字符级中文 tokenization；其他多语言模型使用 WordPiece。","source_url":"https://github.com/google-research/bert","locator":"README, Multilingual and Chinese models section","status":"verified","verification_note":"不将中文字符级处理推广成所有中文 BERT 变体的统一规则。"},
+    {"id":"05-C04","claim":"BPE 典型训练过程通过统计相邻符号对并反复合并高频 pair 构造子词词表。","source_url":"https://arxiv.org/abs/1508.07909","locator":"Sennrich et al. (2016), Section 3","status":"verified","verification_note":"将 BPE 与 WordPiece 的具体词表训练方法区分。"},
+    {"id":"05-C05","claim":"BERT 输入接口包含 input_ids、attention_mask、token_type_ids 等字段，字段是否出现取决于模型与 tokenizer 配置。","source_url":"https://huggingface.co/docs/transformers/model_doc/bert","locator":"BERT model input parameters","status":"verified","verification_note":"不将某一模型的 token ID 或 mask 约定当成所有模型的通用常数。"}
+  ]
+}

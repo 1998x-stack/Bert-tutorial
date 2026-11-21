@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 410" role="img" aria-labelledby="title desc">
+<title id="title">BERT 共享编码器连接三类下游任务头</title>
+<desc id="desc">同一个 BERT encoder 输出 token 表示，分支接入序列分类、逐 token 序列标注和问答起止位置预测。</desc>
+<rect width="900" height="410" rx="20" fill="#f5f7f2"/>
+<g font-family="system-ui,sans-serif">
+<rect x="292" y="28" width="316" height="62" rx="14" fill="#203035"/><text x="450" y="55" text-anchor="middle" font-size="18" font-weight="700" fill="#fff">BERT Encoder</text><text x="450" y="76" text-anchor="middle" font-size="12" fill="#d9e7e2">输出 H = [B,T,d]</text>
+<path d="M450 90 V126 H150 V160 M450 126 V160 M450 126 H750 V160" fill="none" stroke="#147f80" stroke-width="3"/>
+<rect x="36" y="160" width="228" height="96" rx="14" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="150" y="190" text-anchor="middle" font-size="17" font-weight="700" fill="#203035">序列分类</text><text x="150" y="216" text-anchor="middle" font-size="13" fill="#53676d">取 [CLS] → Linear → Softmax</text><text x="150" y="238" text-anchor="middle" font-size="12" fill="#176a65">情感 / NLI</text>
+<rect x="336" y="160" width="228" height="96" rx="14" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="450" y="190" text-anchor="middle" font-size="17" font-weight="700" fill="#203035">序列标注</text><text x="450" y="216" text-anchor="middle" font-size="13" fill="#53676d">每个 token → 分类器</text><text x="450" y="238" text-anchor="middle" font-size="12" fill="#5b4a9a">NER / POS</text>
+<rect x="636" y="160" width="228" height="96" rx="14" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/><text x="750" y="190" text-anchor="middle" font-size="17" font-weight="700" fill="#203035">抽取式问答</text><text x="750" y="216" text-anchor="middle" font-size="13" fill="#53676d">Start / End logits</text><text x="750" y="238" text-anchor="middle" font-size="12" fill="#a64e33">答案 span</text>
+<path d="M150 256 V296 M450 256 V296 M750 256 V296" stroke="#9aaba6" stroke-width="2"/>
+<rect x="36" y="296" width="228" height="72" rx="12" fill="#fff" stroke="#dce5df"/><text x="150" y="326" text-anchor="middle" font-size="14" fill="#203035">一个类别概率分布</text><text x="150" y="348" text-anchor="middle" font-size="12" fill="#53676d">shape: [B,K]</text>
+<rect x="336" y="296" width="228" height="72" rx="12" fill="#fff" stroke="#dce5df"/><text x="450" y="326" text-anchor="middle" font-size="14" fill="#203035">每个 token 的标签</text><text x="450" y="348" text-anchor="middle" font-size="12" fill="#53676d">shape: [B,T,K]</text>
+<rect x="636" y="296" width="228" height="72" rx="12" fill="#fff" stroke="#dce5df"/><text x="750" y="326" text-anchor="middle" font-size="14" fill="#203035">两个位置分布</text><text x="750" y="348" text-anchor="middle" font-size="12" fill="#53676d">shape: [B,T] × 2</text>
+<text x="450" y="394" text-anchor="middle" font-size="12" fill="#53676d">微调时通常更新 Encoder 参数；具体任务头与损失由任务定义决定。</text>
+</g>
+</svg>

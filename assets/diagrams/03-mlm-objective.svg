@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 390" role="img" aria-labelledby="title desc">
+<title id="title">BERT 的 MLM 目标与 80-10-10 替换规则</title>
+<desc id="desc">从输入中选择 15% 的 WordPiece 作为目标，对选中位置按 80% MASK、10% 随机词、10% 保持原样处理；编码器利用双向上下文预测原词。</desc>
+<rect width="900" height="390" rx="20" fill="#f5f7f2"/>
+<g font-family="system-ui,sans-serif">
+<text x="34" y="44" fill="#203035" font-size="20" font-weight="700">选择预测位置，而不是把整句重建一遍</text>
+<rect x="34" y="70" width="832" height="62" rx="12" fill="#fff" stroke="#dce5df"/>
+<g font-size="14" fill="#203035" text-anchor="middle">
+<rect x="54" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="91" y="106">the</text>
+<rect x="140" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="177" y="106">man</text>
+<rect x="226" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="263" y="106">went</text>
+<rect x="312" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="349" y="106">to</text>
+<rect x="398" y="86" width="92" height="30" rx="7" fill="#147f80"/><text x="444" y="106" fill="#fff">[MASK]</text>
+<rect x="502" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="539" y="106">store</text>
+<rect x="588" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="625" y="106">.</text>
+<rect x="674" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="711" y="106">he</text>
+<rect x="760" y="86" width="74" height="30" rx="7" fill="#e4e9e5"/><text x="797" y="106">...</text>
+</g>
+<path d="M444 132 V164" stroke="#147f80" stroke-width="3"/><path d="M436 155 L444 167 L452 155" fill="none" stroke="#147f80" stroke-width="3"/>
+<rect x="34" y="170" width="260" height="116" rx="14" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/>
+<text x="58" y="198" fill="#176a65" font-size="16" font-weight="700">80% 替换为 [MASK]</text><text x="58" y="226" fill="#203035" font-size="14">输入位置变成遮盖符号</text><text x="58" y="252" fill="#53676d" font-size="12">目标仍是原来的 token</text>
+<rect x="320" y="170" width="260" height="116" rx="14" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/>
+<text x="344" y="198" fill="#a64e33" font-size="16" font-weight="700">10% 随机替换</text><text x="344" y="226" fill="#203035" font-size="14">输入位置换成随机 token</text><text x="344" y="252" fill="#53676d" font-size="12">仍预测原 token</text>
+<rect x="606" y="170" width="260" height="116" rx="14" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/>
+<text x="630" y="198" fill="#5b4a9a" font-size="16" font-weight="700">10% 保持原样</text><text x="630" y="226" fill="#203035" font-size="14">输入仍显示原 token</text><text x="630" y="252" fill="#53676d" font-size="12">依然作为预测目标</text>
+<path d="M450 286 V318" stroke="#7461ba" stroke-width="3"/><path d="M442 309 L450 321 L458 309" fill="none" stroke="#7461ba" stroke-width="3"/>
+<rect x="220" y="324" width="460" height="48" rx="12" fill="#203035"/>
+<text x="450" y="354" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">双向 Encoder → 仅在被选位置计算 MLM loss</text>
+</g>
+</svg>

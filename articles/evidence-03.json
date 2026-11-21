@@ -1,20 +1,11 @@
-[
-  {
-    "id": "ref-1",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1810.04805",
-    "locator": "BERT original paper, Sections 3–4",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-2",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1907.11692",
-    "locator": "RoBERTa: A Robustly Optimized BERT Pretraining Approach",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  }
-]
+{
+  "article_id": "03",
+  "title": "BERT 预训练与 MLM",
+  "claims": [
+    {"id":"03-C01","claim":"原始 BERT 随机选择 15% WordPiece 位置作为 MLM 预测目标，并按 80% [MASK]、10% 随机 token、10% 原样保留处理。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Section 3.1 and Appendix A.1","status":"verified","verification_note":"80/10/10 的分母是已选中的预测位置；loss 只在这些位置计算。"},
+    {"id":"03-C02","claim":"NSP 训练样本中 50% 为真实后续片段，50% 为从语料随机采样的片段。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Section 3.1 and Appendix A.2","status":"verified","verification_note":"论文所称 sentence 可以是连续文本 span，不必是语法意义上的单句。"},
+    {"id":"03-C03","claim":"预训练语料为 BooksCorpus 约 800M words 与 English Wikipedia 约 2,500M words。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Section 3.1","status":"verified","verification_note":"将 word 数量与 token 数量区分。"},
+    {"id":"03-C04","claim":"论文报告 batch size 256 sequences、1M steps、前 90% steps 使用长度 128，最后 10% 使用长度 512。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Appendix A.2","status":"verified","verification_note":"说明 256×512 是最大长度下的批次 token 数算术，不代表所有 step 都使用 512。"},
+    {"id":"03-C05","claim":"RoBERTa 在更改数据量、训练时长、batch、mask 策略和序列长度等配方的同时移除了 NSP。","source_url":"https://arxiv.org/abs/1907.11692","locator":"Liu et al. (2019), Abstract and Sections 4.1–4.2","status":"verified","verification_note":"不把多项配方变化的整体结果归因于 NSP 单一变量。"}
+  ]
+}
