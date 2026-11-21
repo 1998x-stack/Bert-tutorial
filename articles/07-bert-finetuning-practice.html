@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="从数据契约、切分与泄漏、动态 padding、分类、NER、抽取式 QA 到 Trainer 训练循环，构建可复现的 BERT 微调流程。"><title>BERT 微调实战：数据契约、任务头、训练循环与评估</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
+<body data-chapter-id="07"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#contract">先定义数据契约</a><a href="#split">切分与泄漏</a><a href="#classification">分类任务完整流程</a><a href="#ner">NER 子词标签对齐</a><a href="#qa">QA 字符偏移与窗口</a><a href="#training">训练循环与调度器</a><a href="#evaluation">评估与复现</a><a href="#demo">交互：选择任务输入</a><a href="#references">官方文档</a></aside>
+<main id="content" class="article-main">
+<header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 07</p><h1>BERT 微调实战：数据契约、任务头、训练循环与评估</h1><p class="article-dek">微调不是把模型名换成某个 checkpoint 就结束。数据字段、tokenizer、标签映射、padding、损失掩码、验证集和测试集的使用方式，决定实验是否正确、是否可复现。</p><div class="article-meta"><span>阅读约 25 分钟</span><span>主题：Dataset / Trainer / Evaluation</span><span>核心问题：怎样避免“训练跑完但实验无效”</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
+<article class="article-body">
+<section id="contract"><h2>1. 先定义数据契约，而不是先写 Trainer</h2>
+<p>同一个 BERT Encoder 可以适配多种任务，但每种任务需要明确的数据字段和监督对象。数据契约至少要说明：一条样本代表什么、输入文本字段是什么、标签如何编码、缺失值如何处理、样本唯一 ID 如何追踪，以及训练/验证/测试如何划分。</p><figure><img src="../assets/diagrams/07-finetuning-pipeline.svg" alt="原始记录先切分，再 tokenizer、collator、Encoder 加任务头，验证集选模型后在测试集最终评估"><figcaption>图 7. 微调流程的顺序很重要：先定义数据与切分，再把样本变成模型输入，测试集不参与模型选择。</figcaption></figure>
+<div class="table-wrap"><table><thead><tr><th>任务</th><th>每条样本的输入</th><th>标签结构</th><th>模型输出</th></tr></thead><tbody>
+<tr><td>单句分类</td><td><code>text</code></td><td>一个类别 ID</td><td>[CLS] 上的类别 logits</td></tr>
+<tr><td>句对分类</td><td><code>text_a</code>、<code>text_b</code></td><td>一个类别 ID</td><td>拼接序列的类别 logits</td></tr>
+<tr><td>NER / 序列标注</td><td>词序列</td><td>与原始词对齐的标签序列</td><td>每个 token 的标签 logits</td></tr>
+<tr><td>抽取式 QA</td><td>问题、段落、答案字符区间</td><td>答案起点/终点或无答案</td><td>start/end logits</td></tr>
+</tbody></table></div>
+<p>数据契约要在训练前固定。例如分类任务的标签映射应写入配置文件，不能在不同运行中按字母排序自动变化；NER 的标签体系应固定 BIO/BIOES 约定；QA 的答案字符偏移必须对应清洗后的原文，而不是清洗前的字符串。</p>
+</section>
+
+<section id="split"><h2>2. 切分与泄漏：先切分文档，再做增强</h2>
+<p>最危险的微调错误之一是数据泄漏：同一篇文档的近重复段落同时出现在 train 和 test；同一用户的多个高度相似样本跨越数据集；或把测试集指标用于挑学习率、epoch 和阈值。</p>
+<ol><li>先按样本来源、文档 ID、用户 ID 或时间分组，再做 train/validation/test 切分。</li><li>只在训练集上做 oversampling、back-translation、随机删除等数据增强。</li><li>验证集用于模型选择、阈值与超参数选择；测试集只在配置锁定后做最终评估。</li><li>类别不平衡时使用分层切分，但不能破坏组级隔离约束。</li><li>保存 split 文件与样本 ID，确保多次实验使用相同切分。</li></ol>
+<div class="callout warning">如果同一实体、文档或时间窗口跨越多个 split，随机种子再固定也不能消除泄漏。先确定评测目标（随机样本泛化、跨文档、跨用户还是时间外推），再选择切分单位。</div>
+</section>
+
+<section id="classification"><h2>3. 分类任务：从原始记录到可训练 Batch</h2>
+<p>以下是一个使用 Hugging Face Datasets 与 Transformers 的最小单句/句对分类骨架。它假设原始数据已整理为 train、validation、test 三个 split，字段名分别为 <code>text</code>、可选的 <code>text_pair</code> 和整数 <code>label</code>。固定版本是为了让 API 参数保持一致；升级依赖时应重新跑测试。</p>
+<pre><code># requirements: transformers==4.46.3 datasets==3.1.0 accelerate==1.1.1 scikit-learn==1.5.2
+# Install a PyTorch build separately for the target CPU/CUDA platform.
+from datasets import load_dataset
+from transformers import (
+    AutoTokenizer, AutoModelForSequenceClassification,
+    DataCollatorWithPadding, Trainer, TrainingArguments
+)
+import numpy as np
+from sklearn.metrics import accuracy_score, f1_score
+
+checkpoint = "google-bert/bert-base-chinese"
+raw = load_dataset("json", data_files={
+    "train": "data/train.jsonl",
+    "validation": "data/validation.jsonl",
+    "test": "data/test.jsonl",
+})
+
+label_names = ["negative", "positive"]
+tokenizer = AutoTokenizer.from_pretrained(checkpoint, use_fast=True)
+
+def tokenize(batch):
+    text_pair = batch.get("text_pair")
+    return tokenizer(
+        batch["text"], text_pair,
+        truncation=True, max_length=256
+    )
+
+tokenized = raw.map(tokenize, batched=True)
+model = AutoModelForSequenceClassification.from_pretrained(
+    checkpoint,
+    num_labels=len(label_names),
+    id2label={i: name for i, name in enumerate(label_names)},
+    label2id={name: i for i, name in enumerate(label_names)},
+)
+
+def compute_metrics(prediction):
+    logits, labels = prediction
+    predicted = np.argmax(logits, axis=-1)
+    return {
+        "accuracy": accuracy_score(labels, predicted),
+        "macro_f1": f1_score(labels, predicted, average="macro"),
+    }
+
+args = TrainingArguments(
+    output_dir="runs/bert-classifier",
+    evaluation_strategy="epoch",
+    save_strategy="epoch",
+    load_best_model_at_end=True,
+    metric_for_best_model="eval_macro_f1",
+    greater_is_better=True,
+    learning_rate=2e-5,
+    per_device_train_batch_size=16,
+    per_device_eval_batch_size=32,
+    num_train_epochs=3,
+    weight_decay=0.01,
+    warmup_ratio=0.1,
+    seed=42,
+    report_to="none",
+)
+
+trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=tokenized["train"],
+    eval_dataset=tokenized["validation"],
+    tokenizer=tokenizer,
+    data_collator=DataCollatorWithPadding(tokenizer),
+    compute_metrics=compute_metrics,
+)
+trainer.train()
+# 只有模型选择与超参数锁定后，才在 test split 上做一次最终评估。
+print(trainer.evaluate(tokenized["test"]))</code></pre>
+<p>这段代码演示的是分类任务的接口，不包含语料清洗、标签审计、超参数搜索和多随机种子报告。对句对任务，tokenizer 的第二个位置参数会把两段文本按模型约定打包；对单句任务则不传第二段。动态 padding 由 <code>DataCollatorWithPadding</code> 按当前 batch 的最长样本补齐，减少大量无效 padding token。</p>
+</section>
+
+<section id="ner"><h2>4. NER：WordPiece 标签必须对齐到原始词</h2>
+<p>假设原始词序列是 <code>[New, York, is, busy]</code>，标签是 <code>[B-LOC, I-LOC, O, O]</code>。Tokenizer 可能把 <code>York</code> 或其他词拆成多个 sub-token。此时模型输出长度是 WordPiece token 数，而标注文件长度是原始词数，两者不能直接逐项相加。</p>
+<p>使用 fast tokenizer 时，可以通过 <code>word_ids()</code> 找到每个 sub-token 对应的原始词索引。一个常见策略是只给每个原始词的第一个 sub-token 保留标签，其余 sub-token 设为 <code>-100</code>，使 CrossEntropyLoss 忽略它们。也有实现会把标签传播到所有 sub-token；两种策略会改变训练目标，必须与评估时的还原方式一致。</p>
+<pre><code>encoding = tokenizer(
+    words, is_split_into_words=True,
+    truncation=True, return_offsets_mapping=True
+)
+word_ids = encoding.word_ids()
+aligned = []
+previous_word_id = None
+
+for word_id in word_ids:
+    if word_id is None:
+        aligned.append(-100)          # [CLS] / [SEP] / padding
+    elif word_id != previous_word_id:
+        aligned.append(word_labels[word_id])
+    else:
+        aligned.append(-100)          # continuation sub-token
+    previous_word_id = word_id</code></pre>
+<p>不要把 <code>-100</code> 当作真实类别；它是损失函数的 ignore_index。评估时应把 WordPiece 预测还原到原始词级别，再计算实体级 precision、recall、F1，而不是直接对所有 sub-token 计算 token accuracy。</p>
+</section>
+
+<section id="qa"><h2>5. 抽取式 QA：字符偏移、溢出窗口与合法 span</h2>
+<p>QA 数据常用原始段落中的答案字符起点和答案文本作为标注。Tokenizer 会把字符文本变成 sub-token，因此需要利用 <code>offset_mapping</code> 将字符区间映射到 token 区间。若问题加段落超过最大长度，必须使用 overflow window 和 stride，让长段落被多个重叠窗口覆盖。</p>
+<p>每个窗口中要区分问题 token、段落 token、特殊 token 和 padding。答案起点/终点必须落在当前窗口的段落范围内；若答案不在窗口里，该窗口通常被标记为无答案样本。推理时不能简单独立取 start argmax 和 end argmax，因为可能得到 end 早于 start 的非法 span。应对候选 (i,j) 施加约束：j≥i、答案长度不超过上限、两端都位于段落 token 范围内，再比较 span 分数。</p>
+<p>对 SQuAD 2.0 等不可回答任务，还要明确无答案策略：可以用 [CLS] 作为 null span，也可以增加 answerability classifier；具体方法必须与训练目标和评估脚本一致。</p>
+</section>
+
+<section id="training"><h2>6. 训练循环：有效 Batch、调度器与梯度累积</h2>
+<p>多卡训练中，名义 batch size 不是单卡 batch size。若每张设备的 batch 为 B，设备数为 N，梯度累积步数为 A，则有效 batch 为：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="有效 batch size 公式"><math display="block" aria-label="有效 batch size 等于每设备 batch 乘以设备数量再乘以梯度累积步数"><mrow><msub><mi>B</mi><mtext>effective</mtext></msub><mo>=</mo><msub><mi>B</mi><mtext>device</mtext></msub><mo>×</mo><mi>N</mi><mo>×</mo><mi>A</mi></mrow></math></div></div>
+<p>若训练集有 N_train 条样本、有效 batch 为 B_effective、训练 E 个 epoch，那么不丢弃最后不完整 batch 时，优化器更新步数约为。实际值还受分布式 sampler、drop_last 与 batch packing 影响：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="总训练步数公式"><math display="block" aria-label="总更新步数等于 epoch 数乘以训练样本数除以有效 batch 后向上取整"><mrow><msub><mi>S</mi><mtext>total</mtext></msub><mo>=</mo><mi>E</mi><mo>·</mo><mo>⌈</mo><mfrac><msub><mi>N</mi><mtext>train</mtext></msub><msub><mi>B</mi><mtext>effective</mtext></msub></mfrac><mo>⌉</mo></mrow></math></div></div>
+<p>学习率 scheduler 通常按 optimizer update step 前进，而不是按每个 micro-batch 前进。梯度累积时应先对 loss 做适当缩放，并只在累积完成后执行 optimizer.step() 与 scheduler.step()。如果把 scheduler 总步数按 micro-batch 计算，warmup 与衰减速度就会错位。</p>
+</section>
+
+<section id="evaluation"><h2>7. 评估与复现：报告结果，也报告不确定性</h2>
+<ul><li>分类任务报告 accuracy 与适合类别不平衡的 macro/micro F1；说明正类定义、阈值和标签映射。</li><li>NER 使用实体级 span F1，并说明子词标签对齐策略。</li><li>QA 报告 EM/F1，说明不可回答阈值、滑窗 stride 和最大答案长度。</li><li>至少固定 split、checkpoint revision、tokenizer、最大长度、优化器、学习率日程、随机种子与评测脚本版本。</li><li>小数据集对随机种子敏感。应报告多个种子的均值和标准差，而不是只挑最好的一次。</li></ul>
+<div class="callout">**最重要的实验边界：** validation 可以参与选择，test 不参与调参。论文排行榜成绩、单次本地运行成绩和多种子复现实验是三种不同证据。</div>
+</section>
+
+<section id="demo"><h2>8. 交互：选择任务，检查数据与标签接口</h2>
+<div class="demo" data-demo><h3>任务数据契约</h3><p class="demo-intro">选择任务，观察样本字段、tokenization 与 loss 的差别。</p><div class="demo-controls"><button type="button" data-demo-action="cls" aria-pressed="true">文本分类</button><button type="button" data-demo-action="ner" aria-pressed="false">NER</button><button type="button" data-demo-action="qa" aria-pressed="false">抽取式 QA</button><button type="button" data-demo-action="pair" aria-pressed="false">句对分类</button></div><pre class="demo-output" data-demo-output aria-live="polite">记录字段：text、label
+Tokenizer：单句编码，truncation=True，动态 padding
+标签：一个整数类别 ID
+输出：[CLS] logits，shape [batch, num_labels]
+损失：CrossEntropyLoss</pre><script type="application/json" data-demo-states>{"cls":"记录字段：text、label\nTokenizer：单句编码，truncation=True，动态 padding\n标签：一个整数类别 ID\n输出：[CLS] logits，shape [batch, num_labels]\n损失：CrossEntropyLoss","ner":"记录字段：words、word_labels\nTokenizer：is_split_into_words=True\n对齐：word_ids() 将 sub-token 映射回原始词\n忽略：特殊 token、padding 和非首 sub-token 可设为 -100\n输出：每个 token 的标签 logits","qa":"记录字段：question、context、answer_text、answer_start\nTokenizer：pair + offset_mapping + overflow windows\n对齐：字符区间映射到 token 起止位置\n输出：start/end logits；解码必须约束合法 span","pair":"记录字段：text_a、text_b、label\nTokenizer：tokenizer(text_a, text_b, truncation=True)\n输入：两段文本按 checkpoint 的特殊 token 规则拼接\n输出：[CLS] logits\n损失：CrossEntropyLoss"}</script></div>
+</section>
+
+<section class="article-summary"><h2>关键结论</h2><ul>
+<li>先定义数据契约和 split，再选择 tokenizer、任务头与 Trainer；训练代码无法补救错误的数据切分。</li>
+<li>动态 padding 降低 padding 计算；NER 需要词到 sub-token 的标签对齐；QA 需要字符偏移与窗口映射。</li>
+<li>有效 batch 和 scheduler 更新步数必须按 optimizer step 计算，不能把 micro-batch 数误当总步数。</li>
+<li>测试集只做最终评估；小数据任务应报告多随机种子的均值与方差。</li>
+</ul></section>
+
+<section id="references"><h2>官方文档与延伸阅读</h2><ol class="article-references">
+<li>Hugging Face, <a href="https://huggingface.co/docs/transformers/v4.46.3/en/main_classes/trainer" target="_blank" rel="noopener noreferrer">Trainer (Transformers v4.46.3)</a>。</li>
+<li>Hugging Face, <a href="https://huggingface.co/docs/transformers/v4.46.3/en/main_classes/data_collator" target="_blank" rel="noopener noreferrer">Data collators</a> 与 <a href="https://huggingface.co/docs/transformers/v4.46.3/en/tasks/token_classification" target="_blank" rel="noopener noreferrer">Token classification</a>。</li>
+<li>Hugging Face, <a href="https://huggingface.co/docs/transformers/v4.46.3/en/tasks/question_answering" target="_blank" rel="noopener noreferrer">Question answering</a>。</li>
+<li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>, §4 and Appendix A.5。</li>
+</ol></section>
+</article><nav class="article-nav" aria-label="专题文章导航"><a href="06-mlm-nsp-masking-objectives.html">← 上一篇：MLM 与句间目标</a><a href="08-roberta-training-recipe.html">下一篇：RoBERTa →</a></nav><p class="article-footer">代码示例固定 Transformers 4.46.3 API；更换版本时应同步检查 Trainer 参数名与数据 collator 行为。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>

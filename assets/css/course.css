@@ -5,6 +5,8 @@ html{scroll-behavior:smooth;scroll-padding-top:28px}
 body{margin:0;background:var(--canvas);color:var(--ink);font:16px/1.8 system-ui,-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
 a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:3px}
 a:hover{color:#075d5e}
+.skip-link{position:absolute;z-index:100;left:12px;top:-60px;padding:9px 13px;border-radius:9px;background:var(--ink);color:white;text-decoration:none;font-weight:800}
+.skip-link:focus{top:12px;color:white}
 button,input,select{font:inherit}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[tabindex="0"]:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 .site-header{max-width:1220px;margin:0 auto;padding:22px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px}
@@ -97,7 +99,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .callout{margin:20px 0;padding:14px 17px;border-left:4px solid var(--accent);border-radius:0 12px 12px 0;background:var(--accent-soft)}
 .callout.warning{border-color:var(--coral);background:var(--coral-soft)}
 .callout.note{border-color:var(--violet);background:var(--violet-soft)}
-.math-group{max-width:100%;margin:18px 0;padding:16px;background:#f5f6f2;border:1px solid var(--line);border-radius:12px}
+.math-inline{font-family:"Cambria Math","STIX Two Math","Latin Modern Math",serif;white-space:nowrap;vertical-align:-.08em}.math-group{max-width:100%;margin:18px 0;padding:16px;background:#f5f6f2;border:1px solid var(--line);border-radius:12px}
 .math-scroll{max-width:100%;min-width:0;overflow-x:auto;overflow-y:hidden;padding:6px 2px}
 .math-scroll math[display="block"]{width:max-content;min-width:100%;font-size:1.18rem}
 .math-scroll:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
@@ -130,4 +132,4 @@ code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
 @media(max-width:960px){.path-grid,.chapter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.article-layout{display:block;padding:18px}.article-toc{position:static;max-height:none;border-bottom:1px solid var(--line);margin-bottom:16px;padding:8px 0 14px}.article-toc a:not(.toc-back){display:inline-block;margin:2px 5px 2px 0}.article-main{padding:28px}}
 @media(max-width:620px){.site-header{padding:16px 18px;align-items:flex-start;flex-direction:column}.site-nav{gap:14px}.home-main{padding:0 14px 40px}.hero{padding:28px 22px;border-radius:22px}.hero-stats{grid-template-columns:1fr;gap:8px;margin-top:26px}.path-grid,.chapter-grid{grid-template-columns:1fr}.section{margin-top:38px}.section-heading{align-items:flex-start;flex-direction:column}.catalog-panel{padding:14px}.catalog-filters{grid-template-columns:1fr}.progress-panel{grid-template-columns:1fr;gap:8px}.progress-count{white-space:normal}.home-footer{flex-direction:column}.article-layout{padding:10px}.article-main{padding:20px 16px;border-radius:16px}.article-header h1{font-size:32px}.article-dek{font-size:16px}.article-body{font-size:15px}.article-body figure{padding:10px}.math-group{padding:10px}pre{font-size:12px}table{font-size:12px}th,td{padding:8px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
-@media print{body{background:white}.site-header,.article-toc,.article-progress,.article-actions,.demo-controls,.article-nav{display:none!important}.home-main,.article-layout{max-width:none;padding:0;display:block}.hero,.catalog-panel,.article-main{box-shadow:none;border:0;padding:0}.chapter-grid{grid-template-columns:repeat(2,1fr)}.article-body section{break-inside:avoid}.math-scroll{overflow:visible}.math-scroll math[display="block"]{font-size:1rem}a{color:inherit;text-decoration:underline}}
+@media print{body{background:white}.site-header,.article-toc,.article-progress,.article-actions,.demo-controls,.article-nav,.skip-link{display:none!important}.home-main,.article-layout{max-width:none;padding:0;display:block}.hero,.catalog-panel,.article-main{box-shadow:none;border:0;padding:0}.chapter-grid{grid-template-columns:repeat(2,1fr)}.article-body section{break-inside:avoid}.math-scroll{overflow:visible}.math-scroll math[display="block"]{font-size:1rem}a{color:inherit;text-decoration:underline}}

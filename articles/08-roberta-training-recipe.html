@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="回到 RoBERTa 原始论文，拆解动态遮盖、移除 NSP、输入打包、大 batch、160GB 数据与更长训练，并核对开发集指标。"><title>RoBERTa：同一类 Encoder，为什么训练配方能带来巨大提升</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
+<body data-chapter-id="08"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#question">论文真正问了什么</a><a href="#changes">四项训练改动</a><a href="#masking">动态遮盖证据</a><a href="#input">NSP 与输入打包</a><a href="#scale">Batch、数据与步数</a><a href="#results">开发集结果</a><a href="#tokenizer">Byte-level BPE</a><a href="#limits">结论边界</a><a href="#demo">交互：配方拆解</a><a href="#references">原始资料</a></aside>
+<main id="content" class="article-main">
+<header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 08</p><h1>RoBERTa：同一类 Encoder，为什么训练配方能带来巨大提升</h1><p class="article-dek">RoBERTa 并没有发明一个完全不同的 Transformer Encoder。它系统地重新检查 BERT 的遮盖方式、句间目标、输入打包、batch size、语料规模与训练时长，说明训练配方本身就能显著改变结果。</p><div class="article-meta"><span>阅读约 24 分钟</span><span>主题：RoBERTa / Ablation / Scaling</span><span>核心问题：哪些提升来自训练配方</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
+<article class="article-body">
+<section id="question"><h2>1. 论文真正问了什么</h2>
+<p>在 2019 年前后的预训练模型比较中，模型架构、训练目标、语料规模、训练步数和调参预算经常同时变化。若一个新模型胜过 BERT，很难判断提升来自架构创新，还是来自更大的训练预算和更充分的调参。</p>
+<p>RoBERTa 的研究策略是尽量固定 BERT-Large 风格的 Encoder 架构，逐项检查训练流程。论文摘要总结了四类主要改动：更长训练、更大 batch、更多数据；移除 NSP；训练更长序列；动态改变 masking pattern。它还评估了 byte-level BPE。</p>
+<figure><img src="../assets/diagrams/08-roberta-recipe.svg" alt="RoBERTa 配方由动态遮盖、移除 NSP 并调整输入打包、大 batch、更大语料与更长训练、byte-level BPE 组成"><figcaption>图 8. RoBERTa 的核心贡献是系统地调整训练配方；不能把全部收益归结为单一的“去掉 NSP”。</figcaption></figure>
+</section>
+
+<section id="changes"><h2>2. 四项训练改动分别改变了什么</h2>
+<ol>
+<li><strong>Dynamic masking：</strong>原始 BERT 在预处理阶段生成固定遮盖副本；RoBERTa 在每次呈现样本时重新生成遮盖模式。</li>
+<li><strong>移除 NSP 并重新组织输入：</strong>不再使用二分类 NSP loss，同时从文档中连续抽取句子填充更长序列。</li>
+<li><strong>更大的 batch：</strong>论文比较 256、2K、8K 序列 batch，并按计算预算调整训练步数和学习率。</li>
+<li><strong>更多数据和更长训练：</strong>从 BookCorpus + Wikipedia 扩展到包含新闻、网页和故事的 160GB 文本，并把预训练延长到 500K steps。</li>
+</ol>
+<p>这几项是组合配方，不应拆成“每个组件独立贡献多少分”的结论，除非引用对应的消融实验。尤其数据量与数据多样性在 RoBERTa 的最终实验中同时变化，论文也明确说明二者没有完全解耦。</p>
+</section>
+
+<section id="masking"><h2>3. 动态遮盖的证据：相当或略优，不是魔法增益</h2>
+<p>RoBERTa Table 1 对 BERT-Base 重实现比较 static 与 dynamic masking，报告 SQuAD 2.0 F1、MNLI-m accuracy 和 SST-2 accuracy。静态遮盖结果分别为 78.3、84.3、92.5；动态遮盖为 78.7、84.0、92.9。论文结论是动态遮盖与静态遮盖表现相当或略好，并且在更长训练与大数据场景中更方便。</p>
+<div class="table-wrap"><table><thead><tr><th>遮盖方式</th><th>SQuAD 2.0 F1</th><th>MNLI-m Accuracy</th><th>SST-2 Accuracy</th></tr></thead><tbody><tr><td>Static</td><td>78.3</td><td>84.3</td><td>92.5</td></tr><tr><td>Dynamic</td><td>78.7</td><td>84.0</td><td>92.9</td></tr></tbody></table></div>
+<p>这些是论文 Table 1 的开发集结果，取 5 个随机初始化的中位数。它们不是所有任务都一致上升的证明，也不是可以脱离模型、训练预算和数据条件的普遍收益。</p>
+</section>
+
+<section id="input"><h2>4. 移除 NSP 不是只删一个 loss：输入格式也变了</h2>
+<p>RoBERTa 比较四种样本组织方式：SEGMENT-PAIR+NSP（接近原始 BERT）；SENTENCE-PAIR+NSP（自然句对，序列更短）；FULL-SENTENCES（连续完整句子打包，可跨文档，跨文档时插入额外 separator，不使用 NSP）；DOC-SENTENCES（连续完整句子打包，但不跨文档，也不使用 NSP）。</p>
+<p>论文 Table 2 的控制实验显示，句子级短 pair 会损害一些任务表现；去掉 NSP 的 FULL-SENTENCES 与 DOC-SENTENCES 与或略好于原始 BERT-Base。DOC-SENTENCES 在一些任务略好，但因为文档末尾会产生较短序列、batch 需要动态调整，作者后续采用 FULL-SENTENCES 以便比较和训练。</p>
+<div class="callout warning">所以“RoBERTa 证明 NSP 完全没用”过于绝对。更准确的结论是：在 RoBERTa 的重实现与输入打包策略下，移除 NSP 并使用更长连续文本没有损害表现，整体配方反而更强。</div>
+</section>
+
+<section id="scale"><h2>5. Batch、数据与训练步数：不要只看一个数字</h2>
+<p>RoBERTa 论文 Table 4 对 BERT-Large 与不同训练阶段的 RoBERTa-Large 做开发集比较。其数据规模和训练步数是逐行累积变化的：</p>
+<div class="table-wrap"><table><thead><tr><th>配置</th><th>预训练文本</th><th>Batch</th><th>Steps</th><th>SQuAD 1.1 / 2.0 F1</th><th>MNLI-m</th><th>SST-2</th></tr></thead><tbody>
+<tr><td>BERT-Large</td><td>13GB（清洗后的 Books + Wiki）</td><td>256</td><td>1M</td><td>90.9 / 81.8</td><td>86.6</td><td>93.7</td></tr>
+<tr><td>RoBERTa-Large · Books + Wiki</td><td>16GB</td><td>8K</td><td>100K</td><td>93.6 / 87.3</td><td>89.0</td><td>95.3</td></tr>
+<tr><td>+ additional data</td><td>160GB</td><td>8K</td><td>100K</td><td>94.0 / 87.7</td><td>89.3</td><td>95.6</td></tr>
+<tr><td>+ longer training</td><td>160GB</td><td>8K</td><td>300K</td><td>94.4 / 88.7</td><td>90.0</td><td>96.1</td></tr>
+<tr><td>+ longer training</td><td>160GB</td><td>8K</td><td>500K</td><td>94.6 / 89.4</td><td>90.2</td><td>96.4</td></tr>
+</tbody></table></div>
+<p>注意两个容易忽略的细节。第一，Table 4 报告的是开发集结果，SQuAD 列为 F1，MNLI-m 和 SST-2 为 accuracy；不能把它们写成测试集排行榜成绩。第二，BERT 原论文报告 BooksCorpus + Wikipedia 共 16GB 未压缩文本；RoBERTa 的重实现说明清洗后同一组合约 13GB，因此表中 BERT-Large 行写 13GB。它们不是简单的数据量矛盾。</p>
+<p>160GB 语料由五个英文来源构成：BooksCorpus + English Wikipedia 约 16GB，CC-News 约 76GB，OpenWebText 约 38GB，Stories 约 31GB。CC-News 是从 CommonCrawl News 提取的新闻文章。数据量与来源多样性一起增加，论文明确指出这两项没有被完全独立控制。</p><p>若把每次更新处理的 token 数作为比较单位，可用 <math class="math-inline" aria-label="每次更新 token 数约等于 batch size 乘以平均序列长度"><mrow><msub><mi>N</mi><mtext>tokens/update</mtext></msub><mo>≈</mo><mi>B</mi><mo>×</mo><msub><mi>L</mi><mtext>avg</mtext></msub></mrow></math> 做一阶估算。它比单独比较“batch 有多少条序列”更能反映长度差异，但还没有包含 padding、packing 和动态 batch 的影响。</p>
+</section>
+
+<section id="results"><h2>6. GLUE 与 SQuAD：必须区分开发集与测试集</h2>
+<p>RoBERTa Table 5 同时列出 single-task dev 与 ensemble test 两种设置。开发集行是 5 个随机种子的中位数；测试集行来自 GLUE leaderboard，RoBERTa 采用每个任务 5–7 个模型集成。其 88.5 的 GLUE average 属于 leaderboard 测试集的集成结果，不应与 Table 5 上方的单模型开发集结果混为一谈。</p>
+<p>在 SQuAD 上，RoBERTa 论文 Table 6 报告 single model dev：SQuAD 1.1 EM/F1 为 88.9/94.6，SQuAD 2.0 EM/F1 为 86.5/89.4；测试集另列为 86.8/89.8（SQuAD 2.0）。论文强调 RoBERTa 只用 SQuAD 自身训练数据，没有像一些先前方法那样增加额外 QA 数据。</p>
+<p>这也解释为什么不能直接拿 RoBERTa 的 88.5 GLUE leaderboard average 与 BERT 表 1 的 82.1 八项开发集平均值做同口径比较：数据切分、任务覆盖、是否集成和提交时间均不同。</p>
+</section>
+
+<section id="tokenizer"><h2>7. Byte-level BPE：文本编码也变了</h2>
+<p>RoBERTa 使用约 50K 的 byte-level BPE 词表，不需要 BERT BasicTokenizer 那套启发式预处理。以 byte 为底层单元，可以编码任意输入字节序列而不引入未知 token。它与 BERT 原始约 30K WordPiece 词表的 tokenization 规则不同，不能把同一个 input ID 或子词切分结果跨 checkpoint 复用。</p>
+<p>这项变化也有代价：词表更大，embedding 参数增加；而且在论文早期实验中，byte-level BPE 对部分任务的表现略低于原始编码。作者仍采用它，理由是通用编码方案的工程优势。它不是“换成 BPE 后所有任务必然更好”。</p>
+</section>
+
+<section id="limits"><h2>8. 结论边界：RoBERTa 是一套训练配方，不是新的注意力公式</h2>
+<ul><li>RoBERTa 保留 BERT-Large 风格的 Encoder 主体和 MLM 目标，主要贡献是系统训练策略。</li><li>动态遮盖的单独消融提升有限，但对大数据和长训练更方便。</li><li>移除 NSP 与 FULL/DOC sentence packing 一起改变，不能孤立解释为一个 loss 的效果。</li><li>数据规模、训练步数和 batch 同时改变；最终收益不能全部归于某一个因素。</li><li>论文表格中的 dev、test、single、ensemble、external data 条件必须分别标注。</li></ul>
+</section>
+
+<section id="demo"><h2>9. 交互：拆解 RoBERTa 配方</h2>
+<div class="demo" data-demo><h3>选择一个改动</h3><p class="demo-intro">观察该改动针对 BERT 训练流程的哪个环节。</p><div class="demo-controls"><button type="button" data-demo-action="mask" aria-pressed="true">动态遮盖</button><button type="button" data-demo-action="nsp" aria-pressed="false">移除 NSP</button><button type="button" data-demo-action="batch" aria-pressed="false">大 Batch</button><button type="button" data-demo-action="data" aria-pressed="false">更多数据与步数</button><button type="button" data-demo-action="bpe" aria-pressed="false">Byte-level BPE</button></div><pre class="demo-output" data-demo-output aria-live="polite">改变：每次样本进入模型时重新采样遮盖位置。
+解决的问题：离线固定 mask 组合有限，长训练时会重复看到相同遮盖模式。
+证据：RoBERTa Table 1 显示 dynamic 与 static 表现相当或略好。
+边界：不是所有单项任务都出现大幅提升。</pre><script type="application/json" data-demo-states>{"mask":"改变：每次样本进入模型时重新采样遮盖位置。\n解决的问题：离线固定 mask 组合有限，长训练时会重复看到相同遮盖模式。\n证据：RoBERTa Table 1 显示 dynamic 与 static 表现相当或略好。\n边界：不是所有单项任务都出现大幅提升。","nsp":"改变：不再训练 NSP 二分类 loss，并使用连续完整句子打包。\n解决的问题：NSP 负例可能让模型利用跨文档主题差异；短句 pair 也会浪费上下文长度。\n证据：Table 2 对比 SEGMENT-PAIR、FULL-SENTENCES、DOC-SENTENCES。\n边界：不能把它概括成所有句间关系目标都无用。","batch":"改变：把 batch 从 256 提高到 8K 序列，并同步调节学习率和训练步数。\n解决的问题：提升并行效率与训练吞吐。\n证据：RoBERTa Table 4 使用 8K batch；Table 3 单独研究 256、2K、8K。\n边界：大 batch 需要重新调参，不是直接把 batch 放大即可。","data":"改变：语料从 Books+Wiki 扩展到 160GB，训练延长至 500K steps。\n解决的问题：数据多样性和训练不足。\n证据：Table 4 展示 16GB→160GB、100K→300K→500K 的累积改动。\n边界：数据量与数据多样性没有在最终实验中完全解耦。","bpe":"改变：使用约 50K byte-level BPE，而不是 BERT 原始 WordPiece。\n解决的问题：以 byte 作为底层单位，减少未知 token 并简化文本预处理。\n证据：RoBERTa §4.4 Text Encoding。\n边界：tokenizer 和词表不兼容，embedding 参数也随词表变化。"}</script></div>
+</section>
+
+<section class="article-summary"><h2>关键结论</h2><ul>
+<li>RoBERTa 保留 BERT 风格 Encoder 与 MLM，主要重新优化数据、mask、输入打包、batch 和训练时长。</li>
+<li>原始 BERT 的 mask 在预处理阶段生成并通过 dupe_factor 扩充；RoBERTa 在每次呈现样本时动态生成。</li>
+<li>RoBERTa 的 FULL-SENTENCES/DOC-SENTENCES 与移除 NSP 同时改变输入组织，不能只归因于删除一个 loss。</li>
+<li>论文 Table 4 是开发集结果；GLUE 88.5 是 leaderboard test ensemble average，必须标明评测口径。</li>
+</ul></section>
+
+<section id="references"><h2>原始资料与延伸阅读</h2><ol class="article-references">
+<li>Liu et al., <a href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener noreferrer">RoBERTa: A Robustly Optimized BERT Pretraining Approach</a>, §3.2、§4.1–4.4、Tables 1–5、Appendix Tables 8–10。</li>
+<li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>, §3.1 and Appendix A.2。</li>
+<li>Gokaslan & Cohen, <a href="https://skylion007.github.io/OpenWebTextCorpus/" target="_blank" rel="noopener noreferrer">OpenWebText Corpus</a>。</li>
+</ol></section>
+</article><nav class="article-nav" aria-label="专题文章导航"><a href="07-bert-finetuning-practice.html">← 上一篇：微调实战</a><a href="09-pretraining-data-engineering.html">下一篇：数据工程 →</a></nav><p class="article-footer">结果表严格区分开发集与测试集；数据规模、batch 和训练步数的组合变化不构成单因素因果证明。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>

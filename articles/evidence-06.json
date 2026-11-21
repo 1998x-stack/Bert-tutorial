@@ -1,0 +1,78 @@
+{
+  "article_id": "06",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "BERT selects 15% of WordPiece positions and uses 80/10/10 replacement; only selected positions contribute direct MLM prediction loss.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "§3.1 Task #1: Masked LM",
+      "status": "verified",
+      "verification_note": "Cross-checked against BERT paper."
+    },
+    {
+      "id": "c02",
+      "claim": "The official BERT preprocessing script supports duplicate factor and whole-word masking options.",
+      "source_url": "https://github.com/google-research/bert/blob/master/create_pretraining_data.py",
+      "locator": "create_training_instances; create_masked_lm_predictions; flags",
+      "status": "verified",
+      "verification_note": "Reference implementation inspected."
+    },
+    {
+      "id": "c03",
+      "claim": "The official BERT script defaults dupe_factor to 10, creating multiple pre-generated masking variants.",
+      "source_url": "https://github.com/google-research/bert/blob/master/create_pretraining_data.py",
+      "locator": "dupe_factor default and duplication loop",
+      "status": "verified",
+      "verification_note": "Distinguishes offline duplicate generation from per-epoch remasking."
+    },
+    {
+      "id": "c04",
+      "claim": "RoBERTa compares static and dynamic masking; Table 1 results are close, with dynamic masking comparable or slightly better.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§4.1 Dynamic Masking; Table 1",
+      "status": "verified",
+      "verification_note": "Preserves metric names and development-set context."
+    },
+    {
+      "id": "c05",
+      "claim": "Whole-word masking groups WordPiece pieces belonging to one original word before selecting prediction positions.",
+      "source_url": "https://github.com/google-research/bert/blob/master/create_pretraining_data.py",
+      "locator": "do_whole_word_mask and candidate_groups logic",
+      "status": "verified",
+      "verification_note": "Changes selection unit, not output vocabulary."
+    },
+    {
+      "id": "c06",
+      "claim": "SpanBERT samples span lengths from a geometric distribution with p=0.2, maximum length 10 and average span length around 3.8 words.",
+      "source_url": "https://arxiv.org/abs/1907.10529",
+      "locator": "§3.1 Span Masking",
+      "status": "verified",
+      "verification_note": "Paper's span length distribution."
+    },
+    {
+      "id": "c07",
+      "claim": "SpanBERT adds a Span Boundary Objective using span boundary representations and relative position embeddings.",
+      "source_url": "https://arxiv.org/abs/1907.10529",
+      "locator": "§3.2 Span Boundary Objective",
+      "status": "verified",
+      "verification_note": "Paper's SBO definition."
+    },
+    {
+      "id": "c08",
+      "claim": "ALBERT SOP uses positive consecutive segments and negative examples formed by reversing their order.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.1 Inter-sentence coherence loss",
+      "status": "verified",
+      "verification_note": "SOP construction described in the paper."
+    },
+    {
+      "id": "c09",
+      "claim": "RoBERTa compares FULL-SENTENCES and DOC-SENTENCES without NSP; FULL-SENTENCES may cross documents with an extra separator.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§4.2 Input Format and Next Sentence Prediction; Table 2",
+      "status": "verified",
+      "verification_note": "Describes input format together with objective ablation."
+    }
+  ]
+}

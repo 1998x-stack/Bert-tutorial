@@ -10,6 +10,11 @@ const articles = [
   'articles/03-bert-pretraining.html',
   'articles/04-bert-finetuning-evidence.html',
   'articles/05-wordpiece-inputs.html',
+  'articles/06-mlm-nsp-masking-objectives.html',
+  'articles/07-bert-finetuning-practice.html',
+  'articles/08-roberta-training-recipe.html',
+  'articles/09-pretraining-data-engineering.html',
+  'articles/10-bert-optimization-hyperparameters.html',
 ];
 
 function read(relativePath) {
@@ -34,6 +39,9 @@ test('each deep-reading page has one semantic H1 and a complete document shell',
     assert.match(html, /id="references"/i, pagePath);
     assert.match(html, /data-mark-complete/i, pagePath);
     assert.match(html, /assets\/js\/site\.js/i, pagePath);
+    assert.match(html, /class="skip-link"/i, pagePath);
+    assert.doesNotMatch(html, /\\\(|\\\)/, pagePath + ': raw LaTeX delimiters are not rendered offline');
+    for (const formula of [...html.matchAll(/<math\b([^>]*)>/gi)]) assert.match(formula[1], /aria-label=/, pagePath + ': MathML needs an accessible label');
   }
 });
 
@@ -64,21 +72,22 @@ test('all article assets and local links resolve inside the repository', () => {
   }
 });
 
-test('five articles use five different subject-specific diagrams', () => {
+test('ten articles use ten different subject-specific diagrams', () => {
   const diagramPaths = articles.map((pagePath) => {
     const html = read(pagePath);
     const match = html.match(/<img[^>]+src="([^"]+\.svg)"/i);
     assert.ok(match, pagePath + ': diagram path missing');
     return match[1];
   });
-  assert.equal(new Set(diagramPaths).size, 5);
+  assert.equal(new Set(diagramPaths).size, 10);
 });
 
 test('each article has an evidence ledger with verified source locators', () => {
-  for (let index = 1; index <= 5; index += 1) {
-    const ledgerPath = 'articles/evidence-0' + index + '.json';
+  for (let index = 1; index <= 10; index += 1) {
+    const articleId = String(index).padStart(2, '0');
+    const ledgerPath = 'articles/evidence-' + articleId + '.json';
     const ledger = JSON.parse(read(ledgerPath));
-    assert.equal(ledger.article_id, '0' + index);
+    assert.ok(ledger.article_id.startsWith(articleId), ledgerPath);
     assert.ok(ledger.claims.length >= 4, ledgerPath);
     for (const claim of ledger.claims) {
       assert.equal(claim.status, 'verified', ledgerPath + ': ' + claim.id);
@@ -90,23 +99,30 @@ test('each article has an evidence ledger with verified source locators', () => 
 });
 
 test('each article includes a meaningful interaction or tokenizer experiment', () => {
-  for (const pagePath of articles.slice(0, 4)) {
+  for (const pagePath of articles) {
     const html = read(pagePath);
-    assert.match(html, /data-demo-action=/, pagePath);
-    assert.match(html, /data-demo-states/, pagePath);
+    if (pagePath.endsWith('05-wordpiece-inputs.html')) {
+      assert.match(html, /data-wordpiece-input/, pagePath);
+      assert.match(html, /data-wordpiece-run/, pagePath);
+    } else {
+      assert.match(html, /data-demo-action=/, pagePath);
+      assert.match(html, /data-demo-states/, pagePath);
+    }
   }
-  const fifth = read(articles[4]);
-  assert.match(fifth, /data-wordpiece-input/, articles[4]);
-  assert.match(fifth, /data-wordpiece-run/, articles[4]);
 });
 
-test('legacy chapter entry points 01–05 redirect to the new article pages', () => {
+test('legacy chapter entry points 01–10 redirect to the new article pages', () => {
   const targets = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
     'articles/03-bert-pretraining.html',
     'articles/04-bert-finetuning-evidence.html',
     'articles/05-wordpiece-inputs.html',
+    'articles/06-mlm-nsp-masking-objectives.html',
+    'articles/07-bert-finetuning-practice.html',
+    'articles/08-roberta-training-recipe.html',
+    'articles/09-pretraining-data-engineering.html',
+    'articles/10-bert-optimization-hyperparameters.html',
   ];
   targets.forEach((target, index) => {
     const html = read(String(index + 1).padStart(2, '0') + '.html');

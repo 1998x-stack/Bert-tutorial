@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="从 Adam 一阶二阶矩、AdamW 解耦权重衰减、warmup 与线性衰减、BERT 和 RoBERTa 原始配置到有效 batch 与微调搜索，建立可复现的优化器知识。"><title>BERT 训练优化：AdamW、Warmup、学习率日程与超参数</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
+<body data-chapter-id="10"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#optimizer">Adam 如何更新参数</a><a href="#decay">AdamW 与权重衰减</a><a href="#schedule">Warmup 与线性衰减</a><a href="#bert-config">BERT 原始配置</a><a href="#roberta-config">RoBERTa 原始配置</a><a href="#effective">有效 Batch 与总步数</a><a href="#finetune">微调超参数</a><a href="#protocol">实验协议</a><a href="#demo">交互：选择训练阶段</a><a href="#references">原始资料</a></aside>
+<main id="content" class="article-main">
+<header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 10</p><h1>BERT 训练优化：AdamW、Warmup、学习率日程与超参数</h1><p class="article-dek">学习率、batch size、warmup、权重衰减和训练步数并不是可以独立随意填写的参数。它们共同决定每一次优化器更新的尺度、噪声和总预算。本篇从 Adam 的数学更新走到 BERT 与 RoBERTa 的原始配置。</p><div class="article-meta"><span>阅读约 25 分钟</span><span>主题：Adam / AdamW / Scheduler / Batch</span><span>核心问题：如何让训练稳定且可复现</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
+<article class="article-body">
+<section id="optimizer"><h2>1. Adam 如何更新参数</h2>
+<p>梯度下降使用当前梯度更新参数；Adam 则为每个参数维护梯度的一阶矩和二阶矩的指数移动平均。一阶矩估计梯度方向，二阶矩估计梯度平方的尺度。对参数 θ，在第 t 步的梯度为 g_t：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="Adam 一阶矩和二阶矩更新公式"><math display="block" aria-label="Adam 的一阶矩 m_t 等于 beta1 乘 m 前一步加一减 beta1 乘梯度，二阶矩 v_t 等于 beta2 乘 v 前一步加一减 beta2 乘梯度平方"><mtable columnalign="right center left" rowspacing="0.6em"><mtr><mtd><msub><mi>m</mi><mi>t</mi></msub></mtd><mtd><mo>=</mo></mtd><mtd><msub><mi>β</mi><mn>1</mn></msub><msub><mi>m</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>β</mi><mn>1</mn></msub><mo>)</mo><msub><mi>g</mi><mi>t</mi></msub></mtd></mtr><mtr><mtd><msub><mi>v</mi><mi>t</mi></msub></mtd><mtd><mo>=</mo></mtd><mtd><msub><mi>β</mi><mn>2</mn></msub><msub><mi>v</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>β</mi><mn>2</mn></msub><mo>)</mo><msubsup><mi>g</mi><mi>t</mi><mn>2</mn></msubsup></mtd></mtr></mtable></math></div></div>
+<p>由于初始矩估计从 0 开始，需要 bias correction：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="Adam 偏差修正与参数更新"><math display="block" aria-label="m hat 等于 m 除以一减 beta1 的 t 次方，v hat 等于 v 除以一减 beta2 的 t 次方，参数减去学习率乘以 m hat 除以 v hat 平方根加 epsilon"><mrow><msub><mover><mi>m</mi><mo>^</mo></mover><mi>t</mi></msub><mo>=</mo><mfrac><msub><mi>m</mi><mi>t</mi></msub><mrow><mn>1</mn><mo>−</mo><msubsup><mi>β</mi><mn>1</mn><mi>t</mi></msubsup></mrow></mfrac><mo>,</mo><mspace width="1em"/><msub><mover><mi>v</mi><mo>^</mo></mover><mi>t</mi></msub><mo>=</mo><mfrac><msub><mi>v</mi><mi>t</mi></msub><mrow><mn>1</mn><mo>−</mo><msubsup><mi>β</mi><mn>2</mn><mi>t</mi></msubsup></mrow></mfrac></mrow></math></div><div class="math-scroll" tabindex="0" role="region" aria-label="Adam 参数更新"><math display="block" aria-label="参数 theta 下一步等于 theta 当前值减去学习率乘以一阶矩修正除以二阶矩修正平方根加 epsilon"><mrow><msub><mi>θ</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><msub><mi>θ</mi><mi>t</mi></msub><mo>−</mo><mi>η</mi><mfrac><msub><mover><mi>m</mi><mo>^</mo></mover><mi>t</mi></msub><mrow><msqrt><msub><mover><mi>v</mi><mo>^</mo></mover><mi>t</mi></msub></msqrt><mo>+</mo><mi>ε</mi></mrow></mfrac></mrow></math></div></div>
+<p>Adam 通过参数级自适应缩放改善了不同参数梯度尺度差异，但它不会自动解决所有优化问题。学习率仍然控制整体更新量；batch size 决定梯度估计噪声；训练步数决定总预算；warmup 和 decay 则决定这些更新量如何随训练阶段变化。</p>
+</section>
+
+<section id="decay"><h2>2. AdamW：把权重衰减从梯度矩估计中分离</h2>
+<p>把 L2 正则项 λ||θ||²/2 加进损失，会使梯度变成 g_t+λθ_t。对 Adam 这类自适应优化器，正则项也会进入一阶和二阶矩估计，导致其作用受到自适应预条件影响。</p>
+<p>AdamW 将 weight decay 与梯度更新解耦。忽略实现中的参数组差异，更新可写为：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="AdamW 解耦权重衰减公式"><math display="block" aria-label="AdamW 参数更新等于一减学习率乘权重衰减乘当前参数，再减去 Adam 的自适应梯度更新"><mrow><msub><mi>θ</mi><mrow><mi>t</mi><mo>+</mo><mn>1</mn></mrow></msub><mo>=</mo><mo>(</mo><mn>1</mn><mo>−</mo><mi>η</mi><mi>λ</mi><mo>)</mo><msub><mi>θ</mi><mi>t</mi></msub><mo>−</mo><mi>η</mi><mfrac><msub><mover><mi>m</mi><mo>^</mo></mover><mi>t</mi></msub><mrow><msqrt><msub><mover><mi>v</mi><mo>^</mo></mover><mi>t</mi></msub></msqrt><mo>+</mo><mi>ε</mi></mrow></mfrac></mrow></math></div></div>
+<p>权重衰减是对参数本身施加收缩，而不是把 λθ 先混入梯度矩估计。现代微调常对 bias 和 LayerNorm 参数设置 weight_decay=0；这是一种常见参数分组实践，具体是否使用应与复现的训练代码一致。</p>
+<p>原始 BERT 论文报告 Adam 与 0.01 weight decay；Google 参考实现使用自定义 <code>AdamWeightDecayOptimizer</code>，并对 LayerNorm 与 bias 做排除。复现 BERT 时不能只凭论文中的“Adam”两个字，就假设任何框架里的默认 Adam 参数完全相同。</p>
+</section>
+
+<section id="schedule"><h2>3. Warmup 与线性衰减：让更新尺度随训练阶段变化</h2>
+<p>预训练初期，模型参数、LayerNorm 统计和 Adam 的矩估计都处于快速变化阶段。Warmup 从较小学习率逐步升到峰值，减少训练刚开始时的大幅更新；随后线性衰减把学习率逐步降到接近 0。</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="线性 warmup 与 decay 学习率公式"><math display="block" aria-label="warmup 阶段学习率等于峰值学习率乘以当前步数除以 warmup 步数，之后线性下降到零"><mrow><mi>η</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mo>{</mo><mtable columnalign="left left" rowspacing="0.5em"><mtr><mtd><msub><mi>η</mi><mtext>max</mtext></msub><mfrac><mi>t</mi><msub><mi>T</mi><mtext>warm</mtext></msub></mfrac></mtd><mtd><mtext>if </mtext><mi>t</mi><mo>&lt;</mo><msub><mi>T</mi><mtext>warm</mtext></msub></mtd></mtr><mtr><mtd><msub><mi>η</mi><mtext>max</mtext></msub><mfrac><mrow><msub><mi>T</mi><mtext>total</mtext></msub><mo>−</mo><mi>t</mi></mrow><mrow><msub><mi>T</mi><mtext>total</mtext></msub><mo>−</mo><msub><mi>T</mi><mtext>warm</mtext></msub></mrow></mfrac></mtd><mtd><mtext>otherwise</mtext></mtd></mtr></mtable></mrow></math></div></div>
+<figure><img src="../assets/diagrams/10-learning-rate-schedule.svg" alt="学习率先线性 warmup 到峰值，再线性衰减到零，并比较 BERT 与 RoBERTa 的训练步数和 warmup"><figcaption>图 10. BERT 和 RoBERTa 都使用 warmup 与线性衰减，但 warmup 步数、总步数、batch 和峰值学习率并不相同。</figcaption></figure>
+<p>调度器应按 optimizer update step 计数。若使用梯度累积，micro-batch 前向次数会多于 optimizer 更新次数；把两者混淆会让 warmup 结束得过早或过晚。</p>
+</section>
+
+<section id="bert-config"><h2>4. BERT 原始预训练配置</h2>
+<div class="table-wrap"><table><thead><tr><th>超参数</th><th>BERT 原始论文配置</th><th>意义</th></tr></thead><tbody>
+<tr><td>Optimizer</td><td>Adam（官方代码为 AdamWeightDecayOptimizer）</td><td>自适应一阶/二阶矩更新</td></tr>
+<tr><td>β₁ / β₂ / ε</td><td>0.9 / 0.999 / 1e-6</td><td>矩估计衰减与数值稳定项</td></tr>
+<tr><td>Peak learning rate</td><td>1e-4</td><td>预训练峰值学习率</td></tr>
+<tr><td>Warmup</td><td>10,000 steps</td><td>随后线性衰减</td></tr>
+<tr><td>Batch</td><td>256 sequences</td><td>不是 256 tokens</td></tr>
+<tr><td>Total steps</td><td>1,000,000</td><td>训练预算</td></tr>
+<tr><td>Weight decay</td><td>0.01</td><td>论文报告值</td></tr>
+<tr><td>Sequence length</td><td>前 90% steps 为 128；最后 10% 为 512</td><td>降低长序列阶段的总计算成本</td></tr>
+<tr><td>Dropout</td><td>0.1</td><td>各层的正则化配置</td></tr>
+</tbody></table></div>
+<p>原始 BERT 先用较短的 128-token 序列训练大部分步骤，最后 10% 再切换到 512-token 长序列。只看“batch 256、max length 512”会误以为所有训练步骤都使用最大长度，进而高估 token/step 与计算预算。</p>
+</section>
+
+<section id="roberta-config"><h2>5. RoBERTa 原始预训练配置：Base 与 Large 不同</h2>
+<div class="table-wrap"><table><thead><tr><th>超参数</th><th>RoBERTa-Base</th><th>RoBERTa-Large</th></tr></thead><tbody>
+<tr><td>Layers / Hidden / Heads</td><td>12 / 768 / 12</td><td>24 / 1024 / 16</td></tr>
+<tr><td>Peak learning rate</td><td>6e-4</td><td>4e-4</td></tr>
+<tr><td>Batch size</td><td>8K</td><td>8K</td></tr>
+<tr><td>Warmup steps</td><td>24K</td><td>30K</td></tr>
+<tr><td>Max steps</td><td>500K</td><td>500K</td></tr>
+<tr><td>β₁ / β₂ / ε</td><td>0.9 / 0.98 / 1e-6</td><td>0.9 / 0.98 / 1e-6</td></tr>
+<tr><td>Weight decay</td><td>0.01</td><td>0.01</td></tr>
+<tr><td>LR decay</td><td>Linear</td><td>Linear</td></tr>
+</tbody></table></div>
+<p>RoBERTa-Large 的 peak LR 是 4e-4，Base 是 6e-4；不能把其中一个值写成整个 RoBERTa 家族的唯一学习率。RoBERTa 论文还报告 gradient clipping=0.0，即其表格中的该配置没有使用梯度裁剪。</p>
+</section>
+
+<section id="effective"><h2>6. 有效 Batch、token 数与更新步数</h2>
+<p>有效 batch 由每设备 micro-batch、设备数量和梯度累积步数共同决定：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="有效 batch size 公式"><math display="block" aria-label="有效 batch size 等于每设备 micro batch 乘以设备数乘以梯度累积步数"><mrow><msub><mi>B</mi><mtext>eff</mtext></msub><mo>=</mo><msub><mi>B</mi><mtext>micro</mtext></msub><mo>×</mo><mi>N</mi><mo>×</mo><mi>A</mi></mrow></math></div></div>
+<p>若每条序列平均包含 L 个有效 token，那么每次更新处理的 token 数约为 B_eff×L。比较 batch 时，必须同时说明“序列数”还是“token 数”，因为不同训练阶段的平均长度可能不同。</p>
+<p>总更新步数可由训练样本数、有效 batch 和 epoch 数估算；预训练若按 token budget 训练，则更适合用总 token 数除以每步有效 token 数来规划。数据重复采样、drop_last、动态 batch 和多任务采样都会改变精确值。</p>
+</section>
+
+<section id="finetune"><h2>7. 微调超参数：小数据集要搜索，不要迷信默认值</h2>
+<p>原始 BERT 的 GLUE 微调在 5e-5、4e-5、3e-5、2e-5 中选择学习率，batch size 为 32，训练 3 epochs，并按 Dev 集选择。RoBERTa 的微调表格对不同任务使用不同搜索空间，例如 GLUE 学习率 1e-5、2e-5、3e-5，batch 16/32，warmup ratio 0.06，最多 10 epochs；SQuAD 和 RACE 又有不同配置。</p>
+<p>这些是论文各自的实验设置，不是所有任务的通用最佳值。对于小数据集，应先固定数据切分，再用验证集选择学习率、epoch、weight decay 和 warmup；如果结果对随机种子敏感，报告多种子均值和标准差。不能用 test set 挑选超参数。</p>
+<h3>7.1 Layer-wise learning-rate decay 是可选策略，不是 BERT 原始默认值</h3>
+<p>Layer-wise learning-rate decay（LLRD）为不同 Transformer 层设置不同学习率，常见做法是让靠近输入的层使用较小学习率。它是一种后续微调启发式，不是 BERT 原始预训练配方。RoBERTa 论文明确说明其微调使用所有层相同学习率，而 XLNet 使用了层级学习率策略。使用 LLRD 时应记录衰减系数、层分组方式，并通过验证集确认是否有收益。</p>
+</section>
+
+<section id="protocol"><h2>8. 可复现实验协议</h2>
+<ol><li>记录模型与 tokenizer 的 checkpoint、revision、词表哈希。</li><li>记录 train/validation/test split 的样本 ID 和文档分组规则。</li><li>记录 optimizer 类型、β 参数、ε、weight decay 参数组、peak LR 和 scheduler。</li><li>记录 per-device batch、设备数、gradient accumulation、有效 batch 和总 optimizer steps。</li><li>记录序列长度、padding/truncation、混合精度、梯度裁剪与随机种子。</li><li>保存验证集模型选择规则、最终测试指标、训练日志和软件版本。</li></ol>
+</section>
+
+<section id="demo"><h2>9. 交互：选择训练阶段，查看对应配置</h2>
+<div class="demo" data-demo><h3>训练配方速查</h3><p class="demo-intro">选择一个实验设置，查看论文参数和需要避免的误读。</p><div class="demo-controls"><button type="button" data-demo-action="bert" aria-pressed="true">BERT 预训练</button><button type="button" data-demo-action="roberta" aria-pressed="false">RoBERTa 预训练</button><button type="button" data-demo-action="finetune" aria-pressed="false">BERT 微调</button><button type="button" data-demo-action="batch" aria-pressed="false">多卡梯度累积</button></div><pre class="demo-output" data-demo-output aria-live="polite">Optimizer：Adam / 官方实现 AdamWeightDecayOptimizer
+Peak LR：1e-4
+Batch：256 sequences
+Steps：1,000,000；warmup 10,000
+Length：90% steps 使用 128，最后 10% 使用 512
+提醒：256 是序列数，不是 token 数。</pre><script type="application/json" data-demo-states>{"bert":"Optimizer：Adam / 官方实现 AdamWeightDecayOptimizer\nPeak LR：1e-4\nBatch：256 sequences\nSteps：1,000,000；warmup 10,000\nLength：90% steps 使用 128，最后 10% 使用 512\n提醒：256 是序列数，不是 token 数。","roberta":"RoBERTa-Base：peak LR 6e-4；RoBERTa-Large：4e-4\nBatch：8K sequences；Steps：500K\nWarmup：Base 24K；Large 30K\nAdam β₂=0.98；ε=1e-6；weight decay=0.01\n提醒：Base 与 Large 的 peak LR 不同。","finetune":"BERT GLUE：batch 32，3 epochs\nLR grid：5e-5、4e-5、3e-5、2e-5\n按 validation/dev 指标选择配置\n提醒：test set 只做最终评估；小数据任务应多随机种子。","batch":"每设备 micro-batch：8\n设备数：4\n梯度累积：4\n有效 batch：8 × 4 × 4 = 128 sequences\nScheduler：每次 optimizer update 后前进一步，不是每个 micro-batch 都前进一步。"}</script></div>
+</section>
+
+<section class="article-summary"><h2>关键结论</h2><ul>
+<li>Adam 维护一阶与二阶矩；AdamW 把 weight decay 从自适应梯度矩估计中解耦。</li>
+<li>Warmup 与线性衰减按 optimizer update step 运行；梯度累积时不能把 micro-batch 数当 scheduler 步数。</li>
+<li>BERT 与 RoBERTa 的学习率、batch、warmup 和总步数差异很大；RoBERTa Base 与 Large 的 peak LR 也不同。</li>
+<li>微调超参数要用 validation 选择；test 不参与调参；小数据集需要报告多随机种子。</li>
+<li>LLRD 是后续可选启发式，不是 BERT 原始默认配方。</li>
+</ul></section>
+
+<section id="references"><h2>原始资料与延伸阅读</h2><ol class="article-references">
+<li>Kingma & Ba, <a href="https://arxiv.org/abs/1412.6980" target="_blank" rel="noopener noreferrer">Adam: A Method for Stochastic Optimization</a>, §Algorithm 1。</li>
+<li>Loshchilov & Hutter, <a href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noopener noreferrer">Decoupled Weight Decay Regularization</a>。</li>
+<li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>, Appendix A.2 and A.5；Google <a href="https://github.com/google-research/bert/blob/master/optimization.py" target="_blank" rel="noopener noreferrer">optimization.py</a>。</li>
+<li>Liu et al., <a href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener noreferrer">RoBERTa</a>, Appendix B Tables 9–10。</li>
+<li>Hugging Face, <a href="https://huggingface.co/docs/transformers/v4.46.3/en/main_classes/optimizer_schedules" target="_blank" rel="noopener noreferrer">Optimizer schedules</a>。</li>
+</ol></section>
+</article><nav class="article-nav" aria-label="专题文章导航"><a href="09-pretraining-data-engineering.html">← 上一篇：数据工程</a><a href="index.html">专题精读总览 →</a></nav><p class="article-footer">数值按论文 Base/Large 与预训练/微调任务分别列出；现代实现的默认参数可能不同。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>

@@ -137,65 +137,65 @@
       "num": "06",
       "title": "MLM 与 NSP 深度剖析",
       "topics": [
-        "15% 预测位置",
-        "80/10/10",
-        "NSP 消融",
-        "SOP"
+        "静态与动态遮盖",
+        "Whole-word Masking",
+        "SpanBERT",
+        "NSP / SOP"
       ],
-      "file": "06.html",
+      "file": "articles/06-mlm-nsp-masking-objectives.html",
       "stageId": "bert-core",
       "stage": "原始 BERT 机制",
       "level": "进阶",
       "duration": 35,
-      "summary": "进一步比较遮盖策略、句间目标与后续预训练配方对训练信号的影响。"
+      "summary": "比较 BERT 静态 mask、RoBERTa 动态 mask、whole-word/span masking、NSP 与 SOP 的监督信号。"
     },
     {
       "num": "07",
       "title": "BERT 微调实战范式",
       "topics": [
-        "文本分类",
-        "NER",
-        "抽取式 QA",
-        "句对匹配"
+        "Dataset Contract",
+        "NER 对齐",
+        "QA Span",
+        "Trainer"
       ],
-      "file": "07.html",
+      "file": "articles/07-bert-finetuning-practice.html",
       "stageId": "transfer",
       "stage": "微调与训练配方",
       "level": "进阶",
       "duration": 40,
-      "summary": "把分类、序列标注和问答任务拆成数据格式、任务头、损失与评估流程。"
+      "summary": "从数据契约、切分、token 对齐、训练循环到验证/测试，构建可复现微调流程。"
     },
     {
       "num": "08",
       "title": "RoBERTa 训练配方革命",
       "topics": [
-        "动态掩码",
-        "移除 NSP",
-        "大 batch",
-        "更多数据"
+        "Dynamic Mask",
+        "No NSP",
+        "8K Batch",
+        "160GB Data"
       ],
-      "file": "08.html",
+      "file": "articles/08-roberta-training-recipe.html",
       "stageId": "transfer",
       "stage": "微调与训练配方",
       "level": "进阶",
       "duration": 40,
-      "summary": "分析 RoBERTa 如何同时调整数据、训练时长、mask、batch 和 NSP 目标。"
+      "summary": "逐项分析 RoBERTa 动态 mask、无 NSP 输入打包、大 batch、更多数据和训练步数。"
     },
     {
       "num": "09",
       "title": "数据工程与动态掩码",
       "topics": [
-        "数据清洗",
-        "去重",
-        "文档采样",
-        "动态 mask"
+        "Corpus Cleaning",
+        "Deduplication",
+        "Document Packing",
+        "Data Collator"
       ],
-      "file": "09.html",
+      "file": "articles/09-pretraining-data-engineering.html",
       "stageId": "transfer",
       "stage": "微调与训练配方",
       "level": "进阶",
       "duration": 35,
-      "summary": "理解预训练语料质量、文档边界、去重与动态遮盖如何影响训练样本。"
+      "summary": "构建从来源许可、清洗、去重、文档切分到动态遮盖的可审计语料流水线。"
     },
     {
       "num": "10",
@@ -203,15 +203,15 @@
       "topics": [
         "AdamW",
         "Warmup",
-        "Weight Decay",
-        "LLRD"
+        "Linear Decay",
+        "Effective Batch"
       ],
-      "file": "10.html",
+      "file": "articles/10-bert-optimization-hyperparameters.html",
       "stageId": "transfer",
       "stage": "微调与训练配方",
       "level": "进阶",
       "duration": 40,
-      "summary": "拆解学习率、warmup、权重衰减、批量大小和分层学习率的作用。"
+      "summary": "推导 Adam/AdamW、warmup、线性衰减、有效 batch，并对比 BERT 与 RoBERTa 原始配置。"
     },
     {
       "num": "11",

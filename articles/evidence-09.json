@@ -1,0 +1,54 @@
+{
+  "article_id": "09",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "RoBERTa uses BooksCorpus and English Wikipedia plus CC-News, OpenWebText and Stories, totaling approximately 160GB.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§3.2 Training Data",
+      "status": "verified",
+      "verification_note": "A single English research corpus example, not a universal ratio."
+    },
+    {
+      "id": "c02",
+      "claim": "RoBERTa compares FULL-SENTENCES and DOC-SENTENCES, with the latter avoiding cross-document packing.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§4.2 Input Format and Next Sentence Prediction",
+      "status": "verified",
+      "verification_note": "Cross-document boundary handling is described."
+    },
+    {
+      "id": "c03",
+      "claim": "BERT official preprocessing creates pretraining instances, applies masking and supports duplicate factor and whole-word masking.",
+      "source_url": "https://github.com/google-research/bert/blob/master/create_pretraining_data.py",
+      "locator": "create_training_instances and create_masked_lm_predictions",
+      "status": "verified",
+      "verification_note": "Canonical repository source."
+    },
+    {
+      "id": "c04",
+      "claim": "Hugging Face DataCollatorForLanguageModeling supports an MLM probability and generates labels for masked language modeling.",
+      "source_url": "https://huggingface.co/docs/transformers/v4.46.3/en/main_classes/data_collator",
+      "locator": "DataCollatorForLanguageModeling",
+      "status": "verified",
+      "verification_note": "Article warns that exact implementation details are version-specific."
+    },
+    {
+      "id": "c05",
+      "claim": "SHA-256 over deterministic normalized text can be used for exact duplicate fingerprints.",
+      "source_url": "https://docs.python.org/3/library/hashlib.html",
+      "locator": "hashlib.sha256 API",
+      "status": "verified",
+      "verification_note": "The code is an exact-duplicate helper, not a near-duplicate method."
+    },
+    {
+      "id": "c06",
+      "claim": "MinHash LSH can retrieve candidate near-duplicate sets using shingle similarity.",
+      "source_url": "https://ekzhu.com/datasketch/lsh.html",
+      "locator": "MinHash LSH documentation",
+      "status": "verified",
+      "verification_note": "Presented as a general engineering technique with threshold caveats."
+    }
+  ]
+}

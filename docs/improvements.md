@@ -29,3 +29,16 @@
 - Validation status at authoring time: source-level consistency checks and browser/Python test suites are added; actual CI results must be read from the new workflow run before claiming browser acceptance. No benchmark training run was performed.
 - Deployment: keep GitHub Pages on the repository root; no custom domain, secret, permission, or deployment setting is changed.
 - Follow-up: migrate chapters 06–28 in later batches, keeping the same standalone-article and evidence-ledger requirements.
+
+
+### 2026-11-21 — Olah-style BERT course upgrade (articles 06–10)
+- Scope: replace legacy 06–10 chapter entry pages with compatibility redirects to five standalone articles; keep the 28-chapter catalogue and old root URLs working.
+- Article 06: compare BERT pre-generated mask examples and dupe_factor, RoBERTa dynamic masking, whole-word masking, SpanBERT geometric spans and SBO, BERT NSP, ALBERT SOP, and RoBERTa no-NSP sentence packing.
+- Article 07: define task data contracts and leakage-safe splits; add a version-pinned Transformers 4.46.3 classification workflow, fast-tokenizer NER alignment, QA offsets/overflow windows, effective batch math and evaluation protocol.
+- Article 08: cross-check RoBERTa Tables 1–6 and Appendices B–C; separate dynamic-mask ablation, NSP/input-format changes, data scale, batch/steps, byte-level BPE, dev metrics and leaderboard test ensemble.
+- Article 09: document provenance/licensing, cleaning, exact and near-duplicate detection, document-level split, FULL-SENTENCES/DOC-SENTENCES packing and dynamic MLM collators.
+- Article 10: derive Adam/AdamW and warmup/linear decay; compare BERT and RoBERTa Base/Large pretraining hyperparameters and fine-tuning search spaces.
+- Engineering: add five article-specific SVGs, five evidence ledgers, ten-article directory, root compatibility redirects, catalogue and offline snapshot updates, and extend static/browser test coverage.
+- Cross-check sources: BERT arXiv:1810.04805 and official preprocessing/optimizer code; RoBERTa arXiv:1907.11692; ALBERT arXiv:1909.11942; SpanBERT arXiv:1907.10529; Adam arXiv:1412.6980; AdamW arXiv:1711.05101; versioned Transformers 4.46.3 docs.
+- Validation: GitHub Actions run 9 passed the Node catalog/content tests, 12 Python reference tests, and HTTP/file:// Playwright checks across all ten article pages and 1440/768/390/360 px viewports; 41 screenshots were uploaded. The first CI run caught a missing Article 07 diagram, which was added before the final passing run. GitHub Pages refresh is checked after merge. No new pretraining or benchmark run is claimed.
+- Compatibility: root 06.html–10.html redirect to articles; chapter metadata points to articles; original legacy page bodies remain available in Git history.
