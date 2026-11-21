@@ -1,54 +1,59 @@
-# 📖 BERT 模型系列 · 从入门到精通
+# BERT 模型系列教程
 
-> 📘 28章 实战体系 · 交互式 HTML 课程
+一套从 Transformer Encoder、BERT 原始论文到 BERT 家族演进与中文 NLU 实践的中文课程。课程由 28 个章节组成，并新增五篇独立专题精读文章。
 
-> **English TL;DR:** An all-Chinese 28-chapter course on the **BERT model family** — from the 2018 breakthrough (MLM + NSP) through the encoder family tree that followed: RoBERTa, ELECTRA, XLNet, MPNet, ALBERT, DeBERTa, Chinese ERNIE/WWM, Longformer/BigBird, SimCSE, distillation (DistilBERT/TinyBERT/MobileBERT), and efficient fine-tuning (LoRA/AdaLoRA/BitFit) — ending with ModernBERT & edge-compressed end-to-end. Covers pretraining recipes, data/scale effects, training stability, multilingual transfer, and a real Chinese NLU capstone.
+## 在线阅读
 
-## 📖 课程简介
+- **课程首页**：https://1998x-stack.github.io/Bert-tutorial/
+- **五篇专题精读**：https://1998x-stack.github.io/Bert-tutorial/articles/
+- [专题 01：从词向量到上下文预训练](articles/01-pretraining-evolution.html)
+- [专题 02：Transformer Encoder 的计算路径](articles/02-transformer-encoder.html)
+- [专题 03：BERT 预训练与 MLM](articles/03-bert-pretraining.html)
+- [专题 04：BERT 下游微调与实验解读](articles/04-bert-finetuning-evidence.html)
+- [专题 05：WordPiece 与输入表示](articles/05-wordpiece-inputs.html)
 
-本课程围绕 **BERT 及其衍生模型家族**做系统性精读与实践：从 NLP 预训练简史与 Transformer 精讲切入，逐篇精读 BERT 开山论文（MLM/NSP/微调范式），再按家族演进线覆盖 RoBERTa（训练配方革命）、ELECTRA（判别式）、XLNet/MPNet、ALBERT（参数高效）、DeBERTa（解耦注意力）与中文生态 ERNIE/WWM，加上长文本、句向量、蒸馏、移动端部署与高效微调（LoRA/BitFit），最终以 ModernBERT 前沿与端到端中文 NLU 项目收束。
-
-## 🚀 快速开始
-
-```bash
-open index.html   # macOS，纯静态即开即看
-```
-
-## 📂 项目结构
+## 仓库结构
 
 ```text
-Bert-tutorial/
-├── index.html / 01.html ~ 28.html / courses.json / theme.css
+.
+├── index.html                 # 课程门户与离线目录
+├── courses.json               # 28 章唯一目录数据源
+├── theme.css                 # 既有课程章节主题
+├── 01.html ... 28.html        # 28 章课程正文
+├── articles/
+│   ├── index.html            # 五篇专题入口
+│   ├── article.css           # 专题文章设计系统
+│   ├── 01-*.html ... 05-*.html
+│   └── evidence-*.json       # 每篇文章的来源账本
+├── pdfs/                     # 论文原文
+├── docs/                     # 维护与改进记录
+└── tests/                    # 离线目录一致性测试
 ```
 
-## 📖 章节目录（阶段映射）
+## 学习路线
 
-| 阶段 | 章节 | 核心 |
-|------|------|------|
-| **铺垫** | 01–04 | NLP 预训练简史、Transformer、BERT 开山论文精读 |
-| **机制** | 05–06 | 输入表示/分词、MLM 与 NSP 深度剖析 |
-| **微调与配方** | 07–11 | 微调范式、RoBERTa、数据工程、超参/优化、scaling |
-| **训练技术** | 12–13 | 训练稳定性、多语言/零样本 |
-| **家族横评** | 14–19 | 变体生态、ELECTRA、XLNet、MPNet、ALBERT、DeBERTa |
-| **中文+长文** | 20–21 | ERNIE/WWW、Longformer/LongBigBird |
-| **句向量+轻量** | 22–25 | SimCL/SBERT、蒸馏、移动部署、高效微调 |
-| **前沿+实战** | 26–28 | ModernBERT、极致压缩、端到端中文 NLU |
+1. 先读 01–02，建立表示学习与 Transformer Encoder 的计算直觉。
+2. 再读 03–05，理解 BERT 的训练目标、下游接口与输入构造。
+3. 回到 06–14，研究训练配方、数据规模、稳定性与模型变体。
+4. 继续 15–25，比较 ELECTRA、XLNet、MPNet、DeBERTa、长文本、句向量、蒸馏与高效微调。
+5. 最后完成 26–28 的现代编码器、端侧压缩与端到端项目。
 
-## ✨ 亮点
+## 本地运行
 
-- 唯一按「开山本义 → 家族谱系 → 部署/前沿」组织的 BERT 课程
-- 中文生态（ERNIE / WWM）+ 极致压缩（EI-BERT 1.91MB）覆盖完整
-- 端到端实战：预训练→微调→蒸馏→部署（电商评论分析）
+无需构建步骤。直接打开 `index.html` 即可浏览 28 章课程；专题文章可从 `articles/index.html` 打开。也可启动静态服务器：
 
-## 🎯 前置知识
+```bash
+python -m http.server 8000
+# http://localhost:8000
+```
 
-- 适合：NLP 学习者 / 预训练模型工程师
-- 建议具备：PyTorch + Transformer 基础概念
+## 质量与事实边界
 
-## ✨ 特色
+- 论文中的结论以原始论文为准；专题页在文末链接论文或官方文档，并在 `articles/evidence-*.json` 中登记来源。
+- 教学示意、公式推导、论文报告结果与工程实践建议分开表述。
+- 不把跨论文排行榜数字当作受控实验；没有完整实验条件时不宣称复现了论文结果。
+- 目录数据以 `courses.json` 为准，首页保留离线嵌入数据以支持 `file://` 打开。
 
-- 从 2018 开山到 2025 ModernBERT 的全谱系
-- 即开即用纯静态 HTML
+## 贡献
 
----
-*本课程由 `Bert-tutorial/` 项目维护。*
+欢迎提交术语修正、公式勘误、可复现实验和浏览器兼容性问题。涉及论文数值的修改请附原文表格/章节定位与模型、数据集、指标、切分条件。

@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ref-1",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1810.04805",
+    "locator": "BERT original paper, Sections 3–4",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-2",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1907.11692",
+    "locator": "RoBERTa: A Robustly Optimized BERT Pretraining Approach",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  }
+]

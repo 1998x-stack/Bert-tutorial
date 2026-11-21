@@ -1,0 +1,47 @@
+[
+  {
+    "id": "ref-1",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1301.3781",
+    "locator": "Word2Vec (Mikolov et al., 2013)",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-2",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://aclanthology.org/D14-1162/",
+    "locator": "GloVe (Pennington et al., 2014)",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-3",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1802.05365",
+    "locator": "Deep contextualized word representations / ELMo (Peters et al., 2018)",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-4",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf",
+    "locator": "Improving Language Understanding by Generative Pre-Training (Radford et al., 2018)",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-5",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1810.04805",
+    "locator": "BERT (Devlin et al., 2019)",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  }
+]

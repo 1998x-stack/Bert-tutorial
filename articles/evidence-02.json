@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ref-1",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1706.03762",
+    "locator": "Attention Is All You Need (Vaswani et al., 2017)",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-2",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1810.04805",
+    "locator": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  }
+]
