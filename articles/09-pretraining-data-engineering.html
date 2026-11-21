@@ -40,7 +40,7 @@ def exact_fingerprint(text: str) -> str:
     return hashlib.sha256(normalized.encode("utf-8")).hexdigest()</code></pre>
 <p>这段代码只识别规范化后完全相同的文本；它不会发现改写、模板变化、少量增删或同一新闻的转载版本。</p>
 <h3>4.2 近重复去重</h3>
-<p>近重复检测通常把文档拆成 shingles（例如连续 token n-gram），再用 MinHash/LSH 或 SimHash 等近似方法召回候选对，最后计算 Jaccard 或编辑相似度进行确认。阈值越高，误删越少但漏掉的近重复越多；阈值越低，越容易误删主题相似但内容不同的文章。</p><div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="Jaccard 相似度公式"><math display="block" aria-label="Jaccard 相似度等于两个 shingle 集合交集大小除以并集大小"><mrow><mi>J</mi><mo>(</mo><mi>A</mi><mo>,</mo><mi>B</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mo>|</mo><mi>A</mi><mo>∩</mo><mi>B</mi><mo>|</mo></mrow><mrow><mo>|</mo><mi>A</mi><mo>∪</mo><mi>B</mi><mo>|</mo></mrow></mfrac></mrow></math></div></div>
+<p>近重复检测通常把文档拆成 shingles（例如连续 token n-gram），再用 MinHash/LSH 等近似方法召回候选对，最后计算 Jaccard 或编辑相似度进行确认。阈值越高，误删越少但漏掉的近重复越多；阈值越低，越容易误删主题相似但内容不同的文章。</p><div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="Jaccard 相似度公式"><math display="block" aria-label="Jaccard 相似度等于两个 shingle 集合交集大小除以并集大小"><mrow><mi>J</mi><mo>(</mo><mi>A</mi><mo>,</mo><mi>B</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mo>|</mo><mi>A</mi><mo>∩</mo><mi>B</mi><mo>|</mo></mrow><mrow><mo>|</mo><mi>A</mi><mo>∪</mo><mi>B</mi><mo>|</mo></mrow></mfrac></mrow></math></div></div>
 <p>实践中应同时考虑文档级与段落级重复：新闻转载可能整篇重复，百科页面可能只有模板段落重复。对法律条文、代码、数学定义和常见短语，过度去重可能把有价值的重复结构误删。去重报告应包含阈值、样本抽检、误删估计和被保留的 canonical 文档。</p>
 </section>
 

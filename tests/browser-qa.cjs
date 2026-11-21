@@ -148,7 +148,7 @@ async function main() {
     if (offlineCount !== 28) throw new Error('file:// homepage rendered ' + offlineCount + ' chapters, expected 28');
 
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, five article interactions, MathML, and 1440/768/390/360px layouts.');
+    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, ten article interactions, MathML, and 1440/768/390/360px layouts.');
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));
