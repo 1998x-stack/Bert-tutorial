@@ -1,29 +1,11 @@
-[
-  {
-    "id": "ref-1",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1810.04805",
-    "locator": "BERT original paper, Tables 1–4",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-2",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1804.07461",
-    "locator": "GLUE benchmark (Wang et al., 2018)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-3",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1806.03822",
-    "locator": "SQuAD 2.0 (Rajpurkar et al., 2018)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  }
-]
+{
+  "article_id": "04",
+  "title": "BERT 下游微调与实验解读",
+  "claims": [
+    {"id":"04-C01","claim":"BERT 微调将句对拼接后编码，序列级任务读取 [CLS] 表示，token-level 任务读取各位置表示。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Section 3.2 and Appendix A.5","status":"verified","verification_note":"区分论文原始 fine-tuning 方案与后续框架实现增加的任务头细节。"},
+    {"id":"04-C02","claim":"BERT-Large 在论文当时的官方 GLUE leaderboard score 为 80.5；MultiNLI matched accuracy 为 86.7。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Abstract, Section 4.1 and Table 1","status":"verified","verification_note":"80.5 是官方 leaderboard score，不与排除 WNLI 的 Table 1 average 混用。"},
+    {"id":"04-C03","claim":"SQuAD v1.1 test F1 93.2 对应 BERT-Large ensemble + TriviaQA；SQuAD v2.0 test F1 83.1 对应 BERT-Large single。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Abstract, Tables 2–3","status":"verified","verification_note":"明确模型数量与额外训练数据，避免将 ensemble 结果误写成裸单模型。"},
+    {"id":"04-C04","claim":"BERT-Base 与 No-NSP 消融在 MNLI-m、QNLI、MRPC、SST-2 和 SQuAD 上的开发集数值如表所列。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Section 5.1, Table 5","status":"verified","verification_note":"No-NSP 对照仍保留双向 MLM；LTR & No-NSP 是另一个同时改变方向目标的对照。"},
+    {"id":"04-C05","claim":"SQuAD v2.0 通过允许 no-answer span 扩展了 SQuAD v1.1 的抽取式问答定义。","source_url":"https://arxiv.org/abs/1806.03822","locator":"Rajpurkar et al. (2018), Abstract and task definition","status":"verified","verification_note":"问答头还需要处理无答案阈值、最大答案长度与窗口偏移。"}
+  ]
+}

@@ -1,1 +1,186 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="同一个预训练编码器如何接入分类、句对判断与抽取式问答；如何正确读取论文结果。"><title>BERT 如何迁移到下游任务：微调接口、实验解读与复现边界｜BERT 教程</title><link rel="stylesheet" href="article.css"></head><body><div class="shell"><nav class="toc" aria-label="文章目录"><a class="back" href="../index.html">← 返回课程首页</a><hr><a href="#interface">预训练模型不是一个现成的分类器</a><a href="#classification">单句分类：用 [CLS] 作为序列摘要</a><a href="#pair">句对任务：Segment 与交互</a><a href="#qa">抽取式问答：预测答案起止位置</a><a href="#evidence">论文结果应该如何读</a><a href="#repro">复现时最容易被忽略的变量</a></nav><main><header><div class="eyebrow">BERT 系列 · 深度精读 04</div><h1>BERT 如何迁移到下游任务：微调接口、实验解读与复现边界</h1><p class="dek">同一个预训练编码器如何接入分类、句对判断与抽取式问答；如何正确读取论文结果。</p><p><small>建议阅读：15–25 分钟 · 先理解问题，再检查公式、张量与实验边界。</small></p></header><article><section id="interface"><h2>1. 预训练模型不是一个现成的分类器</h2><p>BERT 输出每个 token 的上下文向量。下游任务通常在顶部增加轻量任务头，并用任务标注数据联合更新 encoder 与任务头参数；这就是 fine-tuning 与固定特征抽取的主要区别。</p><figure><svg viewBox="0 0 760 190" role="img" aria-labelledby="fig-title fig-desc"><title id="fig-title">预训练模型不是一个现成的分类器</title><desc id="fig-desc">输入、上下文计算与输出的概念流程图</desc><rect x="18" y="58" width="170" height="72" rx="12" fill="#dcefe7" stroke="#147f80" stroke-width="2"/><text x="103" y="88" text-anchor="middle" font-size="16" fill="#203035">输入 / tokens</text><text x="103" y="110" text-anchor="middle" font-size="12" fill="#53676d">shape: n × d</text><path d="M190 94 H285" stroke="#147f80" stroke-width="3"/><path d="M275 86 L287 94 L275 102" fill="none" stroke="#147f80" stroke-width="3"/><rect x="292" y="40" width="180" height="108" rx="14" fill="#f8e9df" stroke="#c96c4c" stroke-width="2"/><text x="382" y="82" text-anchor="middle" font-size="16" fill="#203035">核心机制</text><text x="382" y="106" text-anchor="middle" font-size="12" fill="#53676d">计算 / 表示变换</text><path d="M474 94 H570" stroke="#7461ba" stroke-width="3"/><path d="M560 86 L572 94 L560 102" fill="none" stroke="#7461ba" stroke-width="3"/><rect x="578" y="58" width="164" height="72" rx="12" fill="#eae5f5" stroke="#7461ba" stroke-width="2"/><text x="660" y="88" text-anchor="middle" font-size="16" fill="#203035">输出表示</text><text x="660" y="110" text-anchor="middle" font-size="12" fill="#53676d">用于下游任务</text></svg><figcaption>图 04. 本章的最小计算路径。图中 n 表示序列长度，d 表示隐藏维度；后文逐步展开每个变换。</figcaption></figure></section><section id="classification"><h2>2. 单句分类：用 [CLS] 作为序列摘要</h2><p>输入 [CLS] + tokens + [SEP]，取最终层 [CLS] hidden state，经过线性层与 softmax 得到类别概率。这个设计是任务接口，不意味着 [CLS] 在所有语料和任务上天然就是最优句向量。</p></section><section id="pair"><h2>3. 句对任务：Segment 与交互</h2><p>将 A、B 拼接为 [CLS] A [SEP] B [SEP]，并用 token type IDs 区分两段。Encoder 的双向注意力让 A 与 B 的 token 可以跨段交互，因此适用于自然语言推断、语义匹配等句对任务。</p></section><section id="qa"><h2>4. 抽取式问答：预测答案起止位置</h2><p>给定问题与段落，拼接后对每个 token 分别预测 start 与 end logits。训练标签是答案 span 的起止 token 索引；推理时还需处理最大答案长度、无效 span 与窗口切分等约束。</p></section><section id="evidence"><h2>5. 论文结果应该如何读</h2><p>BERT 原论文在 GLUE、SQuAD、SWAG 等基准报告结果。复述任何数字时必须同时给出模型规模、数据集版本/切分、指标、对照方法与论文表格位置；跨论文排行榜数字不能直接当成受控对比。</p></section><section id="repro"><h2>6. 复现时最容易被忽略的变量</h2><p>Tokenizer 版本、最大长度、batch size、学习率、warmup、epoch、随机种子、数据预处理和评测脚本都会影响结果。只复现模型结构并不等于复现论文实验；缺少原始数据与算力条件时，应明确称为实现演示而非结果复现。</p></section><section id="summary"><h2>本章的三个结论</h2><ul><li>先明确模型解决的问题，再解释它的计算结构。</li><li>公式必须与输入输出形状、归一化维度和训练目标对应。</li><li>示意代码用于验证数据流；论文指标必须回到原始实验条件核对。</li></ul></section><section id="references"><h2>原始资料与延伸阅读</h2><ol class="refs"><li><a href="https://arxiv.org/abs/1810.04805" rel="noopener noreferrer">BERT original paper, Tables 1–4</a></li><li><a href="https://arxiv.org/abs/1804.07461" rel="noopener noreferrer">GLUE benchmark (Wang et al., 2018)</a></li><li><a href="https://arxiv.org/abs/1806.03822" rel="noopener noreferrer">SQuAD 2.0 (Rajpurkar et al., 2018)</a></li></ol></section></article><div class="next"><a href="../index.html">课程总目录</a><a href="index.html">五篇专题导读 →</a></div><footer>本文区分论文原始设计、教学简化与工程实践；不同实现的默认配置可能不同。</footer></main></div></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="解释 BERT 如何通过任务头迁移到分类、句对判断、序列标注和抽取式问答，并按原始论文表格核对实验数字。">
+  <title>BERT 如何迁移到下游任务：微调接口、实验解读与复现边界</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/css/course.css">
+</head>
+<body data-chapter-id="04">
+  <div class="article-progress" aria-hidden="true"><span></span></div>
+  <div class="article-layout">
+    <aside class="article-toc" aria-label="文章目录">
+      <a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a>
+      <p class="toc-label">本篇导航</p>
+      <a href="#transfer">预训练模型如何迁移</a>
+      <a href="#classification">单句分类</a>
+      <a href="#pair">句对任务</a>
+      <a href="#tagging">序列标注</a>
+      <a href="#qa">抽取式问答</a>
+      <a href="#results">原始论文结果</a>
+      <a href="#ablation">NSP 消融实验</a>
+      <a href="#reproduce">复现边界与检查清单</a>
+      <a href="#demo">交互：选择任务头</a>
+      <a href="#references">原始资料</a>
+    </aside>
+    <main id="content" class="article-main">
+      <header class="article-header">
+        <p class="eyebrow">BERT 系列 · 深度精读 04</p>
+        <h1>BERT 如何迁移到下游任务：微调接口、实验解读与复现边界</h1>
+        <p class="article-dek">预训练得到的是 token 的上下文表示，不是一个现成的情感分类器或问答系统。BERT 的迁移能力来自统一的编码器接口：保留预训练参数，按任务添加输出层，再用标注数据端到端微调。</p>
+        <div class="article-meta"><span>阅读约 20 分钟</span><span>主题：Fine-tuning / GLUE / SQuAD</span><span>核心问题：同一编码器如何服务不同任务</span></div>
+        <div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div>
+      </header>
+      <article class="article-body">
+        <section id="transfer">
+          <h2>1. 预训练模型如何迁移到下游任务</h2>
+          <p>BERT encoder 对长度为 <code>T</code> 的输入输出一组上下文隐藏状态 <code>H ∈ R^B ×  T ×  d</code>。其中每个位置都有一个向量。下游任务只需定义如何读取这些向量，以及如何把它们映射到标签空间。</p>
+          <p>微调（fine-tuning）通常会添加少量任务专属参数，同时更新 encoder 的预训练参数。特征抽取（feature-based）则冻结 encoder，把它输出的表示交给另一个任务模型。两者都能利用预训练表示，但参数是否继续更新、任务模型如何构建并不相同。</p>
+          <figure>
+            <img src="../assets/diagrams/04-finetuning-heads.svg" alt="BERT 共享编码器分别连接序列分类、逐 token 序列标注和问答起止位置预测三个任务头">
+            <figcaption>图 4. 共享的是预训练 encoder；输出层根据任务定义变化。微调时通常联合更新 encoder 与任务头。</figcaption>
+          </figure>
+        </section>
+
+        <section id="classification">
+          <h2>2. 单句分类：使用 [CLS] 表示</h2>
+          <p>对情感分类或句子可接受性判断，输入通常写成：</p>
+          <pre><code>[CLS] 句子 token ... [SEP]</code></pre>
+          <p>取最终层 [CLS] 位置的隐藏向量 <code>C ∈ R^H</code>，再接一个分类矩阵 <code>W ∈ R^K ×  H</code>，得到 <code>K</code> 个类别的 logits：</p>
+          <div class="math-group">
+            <div class="math-scroll" tabindex="0" role="region" aria-label="分类器 logits 公式，可横向滚动">
+              <math display="block" aria-label="分类 logits 等于 C 乘以 W 的转置">
+                <mrow><mi>logits</mi><mo>=</mo><mi>C</mi><msup><mi>W</mi><mi>⊤</mi></msup></mrow>
+              </math>
+            </div>
+          </div>
+          <p>softmax 将 logits 转换为类别概率，交叉熵根据真实标签计算损失。论文中的 GLUE 分类实验使用 [CLS] 表示作为序列级表示。需要注意：这是一种经过预训练与任务微调形成的接口，不意味着未经训练的 [CLS] 向量在任意任务上天然就是高质量通用句向量。</p>
+        </section>
+
+        <section id="pair">
+          <h2>3. 句对任务：把两段文本放进同一个序列</h2>
+          <p>自然语言推断、释义识别和问答等任务需要同时处理两段文本。BERT 把它们拼接为一个输入序列：</p>
+          <pre><code>[CLS] 句子 A ... [SEP] 句子 B ... [SEP]</code></pre>
+          <p>第一段通常使用 token type ID 0，第二段使用 token type ID 1。双向 self-attention 允许 A 中的 token 读取 B 中的 token，也允许 B 读取 A。模型因此可以在编码过程中直接建立跨段交互，而不必先独立编码两个句子再额外运行一个 cross-attention 模块。</p>
+          <p>这里的 A、B 是输入片段，不必严格等同于语法学上的完整句子。对于单句分类，通常只有一个文本段；对于 NLI，A 可以是 premise，B 可以是 hypothesis；对于抽取式问答，A 可以是 question，B 可以是 passage。</p>
+        </section>
+
+        <section id="tagging">
+          <h2>4. 序列标注：每个 token 都有输出</h2>
+          <p>命名实体识别（NER）和词性标注属于 token-level 任务。编码器输出 <code>H=[h_1,…,h_T]</code>，对每个位置应用同一个分类器，得到该位置的标签分布。若词被拆成多个 WordPiece，训练和评测必须定义子词与原始词标签之间的对齐策略。</p>
+          <p>BERT 原始论文的 CoNLL-2003 NER 设置使用每个词的第一个 sub-token 表示作为该词的分类输入，并且没有在输出端增加 CRF 层。这是论文实验的具体设置，不应被写成所有 NER 实现唯一正确的方案。</p>
+        </section>
+
+        <section id="qa">
+          <h2>5. 抽取式问答：预测答案的起点与终点</h2>
+          <p>给定问题和段落，BERT 将二者拼接成一条序列。对每个 token 的最终表示 <code>T_i</code>，模型分别计算答案起点与终点分数。论文用两个可学习向量 <code>S,E ∈ R^H</code> 表示起点和终点查询：</p>
+          <div class="math-group">
+            <div class="math-scroll" tabindex="0" role="region" aria-label="答案起点与终点概率公式，可横向滚动">
+              <math display="block" aria-label="起点概率为 softmax 作用于 S 与每个 token 表示的点积；终点同理">
+                <mtable columnalign="right center left" rowspacing="0.7em">
+                  <mtr><mtd><msub><mi>P</mi><mi>i</mi></msub><mo>=</mo></mtd><mtd><mfrac><msup><mi>e</mi><mrow><mi>S</mi><mo>·</mo><msub><mi>T</mi><mi>i</mi></msub></mrow></msup><mrow><munderover><mo>∑</mo><mi>j</mi><mtext>tokens</mtext></munderover><msup><mi>e</mi><mrow><mi>S</mi><mo>·</mo><msub><mi>T</mi><mi>j</mi></msub></mrow></msup></mrow></mfrac></mtd><mtd><mtext>start probability</mtext></mtd></mtr>
+                  <mtr><mtd><msub><mi>Q</mi><mi>j</mi></msub><mo>=</mo></mtd><mtd><mfrac><msup><mi>e</mi><mrow><mi>E</mi><mo>·</mo><msub><mi>T</mi><mi>j</mi></msub></mrow></msup><mrow><munderover><mo>∑</mo><mi>k</mi><mtext>tokens</mtext></munderover><msup><mi>e</mi><mrow><mi>E</mi><mo>·</mo><msub><mi>T</mi><mi>k</mi></msub></mrow></msup></mrow></mfrac></mtd><mtd><mtext>end probability</mtext></mtd></mtr>
+                </mtable>
+              </math>
+            </div>
+          </div>
+          <p>候选答案 span <code>(i,j)</code> 的分数是 <code>S· T_i+E· T_j</code>，并要求 <code>jge i</code>。推理时还要限制答案最大长度，排除无效 span，并处理文档切窗造成的 token offset 映射。</p>
+          <p>对于 SQuAD v2.0，段落可能不包含答案。原始 BERT 的做法是把 [CLS] 位置作为 no-answer span 候选，并将其分数与最佳非空 span 比较，阈值在开发集上选择。</p>
+        </section>
+
+        <section id="results">
+          <h2>6. 原始论文结果：数字必须带上实验条件</h2>
+          <p>BERT 论文报告在 11 项 NLP 任务上取得新的最佳结果。以下数字来自论文摘要和实验表格，展示的是论文报告值，不是本教程重新训练或复现的结果。</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>任务 / 基准</th><th>模型与设置</th><th>论文报告值</th><th>指标与定位</th></tr></thead>
+              <tbody>
+                <tr><td>GLUE</td><td>BERT-Large</td><td>80.5</td><td>官方 GLUE leaderboard score；论文 §4.1</td></tr>
+                <tr><td>MultiNLI</td><td>BERT-Large</td><td>86.7</td><td>matched accuracy；论文摘要 / Table 1</td></tr>
+                <tr><td>SQuAD v1.1</td><td>BERT-Large ensemble + TriviaQA</td><td>93.2</td><td>test F1；Table 2。不是裸单模型结果</td></tr>
+                <tr><td>SQuAD v2.0</td><td>BERT-Large single</td><td>83.1</td><td>test F1；Table 3</td></tr>
+                <tr><td>SWAG</td><td>BERT-Large</td><td>86.3</td><td>test accuracy；Table 4</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout warning">SQuAD v1.1 的 93.2 F1 对应论文中使用 TriviaQA 增强数据的 BERT-Large ensemble；如果只写“BERT 单模型 93.2”，就把模型数量和训练数据条件丢掉了。论文中 BERT-Large 单模型加 TriviaQA 的 test F1 是 91.8。</div>
+          <p>GLUE 的 80.5 是论文当时的官方 leaderboard score，与论文 Table 1 中排除 WNLI 的平均分不是同一个统计量。不同数据集的指标也不同：有的是 accuracy，有的是 F1，有的是相关系数。把这些值直接平均或横向比较会产生误导。</p>
+        </section>
+
+        <section id="ablation">
+          <h2>7. NSP 消融实验：读懂对照组才知道结论是什么</h2>
+          <p>原始论文 Table 5 比较完整 BERT-Base、移除 NSP 的双向 MLM，以及同时移除 NSP 并改成左到右语言模型的设置。下面列出其中的开发集指标：</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>设置</th><th>MNLI-m Acc</th><th>QNLI Acc</th><th>MRPC Acc</th><th>SST-2 Acc</th><th>SQuAD F1</th></tr></thead>
+              <tbody>
+                <tr><td>BERT-Base（MLM + NSP）</td><td>84.4</td><td>88.4</td><td>86.7</td><td>92.7</td><td>88.5</td></tr>
+                <tr><td>No NSP（保留双向 MLM）</td><td>83.9</td><td>84.9</td><td>86.5</td><td>92.6</td><td>87.9</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>在这组原始 BERT-Base 实验中，移除 NSP 对 QNLI、MNLI 和 SQuAD 的影响更明显，对 MRPC 和 SST-2 的变化较小。第三个 LTR & No NSP 对照组还同时把双向 MLM 改成了左到右语言模型，因此它与完整 BERT 的差异不能全部归因于 NSP。</p>
+          <p>RoBERTa 后来在更大数据、更长训练、动态 masking 和不同 batch 配置下移除了 NSP，并报告了更好的结果。由于训练配方同时发生多项变化，严谨的表述应该是“NSP 的收益依赖训练配方”，而不是“单凭 RoBERTa 就证明 NSP 在任何条件下都无用”。</p>
+        </section>
+
+        <section id="reproduce">
+          <h2>8. 复现边界与检查清单</h2>
+          <p>复现论文结果不等于搭出相同的网络层数。至少要记录以下变量：</p>
+          <ul>
+            <li><strong>模型：</strong>Base / Large、cased / uncased、checkpoint 版本、tokenizer 与词表。</li>
+            <li><strong>数据：</strong>数据集版本、训练/开发/测试切分、去重与清洗规则、标签对齐方法。</li>
+            <li><strong>输入：</strong>最大长度、截断策略、padding 方向、句对打包、特殊 token。</li>
+            <li><strong>优化：</strong>batch size、学习率、warmup、epoch、weight decay、随机种子、梯度累积。</li>
+            <li><strong>评估：</strong>指标实现、官方脚本、阈值选择、是否使用 ensemble 或额外数据。</li>
+          </ul>
+          <p>如果只运行一个小样本 demo 来确认 forward 过程，应该称为“实现验证”；如果没有相同的数据、算力、超参数和评测协议，就不应声称复现了论文的 benchmark 数值。</p>
+        </section>
+
+        <section id="demo">
+          <h2>9. 交互：同一编码器，任务头怎样变化</h2>
+          <p>切换任务，观察同一个 encoder 输出如何被不同读取方式使用。输出维度是概念示意，具体值取决于 batch、序列长度和类别数。</p>
+          <div class="demo" data-demo>
+            <h3>选择下游任务</h3>
+            <div class="demo-controls">
+              <button type="button" data-demo-action="classification" aria-pressed="true">文本分类</button>
+              <button type="button" data-demo-action="ner" aria-pressed="false">序列标注</button>
+              <button type="button" data-demo-action="qa" aria-pressed="false">抽取式问答</button>
+            </div>
+            <pre class="demo-output" data-demo-output aria-live="polite">输入：一条文本
+Encoder 输出：H ∈ R[B,T,H]
+读取方式：[CLS] 最终隐藏状态
+任务头：Linear(H → K) + Softmax
+输出：每条文本一个类别分布，shape [B,K]</pre>
+            <script type="application/json" data-demo-states>{"classification":"输入：一条文本\nEncoder 输出：H ∈ R[B,T,H]\n读取方式：[CLS] 最终隐藏状态\n任务头：Linear(H → K) + Softmax\n输出：每条文本一个类别分布，shape [B,K]","ner":"输入：一条待标注文本\nEncoder 输出：H ∈ R[B,T,H]\n读取方式：每个 token 的最终隐藏状态\n任务头：共享 Linear(H → K) + Token-level Softmax\n输出：每个 token 一个标签分布，shape [B,T,K]","qa":"输入：问题 + 段落，拼成一个序列\nEncoder 输出：H ∈ R[B,T,H]\n读取方式：每个 token 的最终隐藏状态\n任务头：两个投影分别得到 start / end logits\n输出：两个位置分布，shape [B,T] × 2"}</script>
+          </div>
+        </section>
+
+        <section class="article-summary">
+          <h2>关键结论</h2>
+          <ul>
+            <li>BERT 的迁移接口是“共享 encoder + 任务头”；任务不同，读取 hidden state 的方式不同。</li>
+            <li>问答任务预测的是答案 span 的起点和终点；SQuAD v2.0 还需要显式处理无答案情况。</li>
+            <li>论文数字必须附带模型规模、数据集版本、指标、测试切分、额外数据和 ensemble 条件。</li>
+            <li>消融结论只适用于实际对照组；若多个变量同时变化，就不能把差异归因给单一因素。</li>
+          </ul>
+        </section>
+
+        <section id="references">
+          <h2>原始资料与延伸阅读</h2>
+          <ol class="article-references">
+            <li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>. 重点：§3.2、§4.1–4.4、§5.1、Appendix A.5。</li>
+            <li>Wang et al., <a href="https://aclanthology.org/W18-5446/" target="_blank" rel="noopener noreferrer">GLUE: A Multi-Task Benchmark and Analysis Platform for Natural Language Understanding</a>, 2018.</li>
+            <li>Rajpurkar et al., <a href="https://arxiv.org/abs/1806.03822" target="_blank" rel="noopener noreferrer">Know What You Don't Know: Unanswerable Questions for SQuAD</a>, 2018.</li>
+            <li>Liu et al., <a href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener noreferrer">RoBERTa</a>, 2019. 重点：§4.2 与整体训练配方。</li>
+          </ol>
+        </section>
+      </article>
+      <nav class="article-nav" aria-label="专题文章导航"><a href="03-bert-pretraining.html">← 上一篇：BERT 预训练</a><a href="05-wordpiece-inputs.html">下一篇：WordPiece 与输入表示 →</a></nav>
+      <p class="article-footer">表中数值均标明原始论文定位；它们是论文报告结果，不代表本教程进行了重新训练或独立复现。</p>
+    </main>
+  </div>
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

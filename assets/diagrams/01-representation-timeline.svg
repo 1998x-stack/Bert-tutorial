@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" role="img" aria-labelledby="title desc">
+<title id="title">NLP 词表示从静态向上下文表示演进</title>
+<desc id="desc">时间轴展示从离散 one-hot、静态词向量、ELMo 和 GPT-1，到 BERT 深层双向编码的变化。</desc>
+<rect width="900" height="330" rx="20" fill="#f5f7f2"/>
+<text x="42" y="48" fill="#203035" font-size="22" font-weight="700">表示函数逐步读取更多上下文</text>
+<path d="M74 176 H828" stroke="#9aaba6" stroke-width="4" stroke-linecap="round"/>
+<path d="M816 166 L834 176 L816 186" fill="none" stroke="#9aaba6" stroke-width="4"/>
+<g font-family="system-ui, sans-serif">
+<circle cx="105" cy="176" r="11" fill="#9aa7a4"/><rect x="42" y="90" width="128" height="62" rx="12" fill="#e4e9e5" stroke="#9aa7a4"/><text x="106" y="116" text-anchor="middle" font-size="15" fill="#203035" font-weight="700">One-hot</text><text x="106" y="137" text-anchor="middle" font-size="12" fill="#53676d">离散索引</text><text x="106" y="220" text-anchor="middle" font-size="13" fill="#53676d">词身份</text>
+<circle cx="280" cy="176" r="11" fill="#147f80"/><rect x="212" y="90" width="136" height="62" rx="12" fill="#e2f0eb" stroke="#147f80"/><text x="280" y="116" text-anchor="middle" font-size="15" fill="#203035" font-weight="700">Word2Vec / GloVe</text><text x="280" y="137" text-anchor="middle" font-size="12" fill="#53676d">每词一个向量</text><text x="280" y="220" text-anchor="middle" font-size="13" fill="#53676d">静态表示</text>
+<circle cx="455" cy="176" r="11" fill="#7461ba"/><rect x="387" y="90" width="136" height="62" rx="12" fill="#eeeafa" stroke="#7461ba"/><text x="455" y="116" text-anchor="middle" font-size="15" fill="#203035" font-weight="700">ELMo</text><text x="455" y="137" text-anchor="middle" font-size="12" fill="#53676d">前向 + 后向 LM</text><text x="455" y="220" text-anchor="middle" font-size="13" fill="#53676d">双向特征组合</text>
+<circle cx="630" cy="176" r="11" fill="#c96c4c"/><rect x="562" y="90" width="136" height="62" rx="12" fill="#fbede7" stroke="#c96c4c"/><text x="630" y="116" text-anchor="middle" font-size="15" fill="#203035" font-weight="700">GPT-1</text><text x="630" y="137" text-anchor="middle" font-size="12" fill="#53676d">因果语言模型</text><text x="630" y="220" text-anchor="middle" font-size="13" fill="#53676d">左侧上下文</text>
+<circle cx="800" cy="176" r="11" fill="#147f80"/><rect x="732" y="90" width="136" height="62" rx="12" fill="#d7eee7" stroke="#147f80" stroke-width="2"/><text x="800" y="116" text-anchor="middle" font-size="15" fill="#203035" font-weight="700">BERT</text><text x="800" y="137" text-anchor="middle" font-size="12" fill="#53676d">MLM + Encoder</text><text x="800" y="220" text-anchor="middle" font-size="13" fill="#53676d">深层双向条件化</text>
+</g>
+<text x="450" y="282" text-anchor="middle" fill="#53676d" font-size="13">关键变化不是“模型越来越大”，而是表示函数能够利用的上下文与迁移接口发生变化。</text>
+</svg>

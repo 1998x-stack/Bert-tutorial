@@ -1,47 +1,11 @@
-[
-  {
-    "id": "ref-1",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1301.3781",
-    "locator": "Word2Vec (Mikolov et al., 2013)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-2",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://aclanthology.org/D14-1162/",
-    "locator": "GloVe (Pennington et al., 2014)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-3",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1802.05365",
-    "locator": "Deep contextualized word representations / ELMo (Peters et al., 2018)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-4",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf",
-    "locator": "Improving Language Understanding by Generative Pre-Training (Radford et al., 2018)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-5",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1810.04805",
-    "locator": "BERT (Devlin et al., 2019)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  }
-]
+{
+  "article_id": "01",
+  "title": "从词向量到上下文预训练",
+  "claims": [
+    {"id":"01-C01","claim":"Word2Vec 的 CBOW 与 Skip-gram 通过上下文预测目标学习稠密词表示。","source_url":"https://arxiv.org/abs/1310.4546","locator":"Mikolov et al. (2013), Sections 2–3","status":"verified","verification_note":"按原论文的 CBOW / Skip-gram 目标描述；未把词向量类比当作普遍规律。"},
+    {"id":"01-C02","claim":"GloVe 将全局词共现统计用于词向量学习。","source_url":"https://aclanthology.org/D14-1162/","locator":"Pennington et al. (2014), Abstract and model objective","status":"verified","verification_note":"将全局共现统计与局部上下文目标区分。"},
+    {"id":"01-C03","claim":"ELMo 使用字符 CNN 和双向语言模型，并对不同层的表示做任务相关加权组合。","source_url":"https://arxiv.org/abs/1802.05365","locator":"Peters et al. (2018), Sections 3.1–3.3","status":"verified","verification_note":"前向与后向语言模型分别训练，随后组合为上下文特征。"},
+    {"id":"01-C04","claim":"GPT-1 使用 Transformer decoder 式的因果语言模型目标，并采用预训练后微调的迁移路线。","source_url":"https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf","locator":"Radford et al. (2018), model architecture and training objective","status":"verified","verification_note":"只陈述因果方向和迁移范式，不把 GPT-1 与后续 GPT 版本的配置混用。"},
+    {"id":"01-C05","claim":"BERT 使用 MLM 训练深层双向 Transformer 表示，并与 ELMo 的浅层双向组合、GPT 的单向 Transformer 形成区别。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Sections 1–2 and Appendix A.4","status":"verified","verification_note":"采用原论文对三种预训练路线的对照。"}
+  ]
+}

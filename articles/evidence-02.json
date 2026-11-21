@@ -1,20 +1,10 @@
-[
-  {
-    "id": "ref-1",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1706.03762",
-    "locator": "Attention Is All You Need (Vaswani et al., 2017)",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  },
-  {
-    "id": "ref-2",
-    "claim": "本文相关机制与历史背景的主要依据",
-    "kind": "primary-source",
-    "source_url": "https://arxiv.org/abs/1810.04805",
-    "locator": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
-    "status": "verified",
-    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
-  }
-]
+{
+  "article_id": "02",
+  "title": "Transformer Encoder 计算路径",
+  "claims": [
+    {"id":"02-C01","claim":"Scaled dot-product attention 由 QK 转置、按 sqrt(d_k) 缩放、softmax 和 Value 加权汇聚构成。","source_url":"https://arxiv.org/abs/1706.03762","locator":"Vaswani et al. (2017), Section 3.2.1","status":"verified","verification_note":"softmax 归一化沿 key 位置轴；mask 在 softmax 前加入分数。"},
+    {"id":"02-C02","claim":"Transformer Base 使用 6 层 encoder、512 维隐藏状态、8 个注意力头和 2048 维 FFN。","source_url":"https://arxiv.org/abs/1706.03762","locator":"Vaswani et al. (2017), Section 3.4 and Table 3","status":"verified","verification_note":"与 BERT-Base 的 12 层、768 维、12 头配置分开说明。"},
+    {"id":"02-C03","claim":"原始 Transformer encoder 使用残差连接与 post-LayerNorm；BERT 使用 GELU 激活并保持 encoder 结构。","source_url":"https://arxiv.org/abs/1810.04805","locator":"Devlin et al. (2019), Section 3 and Appendix A.2","status":"verified","verification_note":"没有把后续模型常见的 pre-LN 配置误写成 BERT 默认结构。"},
+    {"id":"02-C04","claim":"FlashAttention 通过 IO-aware 分块减少显存读写和中间矩阵物化，但精确全注意力的算术复杂度仍随序列长度平方增长。","source_url":"https://arxiv.org/abs/2205.14135","locator":"Dao et al. (2022), Abstract and Section 3","status":"verified","verification_note":"区分 IO/显存优化与算法渐近计算复杂度。"}
+  ]
+}

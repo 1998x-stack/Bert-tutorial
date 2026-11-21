@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 390" role="img" aria-labelledby="title desc">
+<title id="title">缩放点积注意力的数据流</title>
+<desc id="desc">输入 X 分别投影为 Query、Key、Value，Query 与 Key 转置相乘并缩放、softmax 后作为权重加权 Value。</desc>
+<rect width="900" height="390" rx="20" fill="#f5f7f2"/>
+<g font-family="system-ui, sans-serif" fill="#203035">
+<rect x="28" y="146" width="112" height="72" rx="12" fill="#e4e9e5" stroke="#7d918a" stroke-width="2"/><text x="84" y="176" text-anchor="middle" font-size="20" font-weight="700">X</text><text x="84" y="198" text-anchor="middle" font-size="12" fill="#53676d">[B,T,d]</text>
+<path d="M140 182 H176 V74 H218" fill="none" stroke="#147f80" stroke-width="3"/><path d="M176 182 V182 H218" fill="none" stroke="#7461ba" stroke-width="3"/><path d="M176 182 V292 H218" fill="none" stroke="#c96c4c" stroke-width="3"/>
+<rect x="218" y="42" width="110" height="64" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="273" y="70" text-anchor="middle" font-size="19" font-weight="700">Q</text><text x="273" y="91" text-anchor="middle" font-size="11" fill="#53676d">XWQ</text>
+<rect x="218" y="150" width="110" height="64" rx="12" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="273" y="178" text-anchor="middle" font-size="19" font-weight="700">K</text><text x="273" y="199" text-anchor="middle" font-size="11" fill="#53676d">XWK</text>
+<rect x="218" y="260" width="110" height="64" rx="12" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/><text x="273" y="288" text-anchor="middle" font-size="19" font-weight="700">V</text><text x="273" y="309" text-anchor="middle" font-size="11" fill="#53676d">XWV</text>
+<path d="M328 74 H374 V123 H408" fill="none" stroke="#147f80" stroke-width="3"/><path d="M328 182 H408" fill="none" stroke="#7461ba" stroke-width="3"/><path d="M328 292 H590 V212 H626" fill="none" stroke="#c96c4c" stroke-width="3"/>
+<rect x="408" y="96" width="138" height="78" rx="12" fill="#fff" stroke="#147f80" stroke-width="2"/><text x="477" y="127" text-anchor="middle" font-size="18" font-weight="700">QKᵀ</text><text x="477" y="150" text-anchor="middle" font-size="12" fill="#53676d">[B,h,T,T]</text>
+<path d="M546 135 H586" stroke="#147f80" stroke-width="3"/><path d="M576 127 L588 135 L576 143" fill="none" stroke="#147f80" stroke-width="3"/>
+<rect x="590" y="96" width="120" height="78" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="650" y="126" text-anchor="middle" font-size="16" font-weight="700">÷ √dₖ</text><text x="650" y="150" text-anchor="middle" font-size="12" fill="#53676d">+ mask</text>
+<path d="M710 135 H746" stroke="#147f80" stroke-width="3"/><path d="M736 127 L748 135 L736 143" fill="none" stroke="#147f80" stroke-width="3"/>
+<rect x="750" y="96" width="120" height="78" rx="12" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="810" y="126" text-anchor="middle" font-size="16" font-weight="700">Softmax</text><text x="810" y="150" text-anchor="middle" font-size="12" fill="#53676d">沿 Key 轴</text>
+<path d="M810 174 V212 H770" fill="none" stroke="#7461ba" stroke-width="3"/><path d="M780 204 L768 212 L780 220" fill="none" stroke="#7461ba" stroke-width="3"/>
+<rect x="626" y="184" width="142" height="62" rx="12" fill="#fff" stroke="#7461ba" stroke-width="2"/><text x="697" y="210" text-anchor="middle" font-size="16" font-weight="700">权重 × V</text><text x="697" y="231" text-anchor="middle" font-size="11" fill="#53676d">加权汇聚</text>
+<path d="M768 215 H816 V270" fill="none" stroke="#7461ba" stroke-width="3"/><rect x="758" y="270" width="112" height="62" rx="12" fill="#d7eee7" stroke="#147f80" stroke-width="2"/><text x="814" y="296" text-anchor="middle" font-size="17" font-weight="700">Output</text><text x="814" y="317" text-anchor="middle" font-size="11" fill="#53676d">[B,T,dᵥ]</text>
+</g>
+<text x="450" y="360" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#53676d">Softmax 对每个 Query 的所有可见 Key 归一化；mask 在 softmax 前作用于分数。</text>
+</svg>

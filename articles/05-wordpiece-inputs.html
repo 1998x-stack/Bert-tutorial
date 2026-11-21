@@ -1,15 +1,195 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="把原始文本转换成 input_ids、token_type_ids、attention_mask，并追踪每个位置如何形成输入向量。"><title>BERT 输入表示：WordPiece、特殊 Token 与三类 Embedding｜BERT 教程</title><link rel="stylesheet" href="article.css"></head><body><div class="shell"><nav class="toc" aria-label="文章目录"><a class="back" href="../index.html">← 返回课程首页</a><hr><a href="#tokenize">分词不是把句子切成单词那么简单</a><a href="#special">特殊 Token 定义序列结构</a><a href="#pair">从句子到模型输入</a><a href="#embedding">三个向量相加形成每个位置的输入</a><a href="#code">用 Transformers 检查实际 tokenizer 输出</a><a href="#length">512 的限制属于具体模型配置</a></nav><main><header><div class="eyebrow">BERT 系列 · 深度精读 05</div><h1>BERT 输入表示：WordPiece、特殊 Token 与三类 Embedding</h1><p class="dek">把原始文本转换成 input_ids、token_type_ids、attention_mask，并追踪每个位置如何形成输入向量。</p><p><small>建议阅读：15–25 分钟 · 先理解问题，再检查公式、张量与实验边界。</small></p></header><article><section id="tokenize"><h2>1. 分词不是把句子切成单词那么简单</h2><p>WordPiece 将词拆成词表中的子词单元，词首与续接子词使用不同词条形式（常见实现用 ## 标记续接片段）。它让词表覆盖常见片段，同时把罕见词拆成可组合单元。</p><figure><svg viewBox="0 0 760 190" role="img" aria-labelledby="fig-title fig-desc"><title id="fig-title">分词不是把句子切成单词那么简单</title><desc id="fig-desc">输入、上下文计算与输出的概念流程图</desc><rect x="18" y="58" width="170" height="72" rx="12" fill="#dcefe7" stroke="#147f80" stroke-width="2"/><text x="103" y="88" text-anchor="middle" font-size="16" fill="#203035">输入 / tokens</text><text x="103" y="110" text-anchor="middle" font-size="12" fill="#53676d">shape: n × d</text><path d="M190 94 H285" stroke="#147f80" stroke-width="3"/><path d="M275 86 L287 94 L275 102" fill="none" stroke="#147f80" stroke-width="3"/><rect x="292" y="40" width="180" height="108" rx="14" fill="#f8e9df" stroke="#c96c4c" stroke-width="2"/><text x="382" y="82" text-anchor="middle" font-size="16" fill="#203035">核心机制</text><text x="382" y="106" text-anchor="middle" font-size="12" fill="#53676d">计算 / 表示变换</text><path d="M474 94 H570" stroke="#7461ba" stroke-width="3"/><path d="M560 86 L572 94 L560 102" fill="none" stroke="#7461ba" stroke-width="3"/><rect x="578" y="58" width="164" height="72" rx="12" fill="#eae5f5" stroke="#7461ba" stroke-width="2"/><text x="660" y="88" text-anchor="middle" font-size="16" fill="#203035">输出表示</text><text x="660" y="110" text-anchor="middle" font-size="12" fill="#53676d">用于下游任务</text></svg><figcaption>图 05. 本章的最小计算路径。图中 n 表示序列长度，d 表示隐藏维度；后文逐步展开每个变换。</figcaption></figure></section><section id="special"><h2>2. 特殊 Token 定义序列结构</h2><p>[CLS] 常用于序列级任务，[SEP] 分隔句段，[MASK] 是 MLM 训练符号，[PAD] 用于 batch 对齐，[UNK] 表示无法识别的 token。Token ID 是特定 tokenizer 词表中的索引，不应把一组 ID 当作所有 BERT tokenizer 的通用常数。</p></section><section id="pair"><h2>3. 从句子到模型输入</h2><p>单句常写作 [CLS] A [SEP]；句对常写作 [CLS] A [SEP] B [SEP]。input_ids 编码 token 身份，token_type_ids 标记句段归属（原始 BERT 通常为 0/1），attention_mask 区分真实 token 与 padding。</p></section><section id="embedding"><h2>4. 三个向量相加形成每个位置的输入</h2><p>对位置 i，E_i = E_token(x_i) + E_position(i) + E_segment(s_i)，随后经过 LayerNorm 与 dropout。三项 embedding 的维度相同，都是 hidden size；逐元素相加而不是拼接。</p></section><section id="code"><h2>5. 用 Transformers 检查实际 tokenizer 输出</h2><p>下例使用公开的 bert-base-uncased tokenizer。实际 token、ID 与 mask 由所下载 tokenizer 版本决定；离线环境需预先缓存模型文件。</p><pre><code>from transformers import AutoTokenizer
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="从 tokenizer 预处理、WordPiece 子词、特殊 token、token_type_ids、attention_mask 到三类 embedding，完整追踪 BERT 的输入表示。">
+  <title>BERT 输入表示：WordPiece、特殊 Token 与三类 Embedding</title>
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="stylesheet" href="../assets/css/course.css">
+</head>
+<body data-chapter-id="05">
+  <div class="article-progress" aria-hidden="true"><span></span></div>
+  <div class="article-layout">
+    <aside class="article-toc" aria-label="文章目录">
+      <a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a>
+      <p class="toc-label">本篇导航</p>
+      <a href="#pipeline">文本怎样进入 tokenizer</a>
+      <a href="#wordpiece">WordPiece 如何切分</a>
+      <a href="#bpe">WordPiece 与 BPE 不相同</a>
+      <a href="#special">特殊 token 的职责</a>
+      <a href="#pair">单句与句对的输入格式</a>
+      <a href="#embeddings">三类 embedding 相加</a>
+      <a href="#mask">padding、mask 与截断</a>
+      <a href="#length">512 的配置边界</a>
+      <a href="#demo">交互：玩具 WordPiece</a>
+      <a href="#code">检查真实 tokenizer 输出</a>
+      <a href="#references">原始资料</a>
+    </aside>
+    <main id="content" class="article-main">
+      <header class="article-header">
+        <p class="eyebrow">BERT 系列 · 深度精读 05</p>
+        <h1>BERT 输入表示：WordPiece、特殊 Token 与三类 Embedding</h1>
+        <p class="article-dek">模型接收的不是原始字符串，而是一组 token ID、句段 ID、位置 ID 和 attention mask。理解 tokenizer 与 embedding 的边界，才能解释 BERT 为什么会把一句话变成固定长度的张量。</p>
+        <div class="article-meta"><span>阅读约 21 分钟</span><span>主题：WordPiece / Input IDs / Embeddings</span><span>核心问题：文本怎样变成模型输入张量</span></div>
+        <div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div>
+      </header>
+      <article class="article-body">
+        <section id="pipeline">
+          <h2>1. 原始文本怎样进入 tokenizer</h2>
+          <p>tokenizer 的职责是把字符串转成模型词表中的离散 token，并为模型准备边界标记和辅助输入。对于原始英文 BERT，官方实现会先清理文本、处理空白字符；uncased 模型还会小写化并去除重音符号；随后切分标点，再把每个片段送入 WordPiece。</p>
+          <p>cased 与 uncased 模型的预处理不同：cased 模型保留大小写和重音；uncased 模型会做相应归一化。中文模型的预处理也不能直接照搬英文规则。Google 发布的 BERT 中文模型采用字符级中文切分，而其他多语言模型对非中文语言使用 WordPiece。</p>
+          <p>因此，tokenizer 不是“把空格分开的词映射成 ID”这么简单。预处理规则、词表版本、大小写配置和语言特定规则共同决定最终 token 序列。</p>
+        </section>
+
+        <section id="wordpiece">
+          <h2>2. WordPiece 如何切分子词</h2>
+          <p>WordPiece 用固定词表中的子词单元表示输入。一个完整词若不在词表中，tokenizer 会尝试将其拆成更小的已知片段。BERT 常见实现使用 <code>##</code> 标记非词首的续接片段，例如某个词可能被表示为一个起始子词和一个或多个带 <code>##</code> 前缀的后续片段。</p>
+          <p>官方 BERT tokenizer 的推理阶段使用 greedy longest-match-first：从当前未处理位置开始，先尝试尽可能长的子串；若找不到词表项，就缩短候选片段，直到匹配成功。后续片段会加上 <code>##</code> 前缀。如果一个词无法被完整拆分，官方实现会将整个词映射为 <code>[UNK]</code>，而不是保留已经匹配到的一半。</p>
+          <p>这里要区分“词表如何训练出来”与“给定词表后如何切分输入”。BERT 原论文说明使用 30,000 个 WordPiece token，但并没有在论文正文中完整规定 WordPiece 词表训练算法的全部实现细节；因此不能把某个教程中的训练伪代码直接当成 BERT 官方算法。</p>
+        </section>
+
+        <section id="bpe">
+          <h2>3. WordPiece 与 BPE 不相同</h2>
+          <p>BPE（Byte Pair Encoding）最初来自压缩算法，Sennrich 等人将其用于机器翻译中的子词表示。典型 BPE 训练过程统计相邻符号对并反复合并高频 pair；推理时按学到的 merge 规则构造子词。</p>
+          <p>WordPiece 与 BPE 都属于子词建模思路，都能在固定词表中复用词根、词缀和常见字符片段，但二者的词表学习准则和具体实现并不等同。尤其不能把“BPE 每轮合并最高频 pair”写成 WordPiece 的通用训练算法。对复现 BERT 来说，应直接使用与 checkpoint 匹配的 tokenizer 文件，而不是自行猜测训练算法。</p>
+          <div class="callout note">**模型与 tokenizer 必须配套。** 同一个字符串在不同 BERT checkpoint、cased/uncased 词表或多语言 tokenizer 下，可能得到不同 token 序列和 token ID。</div>
+        </section>
+
+        <section id="special">
+          <h2>4. 特殊 token 的职责</h2>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Token</th><th>主要用途</th><th>注意事项</th></tr></thead>
+              <tbody>
+                <tr><td><code>[CLS]</code></td><td>序列开头；常用于分类等序列级任务的汇总位置</td><td>不是天然的通用句向量，通常需要任务训练</td></tr>
+                <tr><td><code>[SEP]</code></td><td>标记片段边界；句对输入中分隔 A 与 B</td><td>单句输入通常也会在末尾添加</td></tr>
+                <tr><td><code>[MASK]</code></td><td>原始 MLM 预训练中使用的遮盖符号</td><td>一般下游输入不会主动插入它</td></tr>
+                <tr><td><code>[PAD]</code></td><td>把不同长度样本补齐到同一 batch 长度</td><td>应同时设置 attention mask</td></tr>
+                <tr><td><code>[UNK]</code></td><td>表示 tokenizer 无法编码的输入片段</td><td>是否出现取决于 tokenizer 和词表</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>特殊 token 的字符串形式较常见，但对应的整数 ID 由具体 tokenizer 词表决定。不能把某个 uncased checkpoint 的 ID 当成所有 BERT 变体的通用常数。</p>
+        </section>
+
+        <section id="pair">
+          <h2>5. 单句与句对的输入格式</h2>
+          <p>单句输入通常组织为：</p>
+          <pre><code>[CLS] A_1 A_2 ... A_n [SEP]</code></pre>
+          <p>句对输入通常组织为：</p>
+          <pre><code>[CLS] A_1 ... A_m [SEP] B_1 ... B_n [SEP]</code></pre>
+          <p>tokenizer 随后会生成多组一一对齐的输入张量：</p>
+          <ul>
+            <li><code>input_ids</code>：每个 token 在当前词表中的整数索引。</li>
+            <li><code>token_type_ids</code>：句段标记。原始 BERT 的句对输入通常用 0 表示 A 段、1 表示 B 段；单句通常全为 0。</li>
+            <li><code>attention_mask</code>：常见约定中 1 表示真实 token、0 表示 padding。框架或模型封装的布尔 mask 语义可能不同，使用时应检查 API。</li>
+            <li><code>position_ids</code>：位置索引，常见默认值从 0 递增。</li>
+          </ul>
+          <figure>
+            <img src="../assets/diagrams/05-input-representation.svg" alt="BERT 句对输入由 CLS、A 段、SEP、B 段和 SEP 构成，并叠加 token、segment、position 三类 embedding">
+            <figcaption>图 5. 句对结构与三类输入 embedding。每个位置的三类向量维度相同，按元素相加而不是拼接。</figcaption>
+          </figure>
+        </section>
+
+        <section id="embeddings">
+          <h2>6. 三类 embedding 相加形成输入表示</h2>
+          <p>对位置 <code>i</code>，BERT 的输入表示由 token embedding、segment embedding 和 position embedding 相加得到：</p>
+          <div class="math-group">
+            <div class="math-scroll" tabindex="0" role="region" aria-label="BERT 三类输入 embedding 相加公式，可横向滚动">
+              <math display="block" aria-label="第 i 个位置输入向量等于 token embedding、segment embedding 与 position embedding 的和">
+                <mrow>
+                  <msub><mi>E</mi><mi>i</mi></msub><mo>=</mo>
+                  <msub><mi>E</mi><mtext>token</mtext></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>)</mo>
+                  <mo>+</mo><msub><mi>E</mi><mtext>segment</mtext></msub><mo>(</mo><msub><mi>s</mi><mi>i</mi></msub><mo>)</mo>
+                  <mo>+</mo><msub><mi>E</mi><mtext>position</mtext></msub><mo>(</mo><mi>i</mi><mo>)</mo>
+                </mrow>
+              </math>
+            </div>
+          </div>
+          <p>三类 embedding 的最后一维都是 hidden size <code>H</code>，所以可以逐元素相加。相加之后，原始 BERT 实现还执行 LayerNorm 和 dropout，再把结果送入第一层 Transformer encoder。</p>
+          <p>Token embedding 告诉模型“当前位置是什么 token”；segment embedding 告诉模型“当前位置属于哪一段”；position embedding 告诉模型“当前位置在序列中的位置”。三者是互补信号，不能把它们说成三套互相拼接的向量。</p>
+        </section>
+
+        <section id="mask">
+          <h2>7. padding、attention mask 与截断</h2>
+          <p>一个 batch 内的文本长度往往不同。padding 会把短序列补到同一长度；attention mask 则告诉模型哪些位置是真实输入、哪些位置只是补齐符号。若只补齐而不屏蔽 padding，模型就可能把补齐位置当作可用上下文。</p>
+          <p>truncation 会在超过最大长度时截断输入。句对任务还需要明确采用 longest-first、只截断一侧或滑动窗口等策略。对问答和序列标注任务，截断不仅影响模型输入，还会影响原始字符 offset 与标签位置的对齐。</p>
+        </section>
+
+        <section id="length">
+          <h2>8. 512 是原始 BERT 配置边界，不是 Transformer 定律</h2>
+          <p>原始 BERT checkpoint 使用长度为 512 的绝对位置 embedding 配置；论文的预训练日程中，前 90% 的训练步使用长度 128，最后 10% 使用长度 512。不同 checkpoint、实现或后续模型可能使用不同的最大长度。</p>
+          <p>若把序列长度从 512 增加到 1024，标准全注意力的 <code>T^2</code> 分数矩阵会扩大到 4 倍。长文档任务常采用滑动窗口、分块编码与聚合，或使用局部/稀疏注意力架构；每种方法都在计算成本、跨段信息和边界效应之间做取舍。</p>
+        </section>
+
+        <section id="demo">
+          <h2>9. 交互：用一个玩具词表观察最长匹配</h2>
+          <p>下面的演示只实现单个英文预分词片段的 greedy longest-match-first，并使用一个极小的教学词表。它不包含官方 BasicTokenizer 的清洗、标点、大小写、重音和中文处理，也不代表 <code>bert-base-uncased</code> 的真实切分结果。</p>
+          <div class="demo">
+            <h3>玩具 WordPiece 切分器</h3>
+            <p class="demo-intro">尝试输入 unbelievable、playing、books。词表仅包含演示用片段。</p>
+            <div class="tokenizer-form">
+              <input type="text" value="unbelievable" data-wordpiece-input aria-label="输入一个英文单词">
+              <button type="button" data-wordpiece-run>切分</button>
+            </div>
+            <pre class="demo-output" data-wordpiece-output aria-live="polite">输入：unbelievable
+切分：un  |  ##believable
+说明：这是一个教学玩具词表，不是 bert-base-uncased 的真实 tokenizer 输出。</pre>
+          </div>
+        </section>
+
+        <section id="code">
+          <h2>10. 检查真实 tokenizer 输出</h2>
+          <p>要查看真实的 token、ID、padding 和 segment 信息，应直接调用与 checkpoint 对应的 tokenizer，而不是根据示意图手工猜 ID。以下代码使用 Hugging Face Transformers 的公开 tokenizer；首次运行通常需要下载模型文件，离线运行则需事先缓存。</p>
+          <pre><code>from transformers import AutoTokenizer
 
 tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased")
+
 batch = tokenizer(
-    ["The bank is near the river.",
-     "I deposited money at the bank."],
+    [
+        "The bank is near the river.",
+        "I deposited money at the bank.",
+    ],
     padding=True,
     truncation=True,
     max_length=128,
     return_tensors="pt",
 )
 
-for key, value in batch.items():
-    print(key, value.shape)
-print(tokenizer.convert_ids_to_tokens(batch["input_ids"][0]))</code></pre></section><section id="length"><h2>6. 512 的限制属于具体模型配置</h2><p>原始 BERT 使用长度上限 512 的位置嵌入配置；它不是所有 Transformer 的理论上限。超长文本可以分块、滑窗、聚合，或选用长上下文架构，但这些策略会改变计算成本与信息覆盖方式。</p></section><section id="summary"><h2>本章的三个结论</h2><ul><li>先明确模型解决的问题，再解释它的计算结构。</li><li>公式必须与输入输出形状、归一化维度和训练目标对应。</li><li>示意代码用于验证数据流；论文指标必须回到原始实验条件核对。</li></ul></section><section id="references"><h2>原始资料与延伸阅读</h2><ol class="refs"><li><a href="https://arxiv.org/abs/1810.04805" rel="noopener noreferrer">BERT original paper, Section 3.1</a></li><li><a href="https://huggingface.co/docs/transformers/model_doc/bert#transformers.BertTokenizer" rel="noopener noreferrer">Hugging Face BERT tokenizer documentation</a></li><li><a href="https://huggingface.co/learn/nlp-course/chapter6/6" rel="noopener noreferrer">WordPiece tokenization notes</a></li></ol></section></article><div class="next"><a href="../index.html">课程总目录</a><a href="index.html">五篇专题导读 →</a></div><footer>本文区分论文原始设计、教学简化与工程实践；不同实现的默认配置可能不同。</footer></main></div></body></html>
+for name, tensor in batch.items():
+    print(name, tuple(tensor.shape))
+
+print(tokenizer.convert_ids_to_tokens(batch["input_ids"][0]))</code></pre>
+          <p>返回字段会随 tokenizer 配置和调用参数变化。对于某些模型，token_type_ids 可能不存在或不被模型使用；不要假定所有 Transformer 都接受与原始 BERT 完全相同的输入字典。</p>
+        </section>
+
+        <section class="article-summary">
+          <h2>关键结论</h2>
+          <ul>
+            <li>Tokenizer 由预处理规则、子词词表和切分算法共同定义；不同 checkpoint 不能随意混用 tokenizer。</li>
+            <li>WordPiece 与 BPE 都是子词方法，但训练准则和具体实现不相同；BERT 推理时常用最长匹配策略。</li>
+            <li>原始 BERT 输入由 token、segment、position 三类同维 embedding 相加，之后再做 LayerNorm 与 dropout。</li>
+            <li>input_ids、token_type_ids、attention_mask 与 position_ids 是不同职责的张量；ID 数值和 mask 约定应以具体 tokenizer/API 为准。</li>
+            <li>512 是原始 BERT checkpoint 的配置边界，不是 Transformer 的理论最大长度。</li>
+          </ul>
+        </section>
+
+        <section id="references">
+          <h2>原始资料与延伸阅读</h2>
+          <ol class="article-references">
+            <li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>. 重点：§3 Input/Output Representations、Appendix A.2。</li>
+            <li>Google Research, <a href="https://github.com/google-research/bert/blob/master/tokenization.py" target="_blank" rel="noopener noreferrer">BERT 官方 tokenizer 实现</a>：BasicTokenizer、WordpieceTokenizer 与中文字符处理。</li>
+            <li>Google Research, <a href="https://github.com/google-research/bert" target="_blank" rel="noopener noreferrer">BERT 官方模型说明</a>：cased/uncased、多语言和中文模型说明。</li>
+            <li>Hugging Face, <a href="https://huggingface.co/docs/transformers/model_doc/bert" target="_blank" rel="noopener noreferrer">BERT model documentation</a>：input_ids、token_type_ids、attention_mask 等输入参数。</li>
+            <li>Sennrich et al., <a href="https://arxiv.org/abs/1508.07909" target="_blank" rel="noopener noreferrer">Neural Machine Translation of Rare Words with Subword Units</a>, 2016：BPE 子词方法。</li>
+          </ol>
+        </section>
+      </article>
+      <nav class="article-nav" aria-label="专题文章导航"><a href="04-bert-finetuning-evidence.html">← 上一篇：下游微调</a><a href="../index.html">返回课程总目录 →</a></nav>
+      <p class="article-footer">玩具 tokenizer 只用于解释最长匹配，不是官方 BERT tokenizer 的替代品；实际工程请使用 checkpoint 对应的词表与预处理配置。</p>
+    </main>
+  </div>
+  <script src="../assets/js/site.js" defer></script>
+</body>
+</html>

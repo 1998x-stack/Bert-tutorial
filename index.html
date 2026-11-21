@@ -1,413 +1,611 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>课程目录</title>
-    <link rel="stylesheet" href="theme.css">
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background: linear-gradient(145deg, #f9fcf5 0%, #e8f3e8 100%);
-            font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Helvetica Neue', system-ui, -apple-system, sans-serif;
-            padding: 2rem 1.5rem 1rem;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .container {
-            display: block;
-            max-width: 1400px;
-            width: 100%;
-            background: rgba(255, 255, 255, 0.70);
-            backdrop-filter: blur(2px);
-            border-radius: 48px 48px 32px 32px;
-            padding: 2rem 2rem 1.5rem;
-            box-shadow: 0 20px 40px rgba(90, 140, 100, 0.15), 0 8px 20px rgba(0, 30, 20, 0.08);
-            border: 1px solid rgba(255, 245, 200, 0.5);
-        }
-
-        .header {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            justify-content: space-between;
-            margin-bottom: 2rem;
-            border-bottom: 4px solid #f7d44a;
-            padding-bottom: 0.75rem;
-        }
-
-        .header h1 {
-            font-size: 2.4rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            background: linear-gradient(135deg, #2b7a4b, #3f9e6b);
-            -webkit-background-clip: text;
-            background-clip: text;
-            color: transparent;
-            text-shadow: 0 2px 8px rgba(60, 140, 80, 0.12);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .header h1 .emoji {
-            font-size: 2.2rem;
-            filter: drop-shadow(0 2px 4px rgba(255, 200, 50, 0.3));
-        }
-
-        .header .sub {
-            font-size: 1rem;
-            background: #fef7e0;
-            padding: 0.3rem 1.2rem;
-            border-radius: 40px;
-            color: #3f6b4a;
-            font-weight: 600;
-            border: 1px solid #f3d98a;
-            box-shadow: 0 2px 6px rgba(200, 160, 50, 0.1);
-            white-space: nowrap;
-        }
-
-        .course-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.2rem;
-            margin: 1.8rem 0 1.2rem;
-        }
-
-        .card {
-            background: #ffffff;
-            border-radius: 28px;
-            padding: 1rem 1.2rem 1rem 1.2rem;
-            box-shadow: 0 6px 14px rgba(70, 120, 80, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02);
-            transition: all 0.2s ease;
-            border: 1px solid rgba(210, 230, 200, 0.5);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            backdrop-filter: blur(2px);
-        }
-
-        .card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 14px 24px rgba(70, 140, 90, 0.15), 0 4px 12px rgba(40, 100, 60, 0.05);
-            border-color: #b8d9b0;
-            background: #fefefc;
-        }
-
-        .card-header {
-            display: flex;
-            align-items: baseline;
-            gap: 0.4rem;
-            margin-bottom: 0.4rem;
-            flex-wrap: wrap;
-        }
-
-        .chapter-num {
-            font-size: 1.1rem;
-            font-weight: 700;
-            background: #f5d142;
-            color: #2a5a3a;
-            padding: 0 0.6rem;
-            border-radius: 40px;
-            line-height: 1.6;
-            display: inline-block;
-            box-shadow: inset 0 -2px 0 #dbb42c;
-            letter-spacing: 0.3px;
-            min-width: 2.2rem;
-            text-align: center;
-        }
-
-        .card-title {
-            font-size: 1.2rem;
-            font-weight: 650;
-            color: #1f4d33;
-            letter-spacing: -0.3px;
-            line-height: 1.3;
-            flex: 1;
-        }
-
-        .topic-list {
-            list-style: none;
-            margin-top: 0.3rem;
-            padding-left: 0.2rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.2rem 0.6rem;
-        }
-
-        .topic-list li {
-            font-size: 0.8rem;
-            color: #2d543a;
-            background: #f1f9ee;
-            padding: 0.1rem 0.7rem 0.2rem 1.2rem;
-            border-radius: 30px;
-            line-height: 1.6;
-            position: relative;
-            border: 1px solid #dcebd4;
-            box-shadow: inset 0 1px 2px white;
-        }
-
-        .topic-list li::before {
-            content: "⚡";
-            position: absolute;
-            left: 4px;
-            top: 0px;
-            font-size: 0.7rem;
-            color: #e5b13b;
-        }
-
-        .card-footer {
-            margin-top: 0.6rem;
-            display: flex;
-            justify-content: flex-end;
-            border-top: 1px dashed #d4e8d0;
-            padding-top: 0.5rem;
-        }
-
-        .card-footer a {
-            background: #b7d8b0;
-            color: #1f452b;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.85rem;
-            padding: 0.2rem 1.2rem;
-            border-radius: 40px;
-            transition: 0.15s;
-            border: 1px solid #8fb88a;
-            box-shadow: 0 2px 4px rgba(60, 120, 60, 0.1);
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .card-footer a::after {
-            content: "→";
-            font-size: 1rem;
-            transition: transform 0.1s;
-        }
-
-        .card-footer a:hover {
-            background: #f7d44a;
-            border-color: #dbb42c;
-            color: #1f3d28;
-            box-shadow: 0 4px 8px rgba(200, 160, 40, 0.2);
-            transform: scale(1.02);
-        }
-
-        .card-footer a:active {
-            transform: scale(0.96);
-        }
-
-        .footer {
-            margin-top: 2.5rem;
-            text-align: center;
-            font-size: 1rem;
-            color: #3b6b47;
-            background: #f2fcee;
-            padding: 0.8rem 2rem;
-            border-radius: 60px;
-            display: inline-block;
-            border: 1px solid #c6dfbe;
-            box-shadow: 0 2px 8px rgba(80, 130, 70, 0.08);
-            font-weight: 500;
-            letter-spacing: 0.3px;
-            backdrop-filter: blur(2px);
-        }
-
-        .footer span {
-            background: #f9eec1;
-            padding: 0.1rem 0.8rem;
-            border-radius: 30px;
-            margin: 0 4px;
-        }
-
-        @media (max-width: 640px) {
-            body { padding: 1rem 0.8rem; }
-            .container { padding: 1.2rem 1rem; border-radius: 32px; }
-            .header h1 { font-size: 1.8rem; }
-            .header .sub { font-size: 0.75rem; padding: 0.2rem 0.8rem; }
-            .course-grid { grid-template-columns: 1fr; gap: 1rem; }
-            .card-title { font-size: 1.05rem; }
-            .topic-list li { font-size: 0.7rem; }
-        }
-
-        @media (min-width: 768px) and (max-width: 1024px) {
-            .course-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        .container::before {
-            content: "";
-            display: block;
-            height: 6px;
-            width: 120px;
-            background: linear-gradient(90deg, #f7d44a, #7fc47c, #4aa0b0, #f7b07a);
-            border-radius: 10px;
-            margin-bottom: 0.2rem;
-        }
-
-        .card:nth-child(6n+1) .chapter-num { background: #f7b07a; color: #3d2e1a; }
-        .card:nth-child(6n+2) .chapter-num { background: #a7d4a0; color: #1f452b; }
-        .card:nth-child(6n+3) .chapter-num { background: #f5d44a; color: #2f4d2a; }
-        .card:nth-child(6n+4) .chapter-num { background: #b3d9e8; color: #1a3f4a; }
-        .card:nth-child(6n+5) .chapter-num { background: #f7c6c6; color: #5a2e2e; }
-        .card:nth-child(6n) .chapter-num { background: #c4b3e0; color: #2f2a4a; }
-
-        .state-msg {
-            text-align: center;
-            padding: 3rem;
-            color: #5f7f66;
-            font-size: 1.1rem;
-        }
-        .state-msg.error {
-            color: #b91c1c;
-            background: #fef2f2;
-            border-radius: 20px;
-            margin: 1rem 0;
-        }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="BERT 中文教程：从词表示、Transformer Encoder、MLM 预训练到下游微调、模型变体与部署实践。">
+  <meta name="theme-color" content="#f3f4ef">
+  <title>BERT 模型系列教程｜从原理到工程实践</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="assets/css/course.css">
 </head>
 <body>
-<div class="container">
-    <div class="header">
-        <h1><span class="emoji"></span><span class="title-text"></span></h1>
-        <div class="sub"></div>
-    </div>
-
-    <section aria-labelledby="deep-reading-title" style="max-width:1400px;width:100%;margin:0 auto 1.5rem;padding:1.2rem 1.5rem;background:#fff;border:1px solid #dce5df;border-radius:20px"><p style="color:#147f80;font-weight:700;letter-spacing:.08em">DEEP READING · 5 ARTICLES</p><h2 id="deep-reading-title" style="margin:.3rem 0 1rem;color:#203035">从预训练到输入表示：五篇独立精读</h2><p style="color:#53676d">从表示学习与注意力机制，到 MLM、下游微调和 WordPiece。每篇都可独立阅读，并附原始论文与官方资料。</p><a href="articles/index.html" style="display:inline-block;padding:.55rem 1rem;background:#147f80;color:white;border-radius:8px;text-decoration:none;font-weight:600">打开五篇专题精读 →</a></section>
-<div id="cardContainer" class="course-grid"></div>
-
-    <div style="text-align:center;">
-        <div class="footer"></div>
-    </div>
-</div>
-
-<script id="offline-courses" type="application/json">
+  <header class="site-header">
+    <a class="brand" href="index.html"><span class="brand-mark">B</span><span>BERT Tutorial</span></a>
+    <nav class="site-nav" aria-label="主导航">
+      <a href="#roadmap">学习路线</a>
+      <a href="#chapters">章节目录</a>
+      <a href="articles/index.html">五篇专题精读</a>
+      <a href="#about">课程说明</a>
+    </nav>
+  </header>
+  <main class="home-main">
+    <section class="hero">
+      <p class="eyebrow">BERT · From Foundations to Practice</p>
+      <h1>理解 BERT，<br>从它如何表示一个词开始。</h1>
+      <p class="hero-copy">一套完整的中文学习路径：先建立静态与上下文表示的区别，再拆开 Transformer Encoder、MLM 与 NSP，随后进入微调、模型变体、长文本、蒸馏和部署。每个章节围绕一个可解释的问题展开。</p>
+      <div class="hero-actions">
+        <a class="button-link" href="articles/index.html">阅读五篇独立专题</a>
+        <a class="button-link secondary" href="#chapters">浏览全部 28 章</a>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><strong>28 章</strong><span>从原理到项目的课程路线</span></div>
+        <div class="stat"><strong>5 篇</strong><span>已精修的独立专题精读</span></div>
+        <div class="stat"><strong>8 个阶段</strong><span>按知识依赖组织的学习路径</span></div>
+      </div>
+    </section>
+    <section class="section" id="roadmap">
+      <div class="section-heading">
+        <h2>先理解，再扩展，最后落地</h2>
+        <p>课程按知识依赖组织。可以按顺序学习，也可以从章节目录搜索自己正在解决的问题。</p>
+      </div>
+      <div class="path-grid">
+        <article class="path-card"><span class="path-index">PHASE 01</span><h3>表示与架构</h3><p>理解静态词向量、上下文表示与 Transformer 的注意力计算。</p><span class="path-range">01–02</span></article>
+        <article class="path-card"><span class="path-index">PHASE 02</span><h3>BERT 原始机制</h3><p>从 MLM、NSP、输入张量到微调接口，建立完整的模型心智模型。</p><span class="path-range">03–06</span></article>
+        <article class="path-card"><span class="path-index">PHASE 03</span><h3>迁移与训练</h3><p>将 encoder 连接到任务头，并理解数据、优化器和训练配方。</p><span class="path-range">07–10</span></article>
+        <article class="path-card"><span class="path-index">PHASE 04</span><h3>规模与工程</h3><p>研究数据规模、训练稳定性、多语言迁移和变体选型。</p><span class="path-range">11–14</span></article>
+        <article class="path-card"><span class="path-index">PHASE 05</span><h3>模型家族</h3><p>比较 ELECTRA、XLNet、MPNet、ALBERT 和 DeBERTa 的目标与结构。</p><span class="path-range">15–19</span></article>
+        <article class="path-card"><span class="path-index">PHASE 06</span><h3>中文与长文本</h3><p>把模型放到中文预训练、长文档和句向量任务中考察。</p><span class="path-range">20–22</span></article>
+        <article class="path-card"><span class="path-index">PHASE 07</span><h3>轻量化与部署</h3><p>通过蒸馏、参数高效微调、量化和推理优化满足资源约束。</p><span class="path-range">23–27</span></article>
+        <article class="path-card"><span class="path-index">PHASE 08</span><h3>端到端项目</h3><p>将数据准备、训练、评估、误差分析和部署串成完整系统。</p><span class="path-range">28</span></article>
+      </div>
+    </section>
+    <section class="section" id="chapters">
+      <div class="section-heading">
+        <h2>全部 28 章</h2>
+        <p>搜索标题、主题或阶段；完成状态保存在当前浏览器，不会上传到服务器。</p>
+      </div>
+      <div class="catalog-panel">
+        <div class="progress-panel" aria-label="学习进度">
+          <div class="progress-count" id="progress-count">0 / 28 章已完成</div>
+          <div class="progress-track" role="progressbar" aria-label="课程完成进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="progress-fill"></span></div>
+          <div class="progress-note" id="progress-note">0% · 进度保存在当前浏览器</div>
+        </div>
+        <div class="catalog-filters">
+          <div class="field"><label for="chapter-search">搜索章节</label><input id="chapter-search" type="search" placeholder="例如：WordPiece、MLM、蒸馏、长文本"></div>
+          <div class="field">
+            <label for="stage-filter">按阶段筛选</label>
+            <select id="stage-filter">
+              <option value="">全部阶段</option>
+              <option value="foundations">基础与架构 · 01–02</option>
+              <option value="bert-core">原始 BERT 机制 · 03–06</option>
+              <option value="transfer">微调与训练配方 · 07–10</option>
+              <option value="scaling">数据规模与工程 · 11–14</option>
+              <option value="variants">模型家族与变体 · 15–19</option>
+              <option value="chinese-longtext">中文与长文本 · 20–22</option>
+              <option value="efficient">轻量化与部署 · 23–27</option>
+              <option value="capstone">综合项目 · 28</option>
+            </select>
+          </div>
+          <button class="reset-button" id="reset-filters" type="button">重置筛选</button>
+        </div>
+        <p class="result-count" id="result-count" aria-live="polite">正在加载课程目录…</p>
+        <div class="chapter-grid" id="chapter-grid" aria-live="polite"><p class="empty-state">正在加载 28 章课程目录…</p></div>
+      </div>
+    </section>
+    <section class="section" id="about">
+      <div class="section-heading">
+        <h2>如何使用这套课程</h2>
+        <p>课程把论文事实、教学解释、代码示例和工程建议分开，避免把示意图或单次实验误读成普遍规律。</p>
+      </div>
+      <div class="path-grid">
+        <article class="path-card"><span class="path-index">SOURCE FIRST</span><h3>回到原始资料</h3><p>五篇专题附论文与官方实现链接；关键结论在 evidence JSON 中记录来源定位。</p><span class="path-range">论文 / 官方文档</span></article>
+        <article class="path-card"><span class="path-index">CHECKABLE</span><h3>可检查的公式与代码</h3><p>公式说明变量和张量形状；示例代码标明教学简化，不冒充完整模型复现。</p><span class="path-range">公式 / 单元测试</span></article>
+        <article class="path-card"><span class="path-index">OFFLINE READY</span><h3>离线与移动端可读</h3><p>课程目录同时提供离线数据快照；专题页面使用本地 CSS、JS 和 SVG 资源。</p><span class="path-range">无 CDN 依赖</span></article>
+      </div>
+    </section>
+    <footer class="home-footer">
+      <span>BERT Tutorial · 28 chapters · 5 deep-reading articles</span>
+      <span><a href="README.md">仓库说明</a> · <a href="articles/index.html">专题文章</a> · <a href="https://github.com/1998x-stack/Bert-tutorial" target="_blank" rel="noopener noreferrer">GitHub</a></span>
+    </footer>
+  </main>
+  <script id="offline-courses" type="application/json">
 {
-  "title": "BERT 模型系列 · 从入门到精通",
-  "emoji": "🤖",
-  "subtitle": "📘 28章 实战体系",
+  "title": "BERT 模型系列教程",
+  "subtitle": "从表示学习、Transformer Encoder 到 BERT 预训练与模型家族实践",
   "chapterCount": 28,
+  "stages": [
+    {
+      "id": "foundations",
+      "name": "基础与架构",
+      "range": "01–02",
+      "description": "词表示、上下文预训练与 Transformer Encoder"
+    },
+    {
+      "id": "bert-core",
+      "name": "原始 BERT 机制",
+      "range": "03–06",
+      "description": "MLM、NSP、输入表示与训练目标"
+    },
+    {
+      "id": "transfer",
+      "name": "微调与训练配方",
+      "range": "07–10",
+      "description": "下游任务、RoBERTa、数据工程与优化"
+    },
+    {
+      "id": "scaling",
+      "name": "数据规模与工程",
+      "range": "11–14",
+      "description": "Scaling、训练稳定性、多语言与变体选型"
+    },
+    {
+      "id": "variants",
+      "name": "模型家族与变体",
+      "range": "15–19",
+      "description": "ELECTRA、XLNet、MPNet、ALBERT 与 DeBERTa"
+    },
+    {
+      "id": "chinese-longtext",
+      "name": "中文与长文本",
+      "range": "20–22",
+      "description": "中文预训练、长文档编码与句向量"
+    },
+    {
+      "id": "efficient",
+      "name": "轻量化与部署",
+      "range": "23–27",
+      "description": "蒸馏、移动端、参数高效微调与压缩"
+    },
+    {
+      "id": "capstone",
+      "name": "综合项目",
+      "range": "28",
+      "description": "端到端中文 NLU 系统"
+    }
+  ],
   "chapters": [
-    { "num": "01", "title": "NLP预训练发展简史", "topics": ["word2vec", "ELMo", "GPT-1", "预训练范式演变"], "file": "01.html" },
-    { "num": "02", "title": "Transformer架构精讲", "topics": ["Self-Attention", "Multi-Head", "FFN", "LayerNorm"], "file": "02.html" },
-    { "num": "03", "title": "BERT开山论文精读(上)", "topics": ["MLM掩码语言模型", "NSP下一句预测", "三层嵌入", "BERT-Base/Large"], "file": "03.html" },
-    { "num": "04", "title": "BERT开山论文精读(下)", "topics": ["微调范式", "11项SOTA", "GLUE/SQuAD", "mBERT多语言"], "file": "04.html" },
-    { "num": "05", "title": "BERT输入表示与分词", "topics": ["WordPiece", "BPE", "Segment Embedding", "Position Embedding"], "file": "05.html" },
-    { "num": "06", "title": "MLM与NSP深度剖析", "topics": ["15%掩码策略", "80-10-10规则", "NSP有效性争议", "SOP替代方案"], "file": "06.html" },
-    { "num": "07", "title": "BERT微调实战范式", "topics": ["文本分类", "NER序列标注", "抽取式QA", "句对匹配"], "file": "07.html" },
-    { "num": "08", "title": "RoBERTa训练配方革命", "topics": ["删除NSP", "动态掩码", "10x数据", "大batch训练"], "file": "08.html" },
-    { "num": "09", "title": "数据工程与动态掩码", "topics": ["数据清洗", "去重过滤", "全句训练", "文档排序"], "file": "09.html" },
-    { "num": "10", "title": "超参数与优化器配置", "topics": ["AdamW", "warmup", "LLRD分层学习率", "Bayesian调参"], "file": "10.html" },
-    { "num": "11", "title": "预训练数据规模效应", "topics": ["Scaling Law", "Chinchilla定律", "数据量vs参数", "计算最优分配"], "file": "11.html" },
-    { "num": "12", "title": "训练稳定性技术", "topics": ["混合精度FP16/BF16", "梯度裁剪", "梯度累积", "Flash Attention"], "file": "12.html" },
-    { "num": "13", "title": "多语言BERT与跨语言迁移", "topics": ["mBERT", "XLM-R", "跨语言零样本", "代码切换"], "file": "13.html" },
-    { "num": "14", "title": "BERT变体生态横评", "topics": ["全景对比表", "速度基准", "精度基准", "选型决策树"], "file": "14.html" },
-    { "num": "15", "title": "ELECTRA判别式预训练", "topics": ["Generator-Discriminator", "RTD任务", "全token学习", "训练提效数倍"], "file": "15.html" },
-    { "num": "16", "title": "XLNet排列语言模型", "topics": ["Permutation LM", "Two-Stream Attention", "消除[MASK]", "Segment Recurrence"], "file": "16.html" },
-    { "num": "17", "title": "MPNet掩码排列融合", "topics": ["MLM+PLM双重优势", "位置补偿机制", "语义匹配/检索"], "file": "17.html" },
-    { "num": "18", "title": "ALBERT参数高效设计", "topics": ["嵌入分解", "跨层参数共享", "SOP句子顺序预测", "128层极致深度"], "file": "18.html" },
-    { "num": "19", "title": "DeBERTa解耦注意力", "topics": ["内容/位置解耦", "相对位置编码", "增强掩码解码器", "GLUE SOTA"], "file": "19.html" },
-    { "num": "20", "title": "中文BERT全景", "topics": ["ERNIE 1.0实体掩码", "ERNIE 2.0持续预训练", "WWM全词掩码", "ChineseBERT字形拼音"], "file": "20.html" },
-    { "num": "21", "title": "长文本BERT方案", "topics": ["Longformer滑动窗口", "BigBird稀疏注意力", "线性复杂度", "8K原生上下文"], "file": "21.html" },
-    { "num": "22", "title": "SimCSE对比学习句向量", "topics": ["Dropout正样本", "InfoNCE对比损失", "有监督/无监督", "向量检索SOTA"], "file": "22.html" },
-    { "num": "23", "title": "知识蒸馏轻量化", "topics": ["DistilBERT三损失蒸馏", "TinyBERT分层蒸馏", "温度调优", "Cross-Distillation"], "file": "23.html" },
-    { "num": "24", "title": "移动端BERT部署", "topics": ["MobileBERT瓶颈倒置", "INT8量化", "ONNX导出", "CPU推理优化"], "file": "24.html" },
-    { "num": "25", "title": "高效微调实战", "topics": ["LoRA低秩适配", "AdaLoRA", "BitFit", "SCALE动态层选择"], "file": "25.html" },
-    { "num": "26", "title": "ModernBERT与2025前沿", "topics": ["8K原生上下文", "RoPE/GeGLU", "2T token训练", "BiGLM双向LLM"], "file": "26.html" },
-    { "num": "27", "title": "极致压缩与端侧智能", "topics": ["EI-BERT 1.91MB", "Cross-Distillation", "Token Pruning", "边缘部署"], "file": "27.html" },
-    { "num": "28", "title": "端到端实战项目", "topics": ["中文NLU系统", "预训练→微调→蒸馏→部署", "电商评论分析", "完整流水线"], "file": "28.html" }
+    {
+      "num": "01",
+      "title": "NLP 预训练与表示学习",
+      "topics": [
+        "Word2Vec",
+        "ELMo",
+        "GPT-1",
+        "上下文表示"
+      ],
+      "file": "articles/01-pretraining-evolution.html",
+      "stageId": "foundations",
+      "stage": "基础与架构",
+      "level": "基础",
+      "duration": 25,
+      "summary": "从静态词向量、ELMo 与 GPT-1 出发，理解 BERT 为什么需要深层双向上下文表示。"
+    },
+    {
+      "num": "02",
+      "title": "Transformer Encoder 计算路径",
+      "topics": [
+        "Self-Attention",
+        "Q/K/V",
+        "Multi-Head",
+        "LayerNorm"
+      ],
+      "file": "articles/02-transformer-encoder.html",
+      "stageId": "foundations",
+      "stage": "基础与架构",
+      "level": "基础",
+      "duration": 30,
+      "summary": "从 Q/K/V 张量形状出发，推导注意力、多头、FFN、残差和 mask。"
+    },
+    {
+      "num": "03",
+      "title": "BERT 预训练目标与 MLM",
+      "topics": [
+        "MLM",
+        "15% mask",
+        "80/10/10",
+        "预训练配置"
+      ],
+      "file": "articles/03-bert-pretraining.html",
+      "stageId": "bert-core",
+      "stage": "原始 BERT 机制",
+      "level": "进阶",
+      "duration": 35,
+      "summary": "解释 MLM 预测位置、替换规则、损失函数、NSP 与原始训练日程。"
+    },
+    {
+      "num": "04",
+      "title": "BERT 下游微调与实验解读",
+      "topics": [
+        "Fine-tuning",
+        "GLUE",
+        "SQuAD",
+        "消融实验"
+      ],
+      "file": "articles/04-bert-finetuning-evidence.html",
+      "stageId": "bert-core",
+      "stage": "原始 BERT 机制",
+      "level": "进阶",
+      "duration": 35,
+      "summary": "比较分类、句对、序列标注和问答任务头，并核对原论文结果。"
+    },
+    {
+      "num": "05",
+      "title": "BERT 输入表示与 Tokenizer",
+      "topics": [
+        "WordPiece",
+        "input_ids",
+        "token_type_ids",
+        "Embeddings"
+      ],
+      "file": "articles/05-wordpiece-inputs.html",
+      "stageId": "bert-core",
+      "stage": "原始 BERT 机制",
+      "level": "进阶",
+      "duration": 35,
+      "summary": "从 tokenizer 预处理到三类 embedding，追踪文本如何变成模型输入张量。"
+    },
+    {
+      "num": "06",
+      "title": "MLM 与 NSP 深度剖析",
+      "topics": [
+        "15% 预测位置",
+        "80/10/10",
+        "NSP 消融",
+        "SOP"
+      ],
+      "file": "06.html",
+      "stageId": "bert-core",
+      "stage": "原始 BERT 机制",
+      "level": "进阶",
+      "duration": 35,
+      "summary": "进一步比较遮盖策略、句间目标与后续预训练配方对训练信号的影响。"
+    },
+    {
+      "num": "07",
+      "title": "BERT 微调实战范式",
+      "topics": [
+        "文本分类",
+        "NER",
+        "抽取式 QA",
+        "句对匹配"
+      ],
+      "file": "07.html",
+      "stageId": "transfer",
+      "stage": "微调与训练配方",
+      "level": "进阶",
+      "duration": 40,
+      "summary": "把分类、序列标注和问答任务拆成数据格式、任务头、损失与评估流程。"
+    },
+    {
+      "num": "08",
+      "title": "RoBERTa 训练配方革命",
+      "topics": [
+        "动态掩码",
+        "移除 NSP",
+        "大 batch",
+        "更多数据"
+      ],
+      "file": "08.html",
+      "stageId": "transfer",
+      "stage": "微调与训练配方",
+      "level": "进阶",
+      "duration": 40,
+      "summary": "分析 RoBERTa 如何同时调整数据、训练时长、mask、batch 和 NSP 目标。"
+    },
+    {
+      "num": "09",
+      "title": "数据工程与动态掩码",
+      "topics": [
+        "数据清洗",
+        "去重",
+        "文档采样",
+        "动态 mask"
+      ],
+      "file": "09.html",
+      "stageId": "transfer",
+      "stage": "微调与训练配方",
+      "level": "进阶",
+      "duration": 35,
+      "summary": "理解预训练语料质量、文档边界、去重与动态遮盖如何影响训练样本。"
+    },
+    {
+      "num": "10",
+      "title": "优化器与超参数配置",
+      "topics": [
+        "AdamW",
+        "Warmup",
+        "Weight Decay",
+        "LLRD"
+      ],
+      "file": "10.html",
+      "stageId": "transfer",
+      "stage": "微调与训练配方",
+      "level": "进阶",
+      "duration": 40,
+      "summary": "拆解学习率、warmup、权重衰减、批量大小和分层学习率的作用。"
+    },
+    {
+      "num": "11",
+      "title": "预训练数据规模与计算分配",
+      "topics": [
+        "Scaling Law",
+        "数据量",
+        "参数量",
+        "计算预算"
+      ],
+      "file": "11.html",
+      "stageId": "scaling",
+      "stage": "数据规模与工程",
+      "level": "高级",
+      "duration": 45,
+      "summary": "比较数据、参数和训练 token 的配置，理解计算预算如何影响模型质量。"
+    },
+    {
+      "num": "12",
+      "title": "训练稳定性与高效注意力",
+      "topics": [
+        "BF16",
+        "梯度裁剪",
+        "梯度累积",
+        "FlashAttention"
+      ],
+      "file": "12.html",
+      "stageId": "scaling",
+      "stage": "数据规模与工程",
+      "level": "高级",
+      "duration": 45,
+      "summary": "分析数值精度、梯度管理、显存优化和注意力 kernel 的工程边界。"
+    },
+    {
+      "num": "13",
+      "title": "多语言 BERT 与跨语言迁移",
+      "topics": [
+        "mBERT",
+        "XLM-R",
+        "零样本迁移",
+        "语言覆盖"
+      ],
+      "file": "13.html",
+      "stageId": "scaling",
+      "stage": "数据规模与工程",
+      "level": "高级",
+      "duration": 40,
+      "summary": "比较共享词表、多语言预训练数据和跨语言迁移的能力与限制。"
+    },
+    {
+      "num": "14",
+      "title": "BERT 变体生态与选型",
+      "topics": [
+        "架构对比",
+        "训练目标",
+        "参数效率",
+        "任务适配"
+      ],
+      "file": "14.html",
+      "stageId": "scaling",
+      "stage": "数据规模与工程",
+      "level": "高级",
+      "duration": 45,
+      "summary": "用训练目标、模型结构、算力成本和下游任务建立变体选型框架。"
+    },
+    {
+      "num": "15",
+      "title": "ELECTRA 判别式预训练",
+      "topics": [
+        "Generator",
+        "Discriminator",
+        "RTD",
+        "样本效率"
+      ],
+      "file": "15.html",
+      "stageId": "variants",
+      "stage": "模型家族与变体",
+      "level": "高级",
+      "duration": 40,
+      "summary": "理解替换 token 检测如何把监督信号扩展到更多输入位置。"
+    },
+    {
+      "num": "16",
+      "title": "XLNet 排列语言模型",
+      "topics": [
+        "Permutation LM",
+        "Two-Stream Attention",
+        "目标泄漏",
+        "自回归"
+      ],
+      "file": "16.html",
+      "stageId": "variants",
+      "stage": "模型家族与变体",
+      "level": "高级",
+      "duration": 45,
+      "summary": "解释排列语言模型的目标分解、双流注意力和与 MLM 的设计差异。"
+    },
+    {
+      "num": "17",
+      "title": "MPNet：掩码与排列融合",
+      "topics": [
+        "MLM",
+        "Permutation LM",
+        "位置补偿",
+        "句向量"
+      ],
+      "file": "17.html",
+      "stageId": "variants",
+      "stage": "模型家族与变体",
+      "level": "高级",
+      "duration": 40,
+      "summary": "分析 MPNet 如何结合掩码预测与排列建模，缓解各自的训练限制。"
+    },
+    {
+      "num": "18",
+      "title": "ALBERT 参数高效设计",
+      "topics": [
+        "嵌入分解",
+        "参数共享",
+        "SOP",
+        "模型深度"
+      ],
+      "file": "18.html",
+      "stageId": "variants",
+      "stage": "模型家族与变体",
+      "level": "高级",
+      "duration": 40,
+      "summary": "拆解词嵌入分解、跨层参数共享和 Sentence Order Prediction。"
+    },
+    {
+      "num": "19",
+      "title": "DeBERTa 解耦注意力",
+      "topics": [
+        "内容位置解耦",
+        "相对位置",
+        "增强掩码解码",
+        "注意力"
+      ],
+      "file": "19.html",
+      "stageId": "variants",
+      "stage": "模型家族与变体",
+      "level": "高级",
+      "duration": 45,
+      "summary": "理解内容向量与位置向量分离建模的动机、公式和实现代价。"
+    },
+    {
+      "num": "20",
+      "title": "中文预训练模型与全词掩码",
+      "topics": [
+        "中文 BERT",
+        "WWM",
+        "ERNIE",
+        "字形拼音"
+      ],
+      "file": "20.html",
+      "stageId": "chinese-longtext",
+      "stage": "中文与长文本",
+      "level": "进阶",
+      "duration": 45,
+      "summary": "比较中文字符切分、全词掩码、知识增强和字形拼音信息的不同路线。"
+    },
+    {
+      "num": "21",
+      "title": "长文本 Transformer：Longformer 与 BigBird",
+      "topics": [
+        "滑动窗口",
+        "稀疏注意力",
+        "全局 token",
+        "长文档"
+      ],
+      "file": "21.html",
+      "stageId": "chinese-longtext",
+      "stage": "中文与长文本",
+      "level": "高级",
+      "duration": 45,
+      "summary": "分析局部窗口、全局连接和随机连接如何降低长序列注意力成本。"
+    },
+    {
+      "num": "22",
+      "title": "SimCSE 对比学习句向量",
+      "topics": [
+        "Dropout",
+        "InfoNCE",
+        "正负样本",
+        "向量检索"
+      ],
+      "file": "22.html",
+      "stageId": "chinese-longtext",
+      "stage": "中文与长文本",
+      "level": "进阶",
+      "duration": 40,
+      "summary": "从对比损失和 batch 内负样本出发，理解句向量的训练与评测。"
+    },
+    {
+      "num": "23",
+      "title": "知识蒸馏：DistilBERT 与 TinyBERT",
+      "topics": [
+        "Teacher Student",
+        "Logits",
+        "层间蒸馏",
+        "温度"
+      ],
+      "file": "23.html",
+      "stageId": "efficient",
+      "stage": "轻量化与部署",
+      "level": "进阶",
+      "duration": 45,
+      "summary": "比较 logits、隐藏层和注意力蒸馏，理解小模型如何继承教师能力。"
+    },
+    {
+      "num": "24",
+      "title": "MobileBERT 与端侧部署",
+      "topics": [
+        "瓶颈结构",
+        "INT8",
+        "ONNX",
+        "CPU 推理"
+      ],
+      "file": "24.html",
+      "stageId": "efficient",
+      "stage": "轻量化与部署",
+      "level": "高级",
+      "duration": 45,
+      "summary": "从模型结构、量化、图优化到移动端延迟和内存预算梳理部署流程。"
+    },
+    {
+      "num": "25",
+      "title": "参数高效微调：LoRA、AdaLoRA 与 BitFit",
+      "topics": [
+        "LoRA",
+        "AdaLoRA",
+        "BitFit",
+        "可训练参数"
+      ],
+      "file": "25.html",
+      "stageId": "efficient",
+      "stage": "轻量化与部署",
+      "level": "进阶",
+      "duration": 45,
+      "summary": "比较低秩适配、偏置微调与参数预算下的训练和部署权衡。"
+    },
+    {
+      "num": "26",
+      "title": "ModernBERT 与现代编码器设计",
+      "topics": [
+        "长上下文",
+        "位置编码",
+        "Gated FFN",
+        "吞吐"
+      ],
+      "file": "26.html",
+      "stageId": "efficient",
+      "stage": "轻量化与部署",
+      "level": "高级",
+      "duration": 45,
+      "summary": "从现代编码器的结构、训练数据和长上下文能力理解 BERT 家族的演进。"
+    },
+    {
+      "num": "27",
+      "title": "模型压缩、量化与端侧推理",
+      "topics": [
+        "量化",
+        "剪枝",
+        "蒸馏",
+        "延迟预算"
+      ],
+      "file": "27.html",
+      "stageId": "efficient",
+      "stage": "轻量化与部署",
+      "level": "高级",
+      "duration": 45,
+      "summary": "比较压缩策略对模型大小、吞吐、精度与端侧资源的影响。"
+    },
+    {
+      "num": "28",
+      "title": "端到端中文 NLU 实战项目",
+      "topics": [
+        "数据流水线",
+        "微调",
+        "误差分析",
+        "部署"
+      ],
+      "file": "28.html",
+      "stageId": "capstone",
+      "stage": "综合项目",
+      "level": "高级",
+      "duration": 60,
+      "summary": "把数据准备、模型微调、评估、误差分析与部署串成可复现项目。"
+    }
   ]
 }
-</script>
-<script>
-    (function() {
-        var container = document.getElementById('cardContainer');
-        var emojiEl = document.querySelector('.header .emoji');
-        var titleEl = document.querySelector('.header .title-text');
-        var subEl = document.querySelector('.header .sub');
-        var footerEl = document.querySelector('.footer');
-
-        function showError(msg) {
-            container.innerHTML = '<div class="state-msg error">' + msg + '</div>';
-        }
-
-        var localData = document.getElementById('offline-courses');
-        var dataPromise = window.location.protocol === 'file:'
-            ? Promise.resolve(JSON.parse(localData.textContent))
-            : fetch('courses.json').then(function(res) {
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                return res.json();
-            });
-
-        dataPromise
-            .then(function(data) {
-                document.title = data.title + ' · 课程目录';
-                emojiEl.textContent = data.emoji;
-                titleEl.textContent = data.title;
-                subEl.textContent = data.subtitle;
-                footerEl.innerHTML = '<span>' + data.chapterCount + '章</span> 实战体系 · 从入门到精通';
-
-                if (!data.chapters || data.chapters.length === 0) {
-                    showError('暂无课程数据');
-                    return;
-                }
-
-                container.innerHTML = '';
-                data.chapters.forEach(function(course) {
-                    var card = document.createElement('div');
-                    card.className = 'card';
-
-                    var headerDiv = document.createElement('div');
-                    headerDiv.className = 'card-header';
-
-                    var numSpan = document.createElement('span');
-                    numSpan.className = 'chapter-num';
-                    numSpan.textContent = course.num;
-
-                    var titleSpan = document.createElement('span');
-                    titleSpan.className = 'card-title';
-                    titleSpan.textContent = course.title;
-
-                    headerDiv.appendChild(numSpan);
-                    headerDiv.appendChild(titleSpan);
-                    card.appendChild(headerDiv);
-
-                    if (course.topics && course.topics.length > 0) {
-                        var topicUl = document.createElement('ul');
-                        topicUl.className = 'topic-list';
-                        course.topics.forEach(function(topic) {
-                            var li = document.createElement('li');
-                            li.textContent = topic;
-                            topicUl.appendChild(li);
-                        });
-                        card.appendChild(topicUl);
-                    }
-
-                    var footerDiv = document.createElement('div');
-                    footerDiv.className = 'card-footer';
-                    var link = document.createElement('a');
-                    link.href = course.file;
-                    link.textContent = '开始学习 ';
-                    footerDiv.appendChild(link);
-                    card.appendChild(footerDiv);
-
-                    container.appendChild(card);
-                });
-            })
-            .catch(function(err) {
-                showError('课程数据加载失败: ' + err.message + '。请刷新页面重试。');
-            });
-    })();
-</script>
-
-<noscript>
-    <div style="background:#fcf0d9; padding:1rem; border-radius:20px; text-align:center; color:#92400e;">
-        请启用 JavaScript 以浏览课程目录。
-    </div>
-</noscript>
+  </script>
+  <script src="assets/js/site.js" defer></script>
 </body>
 </html>
