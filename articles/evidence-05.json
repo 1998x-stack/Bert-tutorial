@@ -1,0 +1,29 @@
+[
+  {
+    "id": "ref-1",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://arxiv.org/abs/1810.04805",
+    "locator": "BERT original paper, Section 3.1",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-2",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://huggingface.co/docs/transformers/model_doc/bert#transformers.BertTokenizer",
+    "locator": "Hugging Face BERT tokenizer documentation",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  },
+  {
+    "id": "ref-3",
+    "claim": "本文相关机制与历史背景的主要依据",
+    "kind": "primary-source",
+    "source_url": "https://huggingface.co/learn/nlp-course/chapter6/6",
+    "locator": "WordPiece tokenization notes",
+    "status": "verified",
+    "notes": "引用原始论文或官方文档；未据此推导新的 benchmark 数字。"
+  }
+]
