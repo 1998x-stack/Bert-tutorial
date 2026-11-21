@@ -24,15 +24,20 @@ test('all 28 chapter links point to existing files', () => {
   }
 });
 
-test('the first five catalog entries link to the deep-reading articles', () => {
+test('the first ten catalog entries link to the deep-reading articles', () => {
   const expected = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
     'articles/03-bert-pretraining.html',
     'articles/04-bert-finetuning-evidence.html',
     'articles/05-wordpiece-inputs.html',
+    'articles/06-mlm-nsp-masking-objectives.html',
+    'articles/07-bert-finetuning-practice.html',
+    'articles/08-roberta-training-recipe.html',
+    'articles/09-pretraining-data-engineering.html',
+    'articles/10-bert-optimization-hyperparameters.html',
   ];
-  assert.deepEqual(source.chapters.slice(0, 5).map((chapter) => chapter.file), expected);
+  assert.deepEqual(source.chapters.slice(0, 10).map((chapter) => chapter.file), expected);
 });
 
 test('file mode uses the embedded snapshot and HTTP mode falls back to courses.json', () => {

@@ -1,0 +1,62 @@
+{
+  "article_id": "08",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "RoBERTa keeps a BERT-style encoder and MLM objective while changing data, masking, sentence-pair objective, batch and training duration.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "Abstract; §3–4; Conclusion",
+      "status": "verified",
+      "verification_note": "Paper's stated contribution."
+    },
+    {
+      "id": "c02",
+      "claim": "RoBERTa dynamic and static masking results in Table 1 are 78.3/84.3/92.5 and 78.7/84.0/92.9 for SQuAD 2.0 F1, MNLI-m accuracy and SST-2 accuracy.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§4.1 Dynamic Masking; Table 1",
+      "status": "verified",
+      "verification_note": "Metrics and development-set context preserved."
+    },
+    {
+      "id": "c03",
+      "claim": "RoBERTa compares SEGMENT-PAIR+NSP, SENTENCE-PAIR+NSP, FULL-SENTENCES and DOC-SENTENCES.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§4.2 Input Format and Next Sentence Prediction; Table 2",
+      "status": "verified",
+      "verification_note": "Input packing and NSP treated as a joint design."
+    },
+    {
+      "id": "c04",
+      "claim": "RoBERTa pretraining data totals about 160GB from BooksCorpus/Wikipedia, CC-News, OpenWebText and Stories.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§3.2 Training Data",
+      "status": "verified",
+      "verification_note": "Source breakdown approximately 16GB, 76GB, 38GB and 31GB."
+    },
+    {
+      "id": "c05",
+      "claim": "RoBERTa-Base uses peak learning rate 6e-4 and 24K warmup; RoBERTa-Large uses 4e-4 and 30K warmup; both use batch 8K and 500K steps.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "Appendix B Table 9",
+      "status": "verified",
+      "verification_note": "Base and Large values are distinguished."
+    },
+    {
+      "id": "c06",
+      "claim": "RoBERTa Table 4 reports development-set results, while GLUE leaderboard test results are separately presented in Table 5.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "Tables 4 and 5; §4.3 GLUE Results",
+      "status": "verified",
+      "verification_note": "Prevents dev/test and single/ensemble conflation."
+    },
+    {
+      "id": "c07",
+      "claim": "RoBERTa uses byte-level BPE with approximately 50K vocabulary rather than BERT's WordPiece tokenizer.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§4.4 Text Encoding",
+      "status": "verified",
+      "verification_note": "Tokenizer distinction."
+    }
+  ]
+}

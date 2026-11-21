@@ -1,0 +1,54 @@
+{
+  "article_id": "07",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Hugging Face Trainer accepts model, TrainingArguments, train/eval datasets, tokenizer, data collator and compute_metrics.",
+      "source_url": "https://huggingface.co/docs/transformers/v4.46.3/en/main_classes/trainer",
+      "locator": "Trainer class API for version 4.46.3",
+      "status": "verified",
+      "verification_note": "Example is pinned to the documented version."
+    },
+    {
+      "id": "c02",
+      "claim": "DataCollatorWithPadding dynamically pads a batch to the longest sequence in that batch.",
+      "source_url": "https://huggingface.co/docs/transformers/v4.46.3/en/main_classes/data_collator",
+      "locator": "DataCollatorWithPadding",
+      "status": "verified",
+      "verification_note": "Used for classification example."
+    },
+    {
+      "id": "c03",
+      "claim": "Fast tokenizers expose word_ids for mapping sub-token positions to original words; a common strategy labels only the first sub-token and ignores continuation pieces with -100.",
+      "source_url": "https://huggingface.co/docs/transformers/v4.46.3/en/tasks/token_classification",
+      "locator": "Token classification preprocessing and label alignment",
+      "status": "verified",
+      "verification_note": "First-subtoken policy is presented as one valid strategy, not the only strategy."
+    },
+    {
+      "id": "c04",
+      "claim": "Question-answering preprocessing uses offset mappings and overflow windows to map character spans to token positions.",
+      "source_url": "https://huggingface.co/docs/transformers/v4.46.3/en/tasks/question_answering",
+      "locator": "Preprocess training examples and overflow_to_sample_mapping",
+      "status": "verified",
+      "verification_note": "Explains why truncation and stride are part of preprocessing."
+    },
+    {
+      "id": "c05",
+      "claim": "BERT fine-tuning initializes task-specific models from pretrained parameters and updates them on task labels.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "§3.2 Fine-tuning BERT",
+      "status": "verified",
+      "verification_note": "Original fine-tuning description."
+    },
+    {
+      "id": "c06",
+      "claim": "Validation is used for model selection and hyperparameter choice; the test split is reserved for final evaluation.",
+      "source_url": "https://huggingface.co/docs/transformers/v4.46.3/en/training",
+      "locator": "Training and evaluation workflow",
+      "status": "verified",
+      "verification_note": "Methodology statement, not a benchmark claim."
+    }
+  ]
+}

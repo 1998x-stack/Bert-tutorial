@@ -87,6 +87,11 @@ async function main() {
       'articles/03-bert-pretraining.html',
       'articles/04-bert-finetuning-evidence.html',
       'articles/05-wordpiece-inputs.html',
+      'articles/06-mlm-nsp-masking-objectives.html',
+      'articles/07-bert-finetuning-practice.html',
+      'articles/08-roberta-training-recipe.html',
+      'articles/09-pretraining-data-engineering.html',
+      'articles/10-bert-optimization-hyperparameters.html',
     ];
     for (const articlePath of articlePages) {
       await page.goto(baseUrl + '/' + articlePath, { waitUntil: 'networkidle' });
@@ -94,6 +99,13 @@ async function main() {
       const h1Count = await page.locator('.article-main h1').count();
       if (h1Count !== 1) throw new Error(articlePath + ': expected exactly one H1');
       const mathCount = await page.locator('math').count();
+      const mathAudit = await page.locator('math').evaluateAll((nodes) => nodes.map((node) => ({ namespace: node.namespaceURI, label: node.getAttribute('aria-label') })));
+      for (const formula of mathAudit) {
+        if (formula.namespace !== 'http://www.w3.org/1998/Math/MathML') throw new Error(articlePath + ': MathML namespace is incorrect');
+        if (!formula.label) throw new Error(articlePath + ': MathML aria-label missing');
+      }
+      const brokenImages = await page.locator('img').evaluateAll((nodes) => nodes.filter((img) => !img.complete || img.naturalWidth === 0).map((img) => img.src));
+      if (brokenImages.length) throw new Error(articlePath + ': broken images: ' + brokenImages.join(', '));
       if (articlePath !== articlePages[0] && mathCount === 0) {
         throw new Error(articlePath + ': expected a rendered MathML formula');
       }

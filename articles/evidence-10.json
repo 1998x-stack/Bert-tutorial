@@ -1,0 +1,70 @@
+{
+  "article_id": "10",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Adam maintains first and second moments of gradients with bias correction.",
+      "source_url": "https://arxiv.org/abs/1412.6980",
+      "locator": "§2 Algorithm 1",
+      "status": "verified",
+      "verification_note": "Equation forms follow the original Adam paper."
+    },
+    {
+      "id": "c02",
+      "claim": "AdamW decouples weight decay from adaptive gradient moment estimation.",
+      "source_url": "https://arxiv.org/abs/1711.05101",
+      "locator": "Abstract and §2",
+      "status": "verified",
+      "verification_note": "Equation shown in simplified parameter-group form."
+    },
+    {
+      "id": "c03",
+      "claim": "BERT pretraining uses batch 256, 1M steps, 10K warmup, peak LR 1e-4, weight decay 0.01, and 128-token sequences for 90% of steps followed by 512 for the final 10%.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "Appendix A.2 Pre-training Procedure",
+      "status": "verified",
+      "verification_note": "Distinguishes sequences per batch from token count."
+    },
+    {
+      "id": "c04",
+      "claim": "Google's BERT reference optimizer is named AdamWeightDecayOptimizer and excludes bias and LayerNorm variables from decay.",
+      "source_url": "https://github.com/google-research/bert/blob/master/optimization.py",
+      "locator": "AdamWeightDecayOptimizer and _do_use_weight_decay",
+      "status": "verified",
+      "verification_note": "Reference code detail is distinguished from paper shorthand."
+    },
+    {
+      "id": "c05",
+      "claim": "RoBERTa-Base uses peak LR 6e-4 and 24K warmup; RoBERTa-Large uses 4e-4 and 30K warmup; both use batch 8K and 500K steps.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "Appendix B Table 9",
+      "status": "verified",
+      "verification_note": "Base and Large settings are not conflated."
+    },
+    {
+      "id": "c06",
+      "claim": "BERT GLUE fine-tuning searches learning rates 5e-5, 4e-5, 3e-5 and 2e-5 with batch 32 and 3 epochs.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "§4.1 GLUE",
+      "status": "verified",
+      "verification_note": "Specific to the original GLUE setup."
+    },
+    {
+      "id": "c07",
+      "claim": "RoBERTa GLUE fine-tuning uses a learning-rate grid, batch 16/32 and warmup ratio 0.06 in its appendix configuration.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "Appendix C Table 10",
+      "status": "verified",
+      "verification_note": "Presented as that paper's recipe, not a universal recommendation."
+    },
+    {
+      "id": "c08",
+      "claim": "RoBERTa authors state they use the same learning rate for all layers, contrasting with XLNet's layer-wise learning rate schedule.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§5.2 SQuAD fine-tuning discussion",
+      "status": "verified",
+      "verification_note": "Supports the boundary that LLRD is not RoBERTa's reported recipe."
+    }
+  ]
+}
