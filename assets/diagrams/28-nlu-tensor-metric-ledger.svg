@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 480" role="img" aria-labelledby="title desc">
+<title id="title">中文意图分类的张量合同与指标计算路径</title>
+<desc id="desc">上半部分是张量形态流水线：Tokenizer 输出 input_ids 与 attention_mask 形状 [B,T]，Encoder 输出 [B,T,H]，句级分类头读取 pooled [B,H] 并输出 logits [B,C=3]，训练用交叉熵，推理用 argmax 或 softmax 阈值。下半部分是一个三分类教学混淆矩阵，按行给出各类的真实数，并计算每类 precision、recall、F1 与 macro F1；同一 group 不得跨 train/dev/test 切分。</desc>
+<rect width="960" height="480" rx="22" fill="#f5f7f2"/>
+<g font-family="system-ui,sans-serif">
+<text x="480" y="38" text-anchor="middle" font-size="21" font-weight="700" fill="#203035">从 token 张量到 macro F1 的可审核计算路径</text>
+<text x="480" y="64" text-anchor="middle" font-size="14" fill="#53676d">标注中的数字均为教学示意，不是任何中文业务数据或 benchmark 的结果</text>
+<text x="46" y="104" font-size="15" font-weight="700" fill="#203035">① 张量形态合同（B=batch, T=padding 后长度, H=隐藏宽度, C=3）</text>
+<rect x="29" y="118" width="170" height="64" rx="10" fill="#e6e0f7" stroke="#6b4fbf" stroke-width="2"/>
+<text x="114" y="144" text-anchor="middle" font-size="13" fill="#4b3690">input_ids / mask</text>
+<text x="114" y="166" text-anchor="middle" font-size="13" fill="#4b3690">[B, T]</text>
+<rect x="212" y="118" width="170" height="64" rx="10" fill="#e0f1ea" stroke="#168579" stroke-width="2"/>
+<text x="297" y="144" text-anchor="middle" font-size="13" fill="#176056">Encoder</text>
+<text x="297" y="166" text-anchor="middle" font-size="13" fill="#176056">[B, T, H]</text>
+<rect x="395" y="118" width="170" height="64" rx="10" fill="#e0f1ea" stroke="#168579" stroke-width="2"/>
+<text x="480" y="144" text-anchor="middle" font-size="13" fill="#176056">pooled 表示</text>
+<text x="480" y="166" text-anchor="middle" font-size="13" fill="#176056">[B, H]</text>
+<rect x="578" y="118" width="170" height="64" rx="10" fill="#fbe7cf" stroke="#c07a1e" stroke-width="2"/>
+<text x="663" y="144" text-anchor="middle" font-size="13" fill="#8a5411">分类 head logits</text>
+<text x="663" y="166" text-anchor="middle" font-size="13" fill="#8a5411">[B, C=3]</text>
+<rect x="761" y="118" width="170" height="64" rx="10" fill="#f0c9c9" stroke="#b0453f" stroke-width="2"/>
+<text x="846" y="144" text-anchor="middle" font-size="13" fill="#8a3b34">训练 CE / 推理 argmax</text>
+<text x="846" y="166" text-anchor="middle" font-size="13" fill="#8a3b34">阈值只用 dev 选</text>
+<text x="46" y="224" font-size="15" font-weight="700" fill="#203035">② 三分类教学混淆矩阵（行=真实，列=预测）</text>
+<text x="60" y="256" font-family="ui-monospace,monospace" font-size="14" fill="#203035">greeting  [8, 1, 1]   P=0.89  R=0.80  F1=0.842</text>
+<text x="60" y="282" font-family="ui-monospace,monospace" font-size="14" fill="#203035">weather   [1, 9, 0]   P=0.75  R=0.90  F1=0.818</text>
+<text x="60" y="308" font-family="ui-monospace,monospace" font-size="14" fill="#203035">food      [0, 2, 8]   P=0.89  R=0.80  F1=0.842</text>
+<text x="60" y="342" font-family="ui-monospace,monospace" font-size="14" fill="#8a3b34">macro F1 = (0.842+0.818+0.842)/3 ≈ 0.834</text>
+<text x="640" y="256" font-size="13" fill="#53676d">每类 F1 = 2TP / (2TP + FP + FN)</text>
+<text x="640" y="280" font-size="13" fill="#53676d">某类无正例时约定 F1 = 0</text>
+<text x="640" y="304" font-size="13" fill="#53676d">不报告 zero-division 约定即不完整</text>
+<rect x="46" y="372" width="885" height="58" rx="10" fill="#fbe7cf" stroke="#c07a1e" stroke-width="2"/>
+<text x="66" y="398" font-size="14" font-weight="700" fill="#8a5411">③ 切分隔离：同一 group 不得跨 train / dev / test</text>
+<text x="66" y="419" font-size="13" fill="#8a5411">否则近重复改写会同时出现在训练与评估，test 指标高估泛化；dev 选模型与阈值，test 冻结后只用一次</text>
+</g>
+</svg>
