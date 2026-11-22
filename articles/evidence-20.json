@@ -1,0 +1,63 @@
+{
+  "article_id": "20",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Original Google Chinese BERT generally tokenizes Chinese characters individually; this does not automatically supply whole-word segmentation boundaries.",
+      "source_url": "https://github.com/google-research/bert/blob/master/multilingual.md",
+      "locator": "Tokenization of Chinese characters",
+      "status": "verified",
+      "verification_note": "Scope qualified for mixed-language and checkpoint-specific tokenization."
+    },
+    {
+      "id": "c02",
+      "claim": "HFL Chinese-BERT-wwm applies external Chinese word segmentation and selects all characters in a selected word as MLM targets.",
+      "source_url": "https://github.com/ymcui/Chinese-BERT-wwm",
+      "locator": "README 简介 and WWM examples",
+      "status": "verified",
+      "verification_note": "README discusses LTP word segmentation and broad notion of masking."
+    },
+    {
+      "id": "c03",
+      "claim": "Whole word masking changes the MLM target grouping, while original token labels remain individual token IDs.",
+      "source_url": "https://arxiv.org/abs/1906.08101",
+      "locator": "WWM method and masking strategy",
+      "status": "verified",
+      "verification_note": "Teaching cross-entropy formula averages over selected valid token positions."
+    },
+    {
+      "id": "c04",
+      "claim": "MacBERT changes MLM to correction with similar-word replacement on 80 percent of selected positions, 10 percent random and 10 percent unchanged.",
+      "source_url": "https://aclanthology.org/2020.findings-emnlp.58/",
+      "locator": "MLM as correction; masking strategy",
+      "status": "verified",
+      "verification_note": "Do not conflate with original BERT 80 percent [MASK] replacement."
+    },
+    {
+      "id": "c05",
+      "claim": "Baidu ERNIE 2019 includes phrase-level and entity-level knowledge-related masking.",
+      "source_url": "https://arxiv.org/abs/1904.09223",
+      "locator": "Abstract and knowledge masking method",
+      "status": "verified",
+      "verification_note": "Specifically refers to Sun et al. ERNIE 2019, not every model named ERNIE."
+    },
+    {
+      "id": "c06",
+      "claim": "ACL 2021 ChineseBERT adds character glyph and pinyin representations to its input.",
+      "source_url": "https://aclanthology.org/2021.acl-long.161/",
+      "locator": "Abstract; input representation section",
+      "status": "verified",
+      "verification_note": "Distinct architecture/model from Google Chinese BERT and HFL BERT-wwm."
+    },
+    {
+      "id": "c07",
+      "claim": "Whole word masking benefits vary by task, illustrated by findings on Chinese grammatical error correction.",
+      "source_url": "https://aclanthology.org/2022.findings-acl.1/",
+      "locator": "Abstract and task evaluation",
+      "status": "verified",
+      "verification_note": "Rejects unconditional claim that WWM improves all Chinese tasks."
+    }
+  ]
+}
