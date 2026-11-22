@@ -1,0 +1,55 @@
+{
+  "article_id": "19",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "DeBERTa disentangled attention uses content-to-content, content-to-position and position-to-content score terms, removing position-to-position in the principal implementation.",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.1, Equation (4) and P2P discussion",
+      "status": "verified",
+      "verification_note": "Three-term rather than four-term default is important."
+    },
+    {
+      "id": "c02",
+      "claim": "Position-to-content term uses reverse relative-distance index delta(j,i), while content-to-position uses delta(i,j).",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.1, Equation (3)–(4) and surrounding explanatory paragraph",
+      "status": "verified",
+      "verification_note": "Direction reversal is an explicit claim in the paper."
+    },
+    {
+      "id": "c03",
+      "claim": "Original paper three-term attention normalizes scores by square root of 3d.",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.1 Equation (4)",
+      "status": "verified",
+      "verification_note": "Implementation may adjust scale with enabled term count."
+    },
+    {
+      "id": "c04",
+      "claim": "Enhanced Mask Decoder incorporates absolute positions in the MLM decoding stage rather than being a generative sequence-to-sequence decoder.",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.2 Enhanced Mask Decoder",
+      "status": "verified",
+      "verification_note": "Original model is an encoder for language understanding."
+    },
+    {
+      "id": "c05",
+      "claim": "Microsoft reference implementation has configurable c2p, p2c and optional p2p score branches.",
+      "source_url": "https://github.com/microsoft/DeBERTa/blob/master/DeBERTa/deberta/disentangled_attention.py",
+      "locator": "DisentangledSelfAttention, disentangled_attention_bias",
+      "status": "verified",
+      "verification_note": "Versioned code options are distinguished from default original paper equation."
+    },
+    {
+      "id": "c06",
+      "claim": "Original DeBERTa dense attention still computes token-pair T by T scores.",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.1 content attention matrix dimensions",
+      "status": "verified",
+      "verification_note": "Relative position embeddings do not imply sparse attention or eliminate quadratic pairwise interactions."
+    }
+  ]
+}
