@@ -107,6 +107,9 @@ async function main() {
       'articles/23-distilbert-tinybert-knowledge-distillation.html',
       'articles/24-mobilebert-edge-inference.html',
       'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html',
+      'articles/26-modernbert-modern-encoder.html',
+      'articles/27-model-compression-quantization.html',
+      'articles/28-end-to-end-chinese-nlu-project.html',
     ];
     for (const articlePath of articlePages) {
       await page.goto(baseUrl + '/' + articlePath, { waitUntil: 'networkidle' });
@@ -140,7 +143,7 @@ async function main() {
         if (before === after) throw new Error(articlePath + ': demo interaction did not change output');
       }
 
-      if (articlePages.indexOf(articlePath) >= 20) {
+      if (articlePages.indexOf(articlePath) >= 20 && articlePages.indexOf(articlePath) < 25) {
         const demos = page.locator('[data-demo]');
         if (await demos.count() !== 2) throw new Error(articlePath + ': expected two demonstrations');
         for (let idx = 0; idx < 2; idx++) {
@@ -182,7 +185,7 @@ async function main() {
     if (offlineCount !== 28) throw new Error('file:// homepage rendered ' + offlineCount + ' chapters, expected 28');
 
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, twenty-five article interactions, MathML, and 1440/768/390/360px layouts.');
+    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, twenty-eight article interactions, MathML, and 1440/768/390/360px layouts.');
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

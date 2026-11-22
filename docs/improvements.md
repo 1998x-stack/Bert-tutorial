@@ -74,3 +74,10 @@
 - Evidence: articles/evidence-21.json…25.json include at least six claim-to-primary-source mappings per chapter. Original Longformer, BigBird, SimCSE, DistilBERT, TinyBERT, MobileBERT, LoRA, AdaLoRA and BitFit papers cross-checked with research repository/implementation docs. Do not generalize paper results to different hardware or task metrics.
 - Integration: 28-chapter courses.json and index.html file:// snapshot kept identical, 25 cards in articles/index.html, README and AGENTS updated. Automated checks expand to 25 article pages, two diagrams and both demos in the newest five; Playwright at 1440, 768, 390, 360 px.
 - Release policy: passing GitHub Actions CI and subsequent GitHub Pages deployment required before claiming publication; site HTTP reachability must be independently checked where possible. Revert squash merge to roll back.
+
+### 2026-11-22 — Final 26–28: ModernBERT, compression and Chinese NLU capstone
+- Base main a1738f8f939dbc286def06312723b94144351f42 after PR #8; preserve published 21–25 each with two SVGs and two interactive labs rather than replacing with redundant parallel drafts.
+- Add 26 ModernBERT RoPE/GeGLU/alternating local-global attention; 27 quantization/pruning/latency auditing; 28 Chinese NLU end-to-end data contract, masked metrics, validation, optional real BERT training and release checklist. Each independent article has accessible MathML, original diagram, offline teaching interaction and located research evidence.
+- Executable 60-row synthetic Chinese classification example: stdlib character n-gram Naive Bayes, train/dev/test contracts, group/ID/text leakage gates, Macro F1 and export with unittest. Optional real Encoder script requires user-provided local pretrained checkpoint, pinned packages, and is not run in CI; the synthetic score is not an NLU benchmark.
+- Canonical 28-chapter courses.json synchronized exactly with homepage file:// snapshot; 28 article cards, README, redirects and tests to 28. Fix chapter 25→26 navigation and MathML arithmetic formula denominator.
+- Validation: pending CI browser+Node+Python and Pages workflow verification on final publication.

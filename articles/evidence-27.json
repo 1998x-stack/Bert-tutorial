@@ -1,0 +1,55 @@
+{
+  "article_id": "27",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "ONNX Runtime distinguishes static calibration and dynamic activation quantization, including QDQ and QOperator representation.",
+      "source_url": "https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html",
+      "locator": "Static/Dynamic Quantization and method selection",
+      "status": "verified",
+      "verification_note": "Dynamic activation scales incur runtime overhead; performance is hardware-specific."
+    },
+    {
+      "id": "c02",
+      "claim": "Post-training quantization is not lossless and can change model quality.",
+      "source_url": "https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html",
+      "locator": "Quantization Debugging",
+      "status": "verified",
+      "verification_note": "Compare FP32/quantized weights and activations."
+    },
+    {
+      "id": "c03",
+      "claim": "Dynamic quantization is a typical starting option for Transformer/RNN models under documented ONNX runtime guidance.",
+      "source_url": "https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html",
+      "locator": "Method selection",
+      "status": "verified",
+      "verification_note": "Not a universal hardware guarantee."
+    },
+    {
+      "id": "c04",
+      "claim": "Movement Pruning studies fine-tuning-time sparsification of pretrained language models.",
+      "source_url": "https://arxiv.org/abs/2005.07683",
+      "locator": "Abstract; methods",
+      "status": "verified",
+      "verification_note": "This does not imply dense CPU kernel acceleration from unstructured zeros."
+    },
+    {
+      "id": "c05",
+      "claim": "Quantization-aware training models integer inference effects and fake quantization.",
+      "source_url": "https://arxiv.org/abs/1712.05877",
+      "locator": "§2–4",
+      "status": "verified",
+      "verification_note": "Training-time simulation is different from post-training ONNX INT8 conversion."
+    },
+    {
+      "id": "c06",
+      "claim": "DistilBERT demonstrates training a smaller student with teacher supervision.",
+      "source_url": "https://arxiv.org/abs/1910.01108",
+      "locator": "§2–4",
+      "status": "verified",
+      "verification_note": "Student training compute and deployed inference compute are distinct."
+    }
+  ]
+}

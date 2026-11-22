@@ -16,7 +16,7 @@
     <nav class="site-nav" aria-label="主导航">
       <a href="#roadmap">学习路线</a>
       <a href="#chapters">章节目录</a>
-      <a href="articles/index.html">二十五篇专题精读</a>
+      <a href="articles/index.html">二十八篇专题精读</a>
       <a href="#about">课程说明</a>
     </nav>
   </header>
@@ -26,12 +26,12 @@
       <h1>理解 BERT，<br>从它如何表示一个词开始。</h1>
       <p class="hero-copy">一套完整的中文学习路径：先建立静态与上下文表示的区别，再拆开 Transformer Encoder、MLM 与 NSP，随后进入微调、模型变体、长文本、蒸馏和部署。每个章节围绕一个可解释的问题展开。</p>
       <div class="hero-actions">
-        <a class="button-link" href="articles/index.html">阅读二十五篇独立专题</a>
+        <a class="button-link" href="articles/index.html">阅读二十八篇独立专题</a>
         <a class="button-link secondary" href="#chapters">浏览全部 28 章</a>
       </div>
       <div class="hero-stats">
         <div class="stat"><strong>28 章</strong><span>从原理到项目的课程路线</span></div>
-        <div class="stat"><strong>25 篇</strong><span>已精修的独立专题精读</span></div>
+        <div class="stat"><strong>28 篇</strong><span>已精修的独立专题精读</span></div>
         <div class="stat"><strong>8 个阶段</strong><span>按知识依赖组织的学习路径</span></div>
       </div>
     </section>
@@ -100,8 +100,7 @@
       <span><a href="README.md">仓库说明</a> · <a href="articles/index.html">专题文章</a> · <a href="https://github.com/1998x-stack/Bert-tutorial" target="_blank" rel="noopener noreferrer">GitHub</a></span>
     </footer>
   </main>
-  <script id="offline-courses" type="application/json">
-{
+  <script id="offline-courses" type="application/json">{
   "title": "BERT 模型系列教程",
   "subtitle": "从表示学习、Transformer Encoder 到 BERT 预训练与模型家族实践",
   "chapterCount": 28,
@@ -558,55 +557,54 @@
     },
     {
       "num": "26",
-      "title": "ModernBERT 与现代编码器设计",
+      "title": "ModernBERT：RoPE、GeGLU 与交替局部/全局注意力",
       "topics": [
-        "长上下文",
-        "位置编码",
-        "Gated FFN",
-        "吞吐"
+        "ModernBERT",
+        "RoPE",
+        "GeGLU",
+        "Alternating Attention"
       ],
-      "file": "26.html",
+      "file": "articles/26-modernbert-modern-encoder.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
       "duration": 45,
-      "summary": "从现代编码器的结构、训练数据和长上下文能力理解 BERT 家族的演进。"
+      "summary": "解释 8192-token Encoder 的 RoPE、GeGLU、交替 attention、unpadding、packing 的信息隔离与版本边界。"
     },
     {
       "num": "27",
-      "title": "模型压缩、量化与端侧推理",
+      "title": "模型压缩：量化、剪枝与端侧质量门禁",
       "topics": [
-        "量化",
-        "剪枝",
-        "蒸馏",
-        "延迟预算"
+        "INT8 / PTQ / QAT",
+        "Pruning",
+        "Distillation",
+        "p95 / Memory"
       ],
-      "file": "27.html",
+      "file": "articles/27-model-compression-quantization.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
       "duration": 45,
-      "summary": "比较压缩策略对模型大小、吞吐、精度与端侧资源的影响。"
+      "summary": "区分权重位宽、非结构化与结构化剪枝、模型激活和真实推理延迟，以质量/p95/peak RSS 统一验收。"
     },
     {
       "num": "28",
-      "title": "端到端中文 NLU 实战项目",
+      "title": "中文 NLU 综合项目：训练、评估与部署",
       "topics": [
-        "数据流水线",
-        "微调",
-        "误差分析",
-        "部署"
+        "Chinese Intent Classification",
+        "Data Leakage",
+        "Macro F1",
+        "Reproducible Pipeline"
       ],
-      "file": "28.html",
+      "file": "articles/28-end-to-end-chinese-nlu-project.html",
       "stageId": "capstone",
       "stage": "综合项目",
       "level": "高级",
       "duration": 60,
-      "summary": "把数据准备、模型微调、评估、误差分析与部署串成可复现项目。"
+      "summary": "从 JSONL 数据合同、分组切分与防泄漏到可运行的标准库基线、可选 BERT 微调、Macro F1 与可回滚发布。"
     }
   ]
-}
-</script>
+}</script>
   <script src="assets/js/site.js" defer></script>
 </body>
 </html>
