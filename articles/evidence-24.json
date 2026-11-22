@@ -1,0 +1,55 @@
+{
+  "article_id": "24",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "MobileBERT uses a thin deep architecture with bottleneck structures and a specially inverted-bottleneck BERT-large teacher.",
+      "source_url": "https://aclanthology.org/2020.acl-main.195/",
+      "locator": "Abstract; §3",
+      "status": "verified",
+      "verification_note": "Teacher is specialized; not an arbitrary vanilla BERT-large checkpoint."
+    },
+    {
+      "id": "c02",
+      "claim": "MobileBERT reference paper claims 4.3x smaller and 5.5x faster than BERT-base in specified evaluations.",
+      "source_url": "https://aclanthology.org/2020.acl-main.195/",
+      "locator": "Abstract",
+      "status": "verified",
+      "verification_note": "Numerical comparison is paper-configuration specific."
+    },
+    {
+      "id": "c03",
+      "claim": "The paper reports 62 ms Pixel 4 latency under paper evaluation and GLUE score 77.7.",
+      "source_url": "https://aclanthology.org/2020.acl-main.195/",
+      "locator": "Abstract; evaluation tables",
+      "status": "verified",
+      "verification_note": "Not guaranteed for arbitrary Chinese tasks or mobile hardware."
+    },
+    {
+      "id": "c04",
+      "claim": "ONNX Runtime defines dynamic quantization with runtime activation scale and static quantization with calibration data.",
+      "source_url": "https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html",
+      "locator": "Dynamic/Static Quantization sections",
+      "status": "verified",
+      "verification_note": "The quantization method must be coupled to supported ops and CPU."
+    },
+    {
+      "id": "c05",
+      "claim": "Quantization can reduce task quality; ONNX Runtime documents debugging via FP32/quantized weight and activation matching.",
+      "source_url": "https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html",
+      "locator": "Quantization Debugging section",
+      "status": "verified",
+      "verification_note": "Do not assume quantization is lossless or universally faster."
+    },
+    {
+      "id": "c06",
+      "claim": "MobileBERT is task agnostic and supports downstream fine-tuning.",
+      "source_url": "https://aclanthology.org/2020.acl-main.195/",
+      "locator": "Abstract; §4",
+      "status": "verified",
+      "verification_note": "Task and tokenizer must be chosen per checkpoint."
+    }
+  ]
+}
