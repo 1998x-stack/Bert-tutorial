@@ -1,0 +1,55 @@
+{
+  "article_id": "16",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "XLNet permutation LM factorizes over permuted original positions while retaining original positional information.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.1; §2.2",
+      "status": "verified",
+      "verification_note": "Permutation changes factorization order, not token order of sentence."
+    },
+    {
+      "id": "c02",
+      "claim": "Two-stream attention separates content representations from target-aware query states, preventing trivial target-token leakage.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.3; Figure 1",
+      "status": "verified",
+      "verification_note": "Query stream excludes current target token content; content stream includes own content."
+    },
+    {
+      "id": "c03",
+      "claim": "XLNet uses partial prediction to reduce optimization cost instead of predicting every position for each sampled permutation.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.2 implementation discussion; Appendix A",
+      "status": "verified",
+      "verification_note": "Equation is presented as conceptual full-factorization, not exact implementation loss positions."
+    },
+    {
+      "id": "c04",
+      "claim": "XLNet combines permutation LM with Transformer-XL segment recurrence and relative position encoding.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§3 and abstract",
+      "status": "verified",
+      "verification_note": "Separate long-context architectural ideas from permutation objective."
+    },
+    {
+      "id": "c05",
+      "claim": "Transformer-XL segment-level recurrence reuses hidden states from prior segments.",
+      "source_url": "https://arxiv.org/abs/1901.02860",
+      "locator": "§3.1–3.2",
+      "status": "verified",
+      "verification_note": "Memory semantics are distinct from XLNet permutation semantics."
+    },
+    {
+      "id": "c06",
+      "claim": "XLNet official code provides sequence permutation and preprocessing details.",
+      "source_url": "https://github.com/zihangdai/xlnet",
+      "locator": "README; data_utils.py; training code",
+      "status": "verified",
+      "verification_note": "Original repository, cross-checked with model-paper factorization explanation."
+    }
+  ]
+}
