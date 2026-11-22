@@ -97,6 +97,11 @@ async function main() {
       'articles/13-multilingual-transfer.html',
       'articles/14-encoder-model-selection.html',
       'articles/15-electra-replaced-token-detection.html',
+      'articles/16-xlnet-permutation-language-model.html',
+      'articles/17-mpnet-masked-permuted.html',
+      'articles/18-albert-factorized-sharing.html',
+      'articles/19-deberta-disentangled-attention.html',
+      'articles/20-chinese-bert-whole-word-masking.html',
     ];
     for (const articlePath of articlePages) {
       await page.goto(baseUrl + '/' + articlePath, { waitUntil: 'networkidle' });
@@ -154,7 +159,7 @@ async function main() {
     if (offlineCount !== 28) throw new Error('file:// homepage rendered ' + offlineCount + ' chapters, expected 28');
 
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, fifteen article interactions, MathML, and 1440/768/390/360px layouts.');
+    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, twenty article interactions, MathML, and 1440/768/390/360px layouts.');
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

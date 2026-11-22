@@ -16,7 +16,7 @@
     <nav class="site-nav" aria-label="主导航">
       <a href="#roadmap">学习路线</a>
       <a href="#chapters">章节目录</a>
-      <a href="articles/index.html">十五篇专题精读</a>
+      <a href="articles/index.html">二十篇专题精读</a>
       <a href="#about">课程说明</a>
     </nav>
   </header>
@@ -26,12 +26,12 @@
       <h1>理解 BERT，<br>从它如何表示一个词开始。</h1>
       <p class="hero-copy">一套完整的中文学习路径：先建立静态与上下文表示的区别，再拆开 Transformer Encoder、MLM 与 NSP，随后进入微调、模型变体、长文本、蒸馏和部署。每个章节围绕一个可解释的问题展开。</p>
       <div class="hero-actions">
-        <a class="button-link" href="articles/index.html">阅读十五篇独立专题</a>
+        <a class="button-link" href="articles/index.html">阅读二十篇独立专题</a>
         <a class="button-link secondary" href="#chapters">浏览全部 28 章</a>
       </div>
       <div class="hero-stats">
         <div class="stat"><strong>28 章</strong><span>从原理到项目的课程路线</span></div>
-        <div class="stat"><strong>15 篇</strong><span>已精修的独立专题精读</span></div>
+        <div class="stat"><strong>20 篇</strong><span>已精修的独立专题精读</span></div>
         <div class="stat"><strong>8 个阶段</strong><span>按知识依赖组织的学习路径</span></div>
       </div>
     </section>
@@ -100,7 +100,8 @@
       <span><a href="README.md">仓库说明</a> · <a href="articles/index.html">专题文章</a> · <a href="https://github.com/1998x-stack/Bert-tutorial" target="_blank" rel="noopener noreferrer">GitHub</a></span>
     </footer>
   </main>
-  <script id="offline-courses" type="application/json">{
+  <script id="offline-courses" type="application/json">
+{
   "title": "BERT 模型系列教程",
   "subtitle": "从表示学习、Transformer Encoder 到 BERT 预训练与模型家族实践",
   "chapterCount": 28,
@@ -397,83 +398,83 @@
     },
     {
       "num": "16",
-      "title": "XLNet 排列语言模型",
+      "title": "XLNet：排列分解怎样获得双向上下文，却不泄漏答案",
       "topics": [
         "Permutation LM",
         "Two-Stream Attention",
-        "目标泄漏",
-        "自回归"
+        "Target Leakage",
+        "Permutation Mask"
       ],
-      "file": "16.html",
+      "file": "articles/16-xlnet-permutation-language-model.html",
       "stageId": "variants",
       "stage": "模型家族与变体",
       "level": "高级",
       "duration": 45,
-      "summary": "解释排列语言模型的目标分解、双流注意力和与 MLM 的设计差异。"
+      "summary": "从概率链式分解与目标可见集合出发，完整解释 XLNet 的双流注意力、部分预测及 Transformer-XL 记忆边界。"
     },
     {
       "num": "17",
-      "title": "MPNet：掩码与排列融合",
+      "title": "MPNet：让被预测词彼此依赖，同时保留完整位置线索",
       "topics": [
         "MLM",
-        "Permutation LM",
-        "位置补偿",
-        "句向量"
+        "PLM",
+        "Position Compensation",
+        "Two-Stream Mask"
       ],
-      "file": "17.html",
-      "stageId": "variants",
-      "stage": "模型家族与变体",
-      "level": "高级",
-      "duration": 40,
-      "summary": "分析 MPNet 如何结合掩码预测与排列建模，缓解各自的训练限制。"
-    },
-    {
-      "num": "18",
-      "title": "ALBERT 参数高效设计",
-      "topics": [
-        "嵌入分解",
-        "参数共享",
-        "SOP",
-        "模型深度"
-      ],
-      "file": "18.html",
-      "stageId": "variants",
-      "stage": "模型家族与变体",
-      "level": "高级",
-      "duration": 40,
-      "summary": "拆解词嵌入分解、跨层参数共享和 Sentence Order Prediction。"
-    },
-    {
-      "num": "19",
-      "title": "DeBERTa 解耦注意力",
-      "topics": [
-        "内容位置解耦",
-        "相对位置",
-        "增强掩码解码",
-        "注意力"
-      ],
-      "file": "19.html",
+      "file": "articles/17-mpnet-masked-permuted.html",
       "stageId": "variants",
       "stage": "模型家族与变体",
       "level": "高级",
       "duration": 45,
-      "summary": "理解内容向量与位置向量分离建模的动机、公式和实现代价。"
+      "summary": "分析 MLM 与 PLM 的条件集合，推导 MPNet 的位置补偿目标及两流 attention 可见性。"
+    },
+    {
+      "num": "18",
+      "title": "ALBERT：更少参数不等于更少计算",
+      "topics": [
+        "Factorized Embedding",
+        "Parameter Sharing",
+        "SOP",
+        "FLOPs"
+      ],
+      "file": "articles/18-albert-factorized-sharing.html",
+      "stageId": "variants",
+      "stage": "模型家族与变体",
+      "level": "高级",
+      "duration": 45,
+      "summary": "计算词嵌入分解的参数预算、共享层的梯度与计算代价，并交叉核验 SOP 消融。"
+    },
+    {
+      "num": "19",
+      "title": "DeBERTa：让词内容与相对位置分别参与注意力打分",
+      "topics": [
+        "c2c / c2p / p2c",
+        "Relative Position",
+        "Enhanced Mask Decoder",
+        "Attention Shape"
+      ],
+      "file": "articles/19-deberta-disentangled-attention.html",
+      "stageId": "variants",
+      "stage": "模型家族与变体",
+      "level": "高级",
+      "duration": 45,
+      "summary": "推导三项解耦 attention score，审计相对位置索引方向、softmax 轴及原始变体边界。"
     },
     {
       "num": "20",
-      "title": "中文预训练模型与全词掩码",
+      "title": "中文 BERT：字、词与整词掩码到底在哪一步发生",
       "topics": [
-        "中文 BERT",
-        "WWM",
-        "ERNIE",
-        "字形拼音"
+        "中文分词",
+        "Whole Word Masking",
+        "MacBERT / ERNIE",
+        "Glyph / Pinyin"
       ],
-      "file": "20.html",
+      "file": "articles/20-chinese-bert-whole-word-masking.html",
       "stageId": "chinese-longtext",
       "stage": "中文与长文本",
       "level": "进阶",
       "duration": 45,
-      "summary": "比较中文字符切分、全词掩码、知识增强和字形拼音信息的不同路线。"
+      "summary": "用中文分词、token ID 与整词目标对齐理解 WWM，并比较 MacBERT、ERNIE 和字形拼音增强。"
     },
     {
       "num": "21",
@@ -604,7 +605,8 @@
       "summary": "把数据准备、模型微调、评估、误差分析与部署串成可复现项目。"
     }
   ]
-}</script>
+}
+</script>
   <script src="assets/js/site.js" defer></script>
 </body>
 </html>

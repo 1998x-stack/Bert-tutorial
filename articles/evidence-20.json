@@ -1,0 +1,55 @@
+{
+  "article_id": "20",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Original Chinese BERT often segments Chinese at character level; Chinese WWM requires word segmentation to group characters.",
+      "source_url": "https://github.com/ymcui/Chinese-BERT-wwm",
+      "locator": "README 简介 / Whole Word Masking description",
+      "status": "verified",
+      "verification_note": "Official HFL project explicitly mentions LTP Chinese segmentation and Chinese BERT character units."
+    },
+    {
+      "id": "c02",
+      "claim": "WWM selects token groups corresponding to entire words, while MLM still predicts original individual token IDs on selected positions.",
+      "source_url": "https://arxiv.org/abs/1906.08101",
+      "locator": "§III Whole word masking; method and training data generation",
+      "status": "verified",
+      "verification_note": "Cross-checked with HFL README: mask means broad 80/10/10 corruption, not all literal [MASK]."
+    },
+    {
+      "id": "c03",
+      "claim": "MacBERT reformulates MLM as correction with semantically similar words and uses SOP, WWM and N-gram mask strategies.",
+      "source_url": "https://arxiv.org/abs/2004.13922",
+      "locator": "§4 MacBERT; §4.1 MLM as correction and §4.2 SOP",
+      "status": "verified",
+      "verification_note": "Extended IEEE/ACM journal source §IV-A/B provides 80/10/10 sampled-token rule; mechanism only, not reimplemented here."
+    },
+    {
+      "id": "c04",
+      "claim": "ERNIE original paper includes entity-level and phrase-level knowledge masking.",
+      "source_url": "https://arxiv.org/abs/1904.09223",
+      "locator": "Abstract; §2 Knowledge masking",
+      "status": "verified",
+      "verification_note": "Not generalized to all other papers named ERNIE or to generic KG embedding."
+    },
+    {
+      "id": "c05",
+      "claim": "ChineseBERT combines character embeddings with glyph and pinyin embeddings.",
+      "source_url": "https://aclanthology.org/2021.acl-long.161/",
+      "locator": "§2–3 architecture and glyph/pinyin representations",
+      "status": "verified",
+      "verification_note": "Paper is distinct input-feature approach, not the same mechanism as WWM sampling."
+    },
+    {
+      "id": "c06",
+      "claim": "HFL Chinese checkpoints differ by tokenizer, pretraining corpus and objective; results tables are benchmark-specific.",
+      "source_url": "https://github.com/ymcui/Chinese-BERT-wwm",
+      "locator": "README pretrained model catalogue; downstream test tables",
+      "status": "verified",
+      "verification_note": "Avoid interpreting model naming as identical English RoBERTa settings; no ungrounded ranking."
+    }
+  ]
+}
