@@ -1,0 +1,55 @@
+{
+  "article_id": "19",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "DeBERTa disentangled attention explicitly combines content-content, content-position and position-content scoring.",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.1; Equation (4); Figure 2",
+      "status": "verified",
+      "verification_note": "Interpretation cross-checked with Microsoft code's c2p and p2c branches."
+    },
+    {
+      "id": "c02",
+      "claim": "Relative position direction affects c2p versus p2c gather indices.",
+      "source_url": "https://github.com/microsoft/DeBERTa/blob/master/DeBERTa/deberta/disentangled_attention.py",
+      "locator": "disentangled_attention_bias; c2p_pos and p2c_att",
+      "status": "verified",
+      "verification_note": "Direction sign in article is an explicit convention; code and diagram must stay consistent."
+    },
+    {
+      "id": "c03",
+      "claim": "DeBERTa official attention implementation exposes configurable c2p, p2c and optional p2p, and scale factor counts active contributions.",
+      "source_url": "https://github.com/microsoft/DeBERTa/blob/master/DeBERTa/deberta/disentangled_attention.py",
+      "locator": "pos_att_type; forward scale_factor; p2p conditional",
+      "status": "verified",
+      "verification_note": "Do not universalize configuration; c2p is one code default."
+    },
+    {
+      "id": "c04",
+      "claim": "Enhanced Mask Decoder incorporates absolute positions at decoding layer for MLM pretraining.",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.2 Enhanced mask decoder",
+      "status": "verified",
+      "verification_note": "Separated from Encoder's relative position attention."
+    },
+    {
+      "id": "c05",
+      "claim": "DeBERTaV3 has additional later architecture and pretraining design differences from original DeBERTa.",
+      "source_url": "https://arxiv.org/abs/2111.09543",
+      "locator": "Abstract; §2",
+      "status": "verified",
+      "verification_note": "Avoid treating v3 performance as pure disentangled attention gain."
+    },
+    {
+      "id": "c06",
+      "claim": "Masked softmax acts on key dimension and score logits are B×heads×queries×keys.",
+      "source_url": "https://github.com/microsoft/DeBERTa/blob/master/DeBERTa/deberta/disentangled_attention.py",
+      "locator": "forward attention_scores reshape and XSoftmax(...,-1)",
+      "status": "verified",
+      "verification_note": "Shape derived from code; score-normalization shown with padding omitted for readability."
+    }
+  ]
+}
