@@ -1,0 +1,55 @@
+{
+  "article_id": "18",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "ALBERT factorized embedding reduces token embedding matrices from V×H to V×E plus E×H.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.1 Factorized embedding parameterization",
+      "status": "verified",
+      "verification_note": "Example 30,000/768/128 is independently derived and explicitly counts embedding only."
+    },
+    {
+      "id": "c02",
+      "claim": "Cross-layer sharing reuses parameter tensors across repeated Transformer layers.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.2; §4.5 Table 4",
+      "status": "verified",
+      "verification_note": "Weight sharing reduces unique parameters, not block calls or all activations."
+    },
+    {
+      "id": "c03",
+      "claim": "SOP negative example swaps the order of the same two consecutive segments; NSP negative uses unrelated segments.",
+      "source_url": "https://github.com/google-research/albert/blob/master/create_pretraining_data.py",
+      "locator": "create_instances_from_document; random_next branch swapping segments",
+      "status": "verified",
+      "verification_note": "Code and ALBERT paper §3.3 cross-check SOP label construction."
+    },
+    {
+      "id": "c04",
+      "claim": "ALBERT base E=128 Table 4 reports full-sharing 12M with Avg=80.1, shared-attention 64M Avg=81.7 and no-sharing 89M Avg=81.6.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "Table 4 ALBERT base E=128 rows",
+      "status": "verified",
+      "verification_note": "Avg is paper-specific aggregate of named downstream tasks, not GLUE test."
+    },
+    {
+      "id": "c05",
+      "claim": "Table 5 NSP variant SOP intrinsic accuracy 52.0 versus SOP-trained 86.5 in controlled ALBERT-base setup.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§4.6 Table 5",
+      "status": "verified",
+      "verification_note": "Source values are intrinsic classification accuracy, not downstream performance."
+    },
+    {
+      "id": "c06",
+      "claim": "Official ALBERT pretraining uses MLM and sentence order head.",
+      "source_url": "https://github.com/google-research/albert/blob/master/run_pretraining.py",
+      "locator": "get_masked_lm_output; get_sentence_order_output",
+      "status": "verified",
+      "verification_note": "Official code sanity check in addition to paper."
+    }
+  ]
+}
