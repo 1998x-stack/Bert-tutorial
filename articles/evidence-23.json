@@ -1,0 +1,55 @@
+{
+  "article_id": "23",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "DistilBERT uses a triple training loss combining language modeling, distillation and cosine-distance losses.",
+      "source_url": "https://arxiv.org/abs/1910.01108",
+      "locator": "Abstract; §2",
+      "status": "verified",
+      "verification_note": "Original scope is pretraining of smaller student, not just pruning teacher layers."
+    },
+    {
+      "id": "c02",
+      "claim": "DistilBERT original student has six Transformer layers compared with twelve in BERT-base.",
+      "source_url": "https://arxiv.org/abs/1910.01108",
+      "locator": "§2 architectural choices",
+      "status": "verified",
+      "verification_note": "Do not infer universal GPU speedup from layer count."
+    },
+    {
+      "id": "c03",
+      "claim": "Temperature softened logits are used in knowledge distillation; alignment reduction must match original implementation.",
+      "source_url": "https://arxiv.org/abs/1910.01108",
+      "locator": "§2–3 distillation discussion",
+      "status": "verified",
+      "verification_note": "Tutorial T-squared KL is canonical generalized KD form; not asserting every code branch multiplies by T²."
+    },
+    {
+      "id": "c04",
+      "claim": "TinyBERT applies Transformer distillation at general pretraining and task-specific stages.",
+      "source_url": "https://arxiv.org/abs/1909.10351",
+      "locator": "Abstract; §2–3",
+      "status": "verified",
+      "verification_note": "Stages have distinct distillation targets and training resources."
+    },
+    {
+      "id": "c05",
+      "claim": "TinyBERT considers embedding, hidden states, attention matrices and prediction layer outputs as knowledge sources.",
+      "source_url": "https://arxiv.org/abs/1909.10351",
+      "locator": "§2, Transformer distillation losses",
+      "status": "verified",
+      "verification_note": "Alignment/projection is required when hidden dimensions differ."
+    },
+    {
+      "id": "c06",
+      "claim": "TinyBERT compression/latency measurements are paper-configuration-specific GLUE experiments.",
+      "source_url": "https://arxiv.org/abs/1909.10351",
+      "locator": "Abstract; §4 tables",
+      "status": "verified",
+      "verification_note": "No invented universal device speedup."
+    }
+  ]
+}
