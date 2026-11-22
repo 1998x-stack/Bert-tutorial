@@ -1,0 +1,55 @@
+{
+  "article_id": "17",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "MPNet combines masked and permuted pretraining to model dependencies among target tokens while utilizing full position information.",
+      "source_url": "https://proceedings.neurips.cc/paper/2020/hash/c3a690be93aa602ee2dc0ccab5b7b67e-Abstract.html",
+      "locator": "Abstract; §2",
+      "status": "verified",
+      "verification_note": "Contrasts MLM output dependency and XLNet position discrepancy."
+    },
+    {
+      "id": "c02",
+      "claim": "Position compensation adds [M] with positions of predicted tokens to the nonpredicted part.",
+      "source_url": "https://www.microsoft.com/en-us/research/blog/mpnet-combines-strengths-of-masked-and-permuted-language-modeling-for-language-understanding/",
+      "locator": "Input consistency; Figure 2",
+      "status": "verified",
+      "verification_note": "Position placeholders are not revealed true target words."
+    },
+    {
+      "id": "c03",
+      "claim": "Two-stream attention allows later predicted tokens to condition on earlier targets without leaking the current target.",
+      "source_url": "https://www.microsoft.com/en-us/research/blog/mpnet-combines-strengths-of-masked-and-permuted-language-modeling-for-language-understanding/",
+      "locator": "Output dependency; Figure 2",
+      "status": "verified",
+      "verification_note": "Contrasts independent MLM target loss with target autoregression."
+    },
+    {
+      "id": "c04",
+      "claim": "Under the paper's 15 percent target assumption the information-coverage analysis reports 100 percent position information for MPNet and 92.5 percent for PLM.",
+      "source_url": "https://www.microsoft.com/en-us/research/blog/mpnet-combines-strengths-of-masked-and-permuted-language-modeling-for-language-understanding/",
+      "locator": "Method analysis; Table 1",
+      "status": "verified",
+      "verification_note": "Metric is analytic position coverage, not accuracy or benchmark score."
+    },
+    {
+      "id": "c05",
+      "claim": "MPNet ablation studies separately remove position compensation, permutation and output dependency.",
+      "source_url": "https://www.microsoft.com/en-us/research/blog/mpnet-combines-strengths-of-masked-and-permuted-language-modeling-for-language-understanding/",
+      "locator": "Experiments; Table 5",
+      "status": "verified",
+      "verification_note": "No unqualified mixture of task metrics or splits."
+    },
+    {
+      "id": "c06",
+      "claim": "MPNet pretraining objective and downstream sentence embedding fine-tuning are distinct training stages.",
+      "source_url": "https://proceedings.neurips.cc/paper/2020/hash/c3a690be93aa602ee2dc0ccab5b7b67e-Abstract.html",
+      "locator": "Abstract; pretraining and downstream GLUE/SQuAD evaluations",
+      "status": "verified",
+      "verification_note": "NeurIPS paper evaluates language understanding; not an automatic claim about later retrieval-specific checkpoints."
+    }
+  ]
+}
