@@ -16,7 +16,7 @@
     <nav class="site-nav" aria-label="主导航">
       <a href="#roadmap">学习路线</a>
       <a href="#chapters">章节目录</a>
-      <a href="articles/index.html">二十篇专题精读</a>
+      <a href="articles/index.html">二十五篇专题精读</a>
       <a href="#about">课程说明</a>
     </nav>
   </header>
@@ -26,12 +26,12 @@
       <h1>理解 BERT，<br>从它如何表示一个词开始。</h1>
       <p class="hero-copy">一套完整的中文学习路径：先建立静态与上下文表示的区别，再拆开 Transformer Encoder、MLM 与 NSP，随后进入微调、模型变体、长文本、蒸馏和部署。每个章节围绕一个可解释的问题展开。</p>
       <div class="hero-actions">
-        <a class="button-link" href="articles/index.html">阅读二十篇独立专题</a>
+        <a class="button-link" href="articles/index.html">阅读二十五篇独立专题</a>
         <a class="button-link secondary" href="#chapters">浏览全部 28 章</a>
       </div>
       <div class="hero-stats">
         <div class="stat"><strong>28 章</strong><span>从原理到项目的课程路线</span></div>
-        <div class="stat"><strong>20 篇</strong><span>已精修的独立专题精读</span></div>
+        <div class="stat"><strong>25 篇</strong><span>已精修的独立专题精读</span></div>
         <div class="stat"><strong>8 个阶段</strong><span>按知识依赖组织的学习路径</span></div>
       </div>
     </section>
@@ -478,83 +478,83 @@
     },
     {
       "num": "21",
-      "title": "长文本 Transformer：Longformer 与 BigBird",
+      "title": "长文本 Transformer：Longformer 与 BigBird 的稀疏注意力图",
       "topics": [
-        "滑动窗口",
-        "稀疏注意力",
-        "全局 token",
-        "长文档"
+        "Local/Global",
+        "Random Sparse",
+        "Complexity",
+        "Long Context"
       ],
-      "file": "21.html",
+      "file": "articles/21-longformer-bigbird-sparse-attention.html",
       "stageId": "chinese-longtext",
       "stage": "中文与长文本",
       "level": "高级",
-      "duration": 45,
-      "summary": "分析局部窗口、全局连接和随机连接如何降低长序列注意力成本。"
+      "duration": 50,
+      "summary": "从 T² 注意力矩阵出发，通过局部、全局、随机边、跨距离路径和部署实际算量理解长文本编码。"
     },
     {
       "num": "22",
-      "title": "SimCSE 对比学习句向量",
+      "title": "SimCSE：一句话的两个视图，如何学出可检索的句向量",
       "topics": [
-        "Dropout",
+        "Dropout Views",
         "InfoNCE",
-        "正负样本",
-        "向量检索"
+        "Alignment/Uniformity",
+        "STS"
       ],
-      "file": "22.html",
+      "file": "articles/22-simcse-contrastive-sentence-embeddings.html",
       "stageId": "chinese-longtext",
       "stage": "中文与长文本",
       "level": "进阶",
-      "duration": 40,
-      "summary": "从对比损失和 batch 内负样本出发，理解句向量的训练与评测。"
+      "duration": 50,
+      "summary": "从独立 Dropout 视图、批内负例到 InfoNCE 与句向量几何，分析无监督/监督 SimCSE 与 STS 评估。"
     },
     {
       "num": "23",
-      "title": "知识蒸馏：DistilBERT 与 TinyBERT",
+      "title": "知识蒸馏：DistilBERT 与 TinyBERT 究竟在模仿教师的什么",
       "topics": [
-        "Teacher Student",
-        "Logits",
-        "层间蒸馏",
-        "温度"
+        "KL/Temperature",
+        "Hidden/Attention",
+        "DistilBERT",
+        "TinyBERT"
       ],
-      "file": "23.html",
+      "file": "articles/23-distilbert-tinybert-knowledge-distillation.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "进阶",
-      "duration": 45,
-      "summary": "比较 logits、隐藏层和注意力蒸馏，理解小模型如何继承教师能力。"
+      "duration": 50,
+      "summary": "区分 soft logits、hidden cosine/MSE、attention 蒸馏与通用/任务双阶段训练，提供层间对齐可视化。"
     },
     {
       "num": "24",
-      "title": "MobileBERT 与端侧部署",
+      "title": "MobileBERT 与端侧推理：一层内的瓶颈，为什么比只砍层数更复杂",
       "topics": [
-        "瓶颈结构",
-        "INT8",
-        "ONNX",
-        "CPU 推理"
+        "Bottleneck",
+        "IB-BERT",
+        "INT8/ONNX",
+        "Edge Latency"
       ],
-      "file": "24.html",
+      "file": "articles/24-mobilebert-edge-inference.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
-      "duration": 45,
-      "summary": "从模型结构、量化、图优化到移动端延迟和内存预算梳理部署流程。"
+      "duration": 50,
+      "summary": "拆解 MobileBERT 窄深结构、IB-BERT 教师及量化部署链路，区分参数量、FLOPs 和端侧 p95 延迟。"
     },
     {
       "num": "25",
-      "title": "参数高效微调：LoRA、AdaLoRA 与 BitFit",
+      "title": "参数高效微调：LoRA、AdaLoRA 与 BitFit 的矩阵、预算和边界",
       "topics": [
-        "LoRA",
-        "AdaLoRA",
+        "LoRA/AdaLoRA",
         "BitFit",
-        "可训练参数"
+        "Rank Budget",
+        "Adapter Merge"
       ],
-      "file": "25.html",
+      "file": "articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "进阶",
-      "duration": 45,
-      "summary": "比较低秩适配、偏置微调与参数预算下的训练和部署权衡。"
+      "duration": 50,
+      "summary": "推导低秩增量参数量、动态 rank 分配、bias-only 训练与 adapter 合并的正确性和推理边界。"
     },
     {
       "num": "26",

@@ -24,7 +24,7 @@ test('all 28 chapter links point to existing files', () => {
   }
 });
 
-test('the first twenty catalog entries link to the deep-reading articles', () => {
+test('the first twenty-five catalog entries link to the deep-reading articles', () => {
   const expected = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
@@ -46,8 +46,13 @@ test('the first twenty catalog entries link to the deep-reading articles', () =>
     'articles/18-albert-factorized-sharing.html',
     'articles/19-deberta-disentangled-attention.html',
     'articles/20-chinese-bert-whole-word-masking.html',
+    'articles/21-longformer-bigbird-sparse-attention.html',
+    'articles/22-simcse-contrastive-sentence-embeddings.html',
+    'articles/23-distilbert-tinybert-knowledge-distillation.html',
+    'articles/24-mobilebert-edge-inference.html',
+    'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html',
   ];
-  assert.deepEqual(source.chapters.slice(0, 20).map((chapter) => chapter.file), expected);
+  assert.deepEqual(source.chapters.slice(0, 25).map((chapter) => chapter.file), expected);
 });
 
 test('file mode uses the embedded snapshot and HTTP mode falls back to courses.json', () => {

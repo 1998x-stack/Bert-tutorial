@@ -25,6 +25,11 @@ const articles = [
   'articles/18-albert-factorized-sharing.html',
   'articles/19-deberta-disentangled-attention.html',
   'articles/20-chinese-bert-whole-word-masking.html',
+  'articles/21-longformer-bigbird-sparse-attention.html',
+  'articles/22-simcse-contrastive-sentence-embeddings.html',
+  'articles/23-distilbert-tinybert-knowledge-distillation.html',
+  'articles/24-mobilebert-edge-inference.html',
+  'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html',
 ];
 
 function read(relativePath) {
@@ -82,18 +87,18 @@ test('all article assets and local links resolve inside the repository', () => {
   }
 });
 
-test('twenty articles use twenty different subject-specific diagrams', () => {
+test('twenty-five articles use twenty-five different subject-specific diagrams', () => {
   const diagramPaths = articles.map((pagePath) => {
     const html = read(pagePath);
     const match = html.match(/<img[^>]+src="([^"]+\.svg)"/i);
     assert.ok(match, pagePath + ': diagram path missing');
     return match[1];
   });
-  assert.equal(new Set(diagramPaths).size, 20);
+  assert.equal(new Set(diagramPaths).size, 25);
 });
 
 test('each article has an evidence ledger with verified source locators', () => {
-  for (let index = 1; index <= 20; index += 1) {
+  for (let index = 1; index <= 25; index += 1) {
     const articleId = String(index).padStart(2, '0');
     const ledgerPath = 'articles/evidence-' + articleId + '.json';
     const ledger = JSON.parse(read(ledgerPath));
@@ -121,7 +126,7 @@ test('each article includes a meaningful interaction or tokenizer experiment', (
   }
 });
 
-test('legacy chapter entry points 01–20 redirect to the new article pages', () => {
+test('legacy chapter entry points 01–25 redirect to the new article pages', () => {
   const targets = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
@@ -143,6 +148,11 @@ test('legacy chapter entry points 01–20 redirect to the new article pages', ()
     'articles/18-albert-factorized-sharing.html',
     'articles/19-deberta-disentangled-attention.html',
     'articles/20-chinese-bert-whole-word-masking.html',
+    'articles/21-longformer-bigbird-sparse-attention.html',
+    'articles/22-simcse-contrastive-sentence-embeddings.html',
+    'articles/23-distilbert-tinybert-knowledge-distillation.html',
+    'articles/24-mobilebert-edge-inference.html',
+    'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html',
   ];
   targets.forEach((target, index) => {
     const html = read(String(index + 1).padStart(2, '0') + '.html');
@@ -199,5 +209,39 @@ test('new SVG diagrams include title, description and viewBox', () => {
     assert.match(svg, /<title id=/);
     assert.match(svg, /<desc id=/);
     assert.match(svg, /aria-labelledby=/);
+  }
+});
+
+
+test('new chapters 21–25 each have two distinct conceptual diagrams and two independent interactive demos', () => {
+  const pages = [
+    'articles/21-longformer-bigbird-sparse-attention.html',
+    'articles/22-simcse-contrastive-sentence-embeddings.html',
+    'articles/23-distilbert-tinybert-knowledge-distillation.html',
+    'articles/24-mobilebert-edge-inference.html',
+    'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html'
+  ];
+  for (const page of pages) {
+    const html = read(page);
+    const imagePaths = [...html.matchAll(/<img[^>]+src="([^"]+\.svg)"/g)].map(x => x[1]);
+    assert.equal(imagePaths.length, 2, page + ': exactly two explanatory images');
+    assert.equal(new Set(imagePaths).size, 2, page + ': duplicate diagrams');
+    for (const src of imagePaths) {
+      assert.ok(existsFrom(page, src), page + ': missing figure ' + src);
+      const svg = read(path.posix.join('assets/diagrams', path.basename(src)));
+      assert.match(svg, /<title id=/, page);
+      assert.match(svg, /<desc id=/, page);
+      assert.match(svg, /viewBox=/, page);
+    }
+    const demonstrations = [...html.matchAll(/<script type="application\/json" data-demo-states>([\s\S]*?)<\/script>/g)];
+    assert.equal(demonstrations.length, 2, page + ': expected two separate demos');
+    for (const [, json] of demonstrations) {
+      const states = JSON.parse(json);
+      assert.ok(Object.keys(states).length >= 3, page);
+      assert.equal(new Set(Object.values(states)).size, Object.values(states).length, page);
+    }
+    const equations = [...html.matchAll(/<math display="block"/g)];
+    assert.ok(equations.length >= 1, page + ': missing substantial MathML');
+    assert.match(html, /<section id="references"/);
   }
 });
