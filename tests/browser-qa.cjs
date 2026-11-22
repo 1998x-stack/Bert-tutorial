@@ -132,8 +132,8 @@ async function main() {
         const output = await page.locator('[data-wordpiece-output]').textContent();
         if (!output.includes('##ing')) throw new Error('WordPiece toy tokenizer did not segment playing');
       } else {
-        const demoOutput = page.locator('[data-demo-output]');
-        const buttons = page.locator('[data-demo-action]');
+        const demoOutput = page.locator('[data-demo]').first().locator('[data-demo-output]');
+        const buttons = page.locator('[data-demo]').first().locator('[data-demo-action]');
         const before = await demoOutput.textContent();
         await buttons.nth(1).click();
         const after = await demoOutput.textContent();
