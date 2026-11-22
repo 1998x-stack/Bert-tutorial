@@ -55,3 +55,12 @@
 - Editorial source policy: primary papers and official code are linked per article; evidence-11.json through evidence-15.json record source locators and verification notes.
 - Engineering: expand 28-chapter catalog with 15 article URLs; synchronized offline JSON snapshot, articles/index.html, README, article interactions and browser test list.
 - Validation: pending CI and browser checks for this branch. Do not claim deployment or QA success before inspecting run results.
+
+### 2026-11-22 — Olah-style deep dives 16–20 (XLNet / MPNet / ALBERT / DeBERTa / Chinese WWM)
+- Scope: replace legacy root chapters 16–20 with redirects to independently readable technical articles in articles/; preserve 21–28 legacy paths and existing links.
+- Scientific story: XLNet permutation and two-stream attention prevent target-content leakage; MPNet predicts conditionally with complete masked-position clues; ALBERT factorizes embeddings, shares layer weights and uses SOP; DeBERTa disentangles c2c/c2p/p2c with directed relative offsets; Chinese WWM aligns word segmentation with token-level MLM labels and distinguishes ERNIE, MacBERT and glyph/pinyin signals.
+- Evidence: original papers and official reference implementations linked with locators in evidence-16.json through evidence-20.json. All toy-demo scores and parameter counts labeled as calculations, not reproduced benchmarks. ALBERT Table 4 data explicitly scoped to the original table.
+- Information architecture: 28-chapter canonical courses.json kept synchronized with the file:// embedded index.html catalog; updated course homepage, 20-card article reading directory, README and compatibility redirects.
+- Technical artifacts: five standalone SVG diagrams with title/description, five offline deterministic demos, standard-library Python implementation examples and tests for prediction masks, parameter decomposition, relative offsets and whole-word label groups.
+- Validation policy: CI for Node, Python and Chromium at widths 1440/768/390/360 remains the release gate; do not claim success without workflow evidence. Verify GitHub Pages workflow after merging.
+- Rollback: revert the final squash merge to restore prior chapters and catalogue routes if a regression is detected.
