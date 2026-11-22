@@ -146,7 +146,7 @@ async function main() {
         for (let idx = 0; idx < 2; idx++) {
           const demo = demos.nth(idx);
           const before = await demo.locator('[data-demo-output]').textContent();
-          await demo.locator('[data-demo-action]').nth(1).click();
+          await demo.locator('[data-demo-action]').nth(idx === 0 ? 0 : 1).click();
           const after = await demo.locator('[data-demo-output]').textContent();
           if (before === after) throw new Error(articlePath + ': demo ' + idx + ' did not respond');
         }
