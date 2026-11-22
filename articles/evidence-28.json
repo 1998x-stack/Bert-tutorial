@@ -1,0 +1,55 @@
+{
+  "article_id": "28",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "BERT fine-tuning uses task-specific heads over pretrained bidirectional Encoder representations.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "§3, §4 downstream tasks",
+      "status": "verified",
+      "verification_note": "Single-label intent classification uses sequence-level logits; unlike NER token-level labels."
+    },
+    {
+      "id": "c02",
+      "claim": "Standard sequence classification uses tokenizer + model, logits and supervised loss.",
+      "source_url": "https://huggingface.co/docs/transformers/tasks/sequence_classification",
+      "locator": "Sequence classification task guide",
+      "status": "verified",
+      "verification_note": "Implementation API version must be pinned and tokenizer paired with checkpoint."
+    },
+    {
+      "id": "c03",
+      "claim": "PyTorch random seed controls are not full cross-device determinism guarantees.",
+      "source_url": "https://docs.pytorch.org/docs/stable/notes/randomness.html",
+      "locator": "Reproducibility note",
+      "status": "verified",
+      "verification_note": "Device, backend, algorithm and dependency versions all matter."
+    },
+    {
+      "id": "c04",
+      "claim": "Macro F1 is the unweighted mean of per-class F1, with precision and recall definitions.",
+      "source_url": "https://scikit-learn.org/stable/modules/generated/sklearn.metrics.f1_score.html",
+      "locator": "f1_score averaging='macro'",
+      "status": "verified",
+      "verification_note": "Zero-division convention must be stated for absent class predictions."
+    },
+    {
+      "id": "c05",
+      "claim": "BERT paper downstream evaluation separates classification and token-level or span tasks.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "§4, task heads",
+      "status": "verified",
+      "verification_note": "Intent classifier tutorial does not assert full NER/QA reproduction."
+    },
+    {
+      "id": "c06",
+      "claim": "The chapter's fabricated Chinese samples serve as teaching data and do not support claims about production NLU accuracy.",
+      "source_url": "https://huggingface.co/docs/transformers/tasks/sequence_classification",
+      "locator": "Quality methodology; evaluation guidance",
+      "status": "verified",
+      "verification_note": "Source scope explicitly labelled illustrative; no numeric performance claim."
+    }
+  ]
+}

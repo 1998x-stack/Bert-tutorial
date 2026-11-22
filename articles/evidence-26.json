@@ -1,0 +1,55 @@
+{
+  "article_id": "26",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "ModernBERT incorporates RoPE, GeGLU, alternating local-global attention and unpadding.",
+      "source_url": "https://arxiv.org/abs/2412.13663",
+      "locator": "Abstract; architecture and systems sections",
+      "status": "verified",
+      "verification_note": "Architectural and systems changes are joint, not independent controlled effect claims."
+    },
+    {
+      "id": "c02",
+      "claim": "ModernBERT released model supports up to 8192 tokens in its native context configuration.",
+      "source_url": "https://huggingface.co/docs/transformers/model_doc/modernbert",
+      "locator": "Model introduction, configuration",
+      "status": "verified",
+      "verification_note": "Token length depends on checkpoint tokenizer and max sequence config."
+    },
+    {
+      "id": "c03",
+      "claim": "Alternating attention commonly has a global layer every 3 layers and local window around 128 tokens in reference recipe.",
+      "source_url": "https://huggingface.co/blog/modernbert",
+      "locator": "Global and Local Attention section",
+      "status": "verified",
+      "verification_note": "Pattern/size version-specific; tutorial 8-token demo is not the production window."
+    },
+    {
+      "id": "c04",
+      "claim": "ModernBERT uses GeGLU as a gated feed-forward layer rather than standard BERT GELU-only FFN.",
+      "source_url": "https://huggingface.co/blog/modernbert",
+      "locator": "Architectural improvements",
+      "status": "verified",
+      "verification_note": "Width and parameters differ from conventional FFN; equations shown conceptually."
+    },
+    {
+      "id": "c05",
+      "claim": "RoPE rotates query and key vectors according to positions and modifies their dot product.",
+      "source_url": "https://arxiv.org/abs/2104.09864",
+      "locator": "RoPE architecture discussion",
+      "status": "verified",
+      "verification_note": "Not directly rotating token IDs or guaranteeing unlimited extrapolation."
+    },
+    {
+      "id": "c06",
+      "claim": "Unpadding and packing reduce padding waste but require preserving sample boundaries.",
+      "source_url": "https://huggingface.co/blog/modernbert",
+      "locator": "Unpadding and Sequence Packing section",
+      "status": "verified",
+      "verification_note": "Attention masks must prevent inter-example leakage in packed batches."
+    }
+  ]
+}
