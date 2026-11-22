@@ -1,0 +1,55 @@
+{
+  "article_id": "13",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Google multilingual BERT cased checkpoint covers 104 languages and uses BERT-Base shape.",
+      "source_url": "https://github.com/google-research/bert/blob/master/multilingual.md",
+      "locator": "Checkpoint list, 104 languages",
+      "status": "verified",
+      "verification_note": "Official repository README for the original checkpoint."
+    },
+    {
+      "id": "c02",
+      "claim": "Original mBERT uses exponentially smoothed multilingual Wikipedia sampling with S=0.7.",
+      "source_url": "https://github.com/google-research/bert/blob/master/multilingual.md",
+      "locator": "Data source and sampling paragraphs",
+      "status": "verified",
+      "verification_note": "Formula is a mathematical restatement; 100:1 example is illustrative."
+    },
+    {
+      "id": "c03",
+      "claim": "XLM-R is trained on filtered CommonCrawl across 100 languages and more than two terabytes of text.",
+      "source_url": "https://aclanthology.org/2020.acl-main.747/",
+      "locator": "Abstract; §2.1",
+      "status": "verified",
+      "verification_note": "Source says text bytes, not trillions of tokenizer tokens."
+    },
+    {
+      "id": "c04",
+      "claim": "XLM-R paper reports gains of 14.6 average accuracy on XNLI, 13 average F1 on MLQA and 2.4 F1 on NER compared with mBERT.",
+      "source_url": "https://aclanthology.org/2020.acl-main.747/",
+      "locator": "Abstract; evaluation tables",
+      "status": "verified",
+      "verification_note": "Reported gains belong to paper comparison under its stated evaluation."
+    },
+    {
+      "id": "c05",
+      "claim": "XNLI is a cross-lingual NLI benchmark with translated evaluation datasets.",
+      "source_url": "https://arxiv.org/abs/1809.05053",
+      "locator": "Abstract; §2 Dataset",
+      "status": "verified",
+      "verification_note": "Zero-shot versus translated evaluation protocols must be distinguished."
+    },
+    {
+      "id": "c06",
+      "claim": "Official XLM-R Base checkpoint uses its own SentencePiece tokenizer and should not share token IDs with a BERT checkpoint.",
+      "source_url": "https://huggingface.co/FacebookAI/xlm-roberta-base",
+      "locator": "Model card and tokenizer configuration",
+      "status": "verified",
+      "verification_note": "Checkpoint/tokenizer pairing is mandatory."
+    }
+  ]
+}

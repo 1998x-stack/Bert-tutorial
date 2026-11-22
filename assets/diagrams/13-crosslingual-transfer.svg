@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 390" role="img" aria-labelledby="title desc">
+<title id="title">多语言零样本迁移的数据流</title><desc id="desc">左侧英语有标签样本训练共享 Encoder 与 NLI 分类头，右侧法语和中文原文通过相同的模型直接预测；目标语言标签仅在最终评估时使用，不参与训练，底部标注对齐和域偏移风险。</desc>
+<rect width="960" height="390" rx="20" fill="#f5f7f2"/><g font-family="system-ui,sans-serif">
+<text x="32" y="42" font-size="21" fill="#203035" font-weight="700">Zero-shot：源语言训练，目标语言直接推理</text>
+<rect x="25" y="87" width="246" height="116" rx="14" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/>
+<text x="148" y="123" font-size="17" font-weight="700" fill="#147f80" text-anchor="middle">English source labels</text><text x="148" y="149" font-size="14" fill="#203035" text-anchor="middle">premise + hypothesis</text><text x="148" y="175" font-size="13" fill="#53676d" text-anchor="middle">entailment / neutral / contradiction</text>
+<rect x="350" y="87" width="255" height="116" rx="14" fill="#203035"/>
+<text x="478" y="126" font-size="18" font-weight="700" fill="#fff" text-anchor="middle">Shared Encoder</text><text x="478" y="155" font-size="14" fill="#dce8e3" text-anchor="middle">+ same classification head</text><text x="478" y="179" font-size="13" fill="#dce8e3" text-anchor="middle">fine-tune on English only</text>
+<path d="M271 145 H350" stroke="#147f80" stroke-width="3"/><path d="M340 137 L353 145 L340 153" stroke="#147f80" fill="none" stroke-width="3"/>
+<rect x="687" y="77" width="244" height="133" rx="14" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/>
+<text x="809" y="109" font-size="17" font-weight="700" fill="#7461ba" text-anchor="middle">Target language test</text><text x="809" y="138" font-size="15" fill="#203035" text-anchor="middle">Français / 中文 / …</text><text x="809" y="164" font-size="13" fill="#53676d" text-anchor="middle">No target-label training</text><text x="809" y="186" font-size="13" fill="#53676d" text-anchor="middle">report per-language accuracy</text>
+<path d="M605 145 H687" stroke="#7461ba" stroke-width="3"/><path d="M677 137 L690 145 L677 153" stroke="#7461ba" stroke-width="3" fill="none"/>
+<rect x="65" y="253" width="830" height="91" rx="16" fill="#fff" stroke="#dce5df"/>
+<text x="480" y="283" text-anchor="middle" fill="#203035" font-size="16" font-weight="700">共享参数不保证对齐：脚本覆盖 / 数据采样 / 领域 / 句长都会改变错误率</text>
+<text x="480" y="312" text-anchor="middle" fill="#53676d" font-size="13">XNLI zero-shot、translate-train、translate-test 是不同协议；先写清楚目标语言标签是否参与模型选择</text>
+</g></svg>

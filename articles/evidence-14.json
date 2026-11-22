@@ -1,0 +1,63 @@
+{
+  "article_id": "14",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "BERT performs downstream fine-tuning by adding task-specific output layers.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "§3.2; §4",
+      "status": "verified",
+      "verification_note": "Task-head dependence explained."
+    },
+    {
+      "id": "c02",
+      "claim": "RoBERTa papers use distinct development and test leaderboard configurations, including model ensembles.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§4.3; Tables 4–6",
+      "status": "verified",
+      "verification_note": "Disallows mixing dev/single and test/ensemble scores."
+    },
+    {
+      "id": "c03",
+      "claim": "ELECTRA introduces replaced-token detection with generator-discriminator pretraining and downstream discriminator reuse.",
+      "source_url": "https://arxiv.org/abs/2003.10555",
+      "locator": "§2–4",
+      "status": "verified",
+      "verification_note": "Model family comparison constrained to mechanism."
+    },
+    {
+      "id": "c04",
+      "claim": "ALBERT reduces parameter storage with factorized embedding parameterization and cross-layer parameter sharing.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.1",
+      "status": "verified",
+      "verification_note": "Parameter count does not directly equal FLOPs."
+    },
+    {
+      "id": "c05",
+      "claim": "DeBERTa disentangles content and relative position representations.",
+      "source_url": "https://arxiv.org/abs/2006.03654",
+      "locator": "§3.1",
+      "status": "verified",
+      "verification_note": "Subsequent version differences not flattened into single numbers."
+    },
+    {
+      "id": "c06",
+      "claim": "DistilBERT uses knowledge distillation for a smaller student model.",
+      "source_url": "https://arxiv.org/abs/1910.01108",
+      "locator": "Abstract; §2",
+      "status": "verified",
+      "verification_note": "No untested latency benchmark is imported."
+    },
+    {
+      "id": "c07",
+      "claim": "ModernBERT extends native context to 8192 tokens under its reported recipe.",
+      "source_url": "https://arxiv.org/abs/2412.13663",
+      "locator": "Abstract; §3",
+      "status": "verified",
+      "verification_note": "Long context supported but measured runtime depends on task/hardware."
+    }
+  ]
+}

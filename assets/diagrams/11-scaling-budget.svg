@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 410" role="img" aria-labelledby="title desc">
+<title id="title">Encoder 的模型参数、训练 token 与计算预算</title><desc id="desc">上方三种资源轴分别是 N 参数、D 已处理 token、C FLOPs；下方展示 GB 语料、词数和 tokenizer token 不是同一单位，Chinchilla 的 20 比 1 结论来自 Decoder-only 研究。</desc>
+<rect width="960" height="410" rx="20" fill="#f5f7f2"/><g font-family="system-ui,sans-serif">
+<text x="32" y="42" fill="#203035" font-size="21" font-weight="700">训练规模：先把三个轴分开</text>
+<rect x="30" y="70" width="275" height="122" rx="15" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/>
+<text x="48" y="104" fill="#147f80" font-size="21" font-weight="700">N · 参数容量</text><text x="48" y="136" fill="#203035" font-size="15">层数 × 隐藏维度 × 结构</text><text x="48" y="165" fill="#53676d" font-size="13">影响权重存储与推理成本</text>
+<rect x="343" y="70" width="275" height="122" rx="15" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/>
+<text x="361" y="104" fill="#7461ba" font-size="21" font-weight="700">D · 训练 token</text><text x="361" y="136" fill="#203035" font-size="15">步数 × batch × 平均长度</text><text x="361" y="165" fill="#53676d" font-size="13">“处理次数”不等于独特样本数</text>
+<rect x="656" y="70" width="275" height="122" rx="15" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/>
+<text x="674" y="104" fill="#c96c4c" font-size="21" font-weight="700">C · 训练计算</text><text x="674" y="136" fill="#203035" font-size="15">FLOPs / GPU-hours / tokens/s</text><text x="674" y="165" fill="#53676d" font-size="13">还受长度、kernel 和硬件影响</text>
+<path d="M167 192 V233 M480 192 V233 M794 192 V233 M167 233 H794" stroke="#94a8a1" stroke-width="2" fill="none"/>
+<path d="M480 233 V258" stroke="#147f80" stroke-width="2"/><path d="M473 250 L480 261 L487 250" fill="none" stroke="#147f80" stroke-width="2"/>
+<rect x="125" y="265" width="710" height="102" rx="14" fill="#fff" stroke="#dce5df" stroke-width="2"/>
+<text x="480" y="292" text-anchor="middle" font-size="16" fill="#203035" font-weight="700">公平比较：固定任务、数据、预算，测量下游质量 + 实际计算</text>
+<text x="480" y="320" text-anchor="middle" font-size="14" fill="#53676d">文本 GB ≠ 词数 ≠ 分词 token ≠ 训练 token 次数</text>
+<text x="480" y="345" text-anchor="middle" font-size="13" fill="#c96c4c">“20 tokens / parameter” 来自特定自回归 LM 的 compute-optimal 实验，不是 Encoder 定律</text>
+</g></svg>
