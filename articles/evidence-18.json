@@ -1,0 +1,55 @@
+{
+  "article_id": "18",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "ALBERT factorizes embeddings from V×H to V×E + E×H with E smaller than H.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.1 Factorized embedding parameterization",
+      "status": "verified",
+      "verification_note": "23,040,000 versus 3,938,304 example is an independently derived matrix count using V=30000 H=768 E=128, not full-model parameter count."
+    },
+    {
+      "id": "c02",
+      "claim": "ALBERT defaults to sharing all Transformer parameters across encoder layers.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.1 Cross-layer parameter sharing",
+      "status": "verified",
+      "verification_note": "Paper also considers partial sharing alternatives."
+    },
+    {
+      "id": "c03",
+      "claim": "Cross-layer weight sharing does not remove repeated layer computation.",
+      "source_url": "https://huggingface.co/docs/transformers/model_doc/albert",
+      "locator": "Overview; repeating layers and computational cost",
+      "status": "verified",
+      "verification_note": "Parameter memory and FLOPs are distinct resources."
+    },
+    {
+      "id": "c04",
+      "claim": "Sentence Order Prediction uses consecutive document segments as positive examples and swaps those segments for negatives.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.1 Inter-sentence coherence loss",
+      "status": "verified",
+      "verification_note": "Contrasts BERT NSP randomly sourced different-document negative segments."
+    },
+    {
+      "id": "c05",
+      "claim": "Original paper Table 1 lists BERT-base 108M, ALBERT-base 12M, BERT-large 334M, ALBERT-large 18M.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§3.2 Table 1",
+      "status": "verified",
+      "verification_note": "Numbers match specified configurations, not broad model family or later checkpoint counts."
+    },
+    {
+      "id": "c06",
+      "claim": "ALBERT-large training throughput is approximately 1.7 times BERT-large under compared TPU setup.",
+      "source_url": "https://arxiv.org/abs/1909.11942",
+      "locator": "§4.3 throughput comparison",
+      "status": "verified",
+      "verification_note": "Not generalized to inference throughput or arbitrary hardware."
+    }
+  ]
+}
