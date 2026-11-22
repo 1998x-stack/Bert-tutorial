@@ -375,131 +375,131 @@
     },
     {
       "num": "21",
-      "title": "长文本 Transformer：Longformer 与 BigBird",
+      "title": "Longformer 与 BigBird：长文档稀疏注意力",
       "topics": [
-        "滑动窗口",
-        "稀疏注意力",
-        "全局 token",
-        "长文档"
+        "Longformer",
+        "BigBird",
+        "Local / Global / Random",
+        "Sparse Complexity"
       ],
-      "file": "21.html",
+      "file": "articles/21-longformer-bigbird-sparse-attention.html",
       "stageId": "chinese-longtext",
       "stage": "中文与长文本",
       "level": "高级",
       "duration": 45,
-      "summary": "分析局部窗口、全局连接和随机连接如何降低长序列注意力成本。"
+      "summary": "用稀疏 QK 可见矩阵推导局部、全局与随机连接，以及何种条件下 attention 配对近似线性增长。"
     },
     {
       "num": "22",
-      "title": "SimCSE 对比学习句向量",
+      "title": "SimCSE：Dropout 对比学习与句向量",
       "topics": [
-        "Dropout",
+        "SimCSE",
         "InfoNCE",
-        "正负样本",
-        "向量检索"
+        "NLI Hard Negatives",
+        "Sentence Pooling"
       ],
-      "file": "22.html",
+      "file": "articles/22-simcse-contrastive-sentence-embeddings.html",
       "stageId": "chinese-longtext",
       "stage": "中文与长文本",
       "level": "进阶",
       "duration": 40,
-      "summary": "从对比损失和 batch 内负样本出发，理解句向量的训练与评测。"
+      "summary": "从同一句两次 dropout、InfoNCE 词外相似度、监督 NLI 到 masked mean pooling 和 STS/检索评估。"
     },
     {
       "num": "23",
-      "title": "知识蒸馏：DistilBERT 与 TinyBERT",
+      "title": "DistilBERT 与 TinyBERT：从教师到学生",
       "topics": [
-        "Teacher Student",
-        "Logits",
-        "层间蒸馏",
-        "温度"
+        "Knowledge Distillation",
+        "Soft Logits",
+        "Layer Alignment",
+        "TinyBERT"
       ],
-      "file": "23.html",
+      "file": "articles/23-distilbert-tinybert-distillation.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "进阶",
       "duration": 45,
-      "summary": "比较 logits、隐藏层和注意力蒸馏，理解小模型如何继承教师能力。"
+      "summary": "核对 DistilBERT 三项蒸馏损失、TinyBERT 两阶段内部表征蒸馏、层对齐和部署指标。"
     },
     {
       "num": "24",
-      "title": "MobileBERT 与端侧部署",
+      "title": "MobileBERT：瓶颈架构与手机端侧推理",
       "topics": [
-        "瓶颈结构",
-        "INT8",
-        "ONNX",
-        "CPU 推理"
+        "MobileBERT",
+        "Inverted Bottleneck",
+        "ONNX Runtime",
+        "INT8"
       ],
-      "file": "24.html",
+      "file": "articles/24-mobilebert-on-device-deployment.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
       "duration": 45,
-      "summary": "从模型结构、量化、图优化到移动端延迟和内存预算梳理部署流程。"
+      "summary": "从特制 Teacher、深窄 Student 到 ONNX、INT8、CPU 整链路 p95 和峰值内存验收。"
     },
     {
       "num": "25",
-      "title": "参数高效微调：LoRA、AdaLoRA 与 BitFit",
+      "title": "LoRA、AdaLoRA 与 BitFit 参数高效微调",
       "topics": [
         "LoRA",
         "AdaLoRA",
         "BitFit",
-        "可训练参数"
+        "Trainable Weights"
       ],
-      "file": "25.html",
+      "file": "articles/25-lora-adalora-bitfit.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "进阶",
       "duration": 45,
-      "summary": "比较低秩适配、偏置微调与参数预算下的训练和部署权衡。"
+      "summary": "推导低秩权重增量 αBA/r、AdaLoRA 非均匀 rank 预算与 BitFit bias 微调，核算训练/推理成本。"
     },
     {
       "num": "26",
-      "title": "ModernBERT 与现代编码器设计",
+      "title": "ModernBERT：RoPE、GeGLU 与交替注意力",
       "topics": [
-        "长上下文",
-        "位置编码",
-        "Gated FFN",
-        "吞吐"
+        "ModernBERT",
+        "RoPE",
+        "GeGLU",
+        "Alternating Attention"
       ],
-      "file": "26.html",
+      "file": "articles/26-modernbert-modern-encoder.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
       "duration": 45,
-      "summary": "从现代编码器的结构、训练数据和长上下文能力理解 BERT 家族的演进。"
+      "summary": "解释交替局部/全局层、RoPE、GeGLU、unpadding 和 8192-token Encoder 的具体边界。"
     },
     {
       "num": "27",
-      "title": "模型压缩、量化与端侧推理",
+      "title": "模型压缩：量化、剪枝与端侧质量门禁",
       "topics": [
-        "量化",
-        "剪枝",
-        "蒸馏",
-        "延迟预算"
+        "INT8 / PTQ / QAT",
+        "Pruning",
+        "Distillation",
+        "p95 / Memory"
       ],
-      "file": "27.html",
+      "file": "articles/27-model-compression-quantization.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
       "duration": 45,
-      "summary": "比较压缩策略对模型大小、吞吐、精度与端侧资源的影响。"
+      "summary": "分离权重存储、激活、稀疏算子和实际延迟，以任务质量与 p95/peak RSS 统一验收。"
     },
     {
       "num": "28",
-      "title": "端到端中文 NLU 实战项目",
+      "title": "综合项目：端到端中文 NLU 训练、评估与部署",
       "topics": [
-        "数据流水线",
-        "微调",
-        "误差分析",
-        "部署"
+        "Chinese Intent Classification",
+        "Data Leakage",
+        "Macro F1",
+        "Reproducible Pipeline"
       ],
-      "file": "28.html",
+      "file": "articles/28-end-to-end-chinese-nlu-project.html",
       "stageId": "capstone",
       "stage": "综合项目",
       "level": "高级",
       "duration": 60,
-      "summary": "把数据准备、模型微调、评估、误差分析与部署串成可复现项目。"
+      "summary": "从 JSONL 标签和 group 切分出发，运行标准库基线，选用 BERT 微调，并建立 Macro F1、误差分析和服务导出合同。"
     }
   ]
 }

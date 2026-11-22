@@ -102,6 +102,14 @@ async function main() {
       'articles/18-albert-factorized-sharing.html',
       'articles/19-deberta-disentangled-attention.html',
       'articles/20-chinese-bert-whole-word-masking.html',
+      'articles/21-longformer-bigbird-sparse-attention.html',
+      'articles/22-simcse-contrastive-sentence-embeddings.html',
+      'articles/23-distilbert-tinybert-distillation.html',
+      'articles/24-mobilebert-on-device-deployment.html',
+      'articles/25-lora-adalora-bitfit.html',
+      'articles/26-modernbert-modern-encoder.html',
+      'articles/27-model-compression-quantization.html',
+      'articles/28-end-to-end-chinese-nlu-project.html',
     ];
     for (const articlePath of articlePages) {
       await page.goto(baseUrl + '/' + articlePath, { waitUntil: 'networkidle' });
@@ -159,7 +167,7 @@ async function main() {
     if (offlineCount !== 28) throw new Error('file:// homepage rendered ' + offlineCount + ' chapters, expected 28');
 
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, twenty article interactions, MathML, and 1440/768/390/360px layouts.');
+    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, twenty-eight article interactions, MathML, and 1440/768/390/360px layouts.');
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

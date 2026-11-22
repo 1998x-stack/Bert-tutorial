@@ -64,3 +64,11 @@
 - Technical artifacts: five standalone SVG diagrams with title/description, five offline deterministic demos, standard-library Python implementation examples and tests for prediction masks, parameter decomposition, relative offsets and whole-word label groups.
 - Validation policy: CI for Node, Python and Chromium at widths 1440/768/390/360 remains the release gate; do not claim success without workflow evidence. Verify GitHub Pages workflow after merging.
 - Rollback: revert the final squash merge to restore prior chapters and catalogue routes if a regression is detected.
+
+### 2026-11-22 — Complete BERT course, chapters 21–28
+- Working branch: olah-style/bert-finish-21-28-20261122 from c33616e59a2c6f37efe56169064c9f8203fec83f.
+- Articles independently expanded: 21 Longformer/BigBird sparse local/global/random attention; 22 SimCSE InfoNCE/dropout and NLI negatives; 23 DistilBERT/TinyBERT soft logits and intermediate distillation; 24 MobileBERT teacher/bottleneck and deployment; 25 LoRA/AdaLoRA/BitFit trainable parameter budgets; 26 ModernBERT RoPE/GeGLU/alternating attention; 27 PTQ/QAT/pruning/quality gate; 28 end-to-end Chinese NLU data/train/evaluate/export.
+- Each article has its own original SVG, offline interactive states, native accessible MathML, independent narrative, scientific limitations and primary-source evidence ledger with locators.
+- Maintain 28 canonical course entries, 28-card articles homepage, file:// offline JSON parity, legacy 01–28 URLs, README and browser/Node/Python test counts.
+- Executable capstone: standard-library character n-gram baseline with synthetic 60 utterances, group/ID/text leakage gates, Macro F1 and artifact export. Optional BERT script requires pre-existing local checkpoint and separately installed dependencies; not run by default CI. No benchmark performance claimed.
+- Release status: pending branch CI, PR merge and Pages verification. Do not mark passed until actual actions complete.

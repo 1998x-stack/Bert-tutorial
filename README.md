@@ -1,11 +1,11 @@
 # BERT 模型系列教程
 
-一套从语言表示学习、Transformer Encoder、BERT 原始论文到模型家族演进与中文 NLU 工程实践的中文课程。课程包含 **28 个章节**，其中前二十篇已升级为可独立阅读的专题精读文章。
+一套从语言表示学习、Transformer Encoder、BERT 原始论文到模型家族演进与中文 NLU 工程实践的中文课程。课程包含 **28 个章节**，其中全部二十八篇已升级为可独立阅读的专题精读文章。
 
 ## 在线入口
 
 - **课程首页**：https://1998x-stack.github.io/Bert-tutorial/
-- **二十篇专题精读**：https://1998x-stack.github.io/Bert-tutorial/articles/
+- **二十八篇专题精读**：https://1998x-stack.github.io/Bert-tutorial/articles/
 - [01 · 从词向量到上下文预训练](articles/01-pretraining-evolution.html)
 - [02 · Transformer Encoder 计算路径](articles/02-transformer-encoder.html)
 - [03 · BERT 预训练与 MLM](articles/03-bert-pretraining.html)
@@ -27,6 +27,15 @@
 - [19 · DeBERTa：解耦相对位置注意力](articles/19-deberta-disentangled-attention.html)
 - [20 · 中文 BERT：全词掩码与中文模型变体](articles/20-chinese-bert-whole-word-masking.html)
 
+- [21 · Longformer 与 BigBird：长文档稀疏注意力](articles/21-longformer-bigbird-sparse-attention.html)
+- [22 · SimCSE：Dropout 对比学习与句向量](articles/22-simcse-contrastive-sentence-embeddings.html)
+- [23 · DistilBERT 与 TinyBERT：从教师到学生](articles/23-distilbert-tinybert-distillation.html)
+- [24 · MobileBERT：瓶颈架构与手机端侧推理](articles/24-mobilebert-on-device-deployment.html)
+- [25 · LoRA、AdaLoRA 与 BitFit 参数高效微调](articles/25-lora-adalora-bitfit.html)
+- [26 · ModernBERT：RoPE、GeGLU 与交替注意力](articles/26-modernbert-modern-encoder.html)
+- [27 · 模型压缩：量化、剪枝与端侧质量门禁](articles/27-model-compression-quantization.html)
+- [28 · 综合项目：端到端中文 NLU 训练、评估与部署](articles/28-end-to-end-chinese-nlu-project.html)
+
 ## 学习路线
 
 | 阶段 | 章节 | 学习目标 |
@@ -45,18 +54,18 @@
     .
     ├── index.html                       # 课程门户、学习路线与离线目录
     ├── courses.json                     # 28 章课程元数据（唯一目录源）
-    ├── 01.html ... 20.html              # 旧链接兼容页，重定向到专题文章
-    ├── 21.html ... 28.html              # 既有课程章节
+    ├── 01.html ... 28.html              # 旧链接兼容页，重定向到专题文章
+    ├── 21.html ... 28.html              # 旧链接兼容页
     ├── articles/
-    │   ├── index.html                   # 二十篇专题入口
-    │   ├── 01-*.html ... 20-*.html      # 二十篇独立精读文章
-    │   ├── evidence-01.json ... 20.json # 逐篇事实与来源账本
+    │   ├── index.html                   # 二十八篇专题入口
+    │   ├── 01-*.html ... 28-*.html      # 二十八篇独立精读文章
+    │   ├── evidence-01.json ... 28.json # 逐篇事实与来源账本
     │   └── article.css                  # 旧样式路径兼容桥
     ├── assets/
     │   ├── css/course.css               # 首页与专题共用设计系统
     │   ├── js/site.js                   # 目录、进度与专题交互
-    │   └── diagrams/                    # 二十篇专题专属 SVG 图解
-    ├── examples/                        # 标准库教学参考实现（含 Encoder 预算、采样、RTD 标签及模型变体机制）
+    │   └── diagrams/                    # 二十八篇专题专属 SVG 图解
+    ├── examples/                        # 标准库教学参考实现（含训练预算、RTD、模型变体与中文 NLU 教学基线）
     ├── pdfs/                            # 论文原文
     ├── tests/                           # Node、Python 与 Playwright 验收
     ├── .github/workflows/quality.yml    # 自动化质量门禁
@@ -81,7 +90,7 @@
     npx playwright install chromium
     npm run test:browser
 
-GitHub Actions 在 push、pull request 和手动触发时运行目录测试、文章结构测试、Python 单元测试，以及 HTTP / file:// 浏览器检查。浏览器测试覆盖首页搜索与阶段筛选、进度交互、二十篇专题交互、MathML 渲染和 1440 / 768 / 390 / 360 px 布局；截图作为 workflow artifact 保存。是否通过以实际 workflow run 为准。
+GitHub Actions 在 push、pull request 和手动触发时运行目录测试、文章结构测试、Python 单元测试，以及 HTTP / file:// 浏览器检查。浏览器测试覆盖首页搜索与阶段筛选、进度交互、二十八篇专题交互、MathML 渲染和 1440 / 768 / 390 / 360 px 布局；截图作为 workflow artifact 保存。是否通过以实际 workflow run 为准。
 
 ## 内容与事实标准
 
@@ -95,8 +104,12 @@ GitHub Actions 在 push、pull request 和手动触发时运行目录测试、�
 
 ## 兼容与迁移
 
-根目录的 01.html–20.html 保留为兼容入口，自动转向升级后的 articles/ 专题页面。第 21–28 章和论文 PDF 暂时保留原路径，避免一次性移动造成旧链接失效；后续章节迁移沿用相同的独立文章标准。
+根目录的 01.html–28.html 保留为兼容入口，自动转向升级后的 articles/ 专题页面。论文 PDF 保留原路径，避免一次性移动造成旧链接失效；后续章节迁移沿用相同的独立文章标准。
 
 ## 贡献
 
 欢迎提交术语修正、公式勘误、原文定位、可复现实验和浏览器兼容性问题。涉及论文数字的修改，请附模型配置、数据集版本、指标、切分条件和原始表格/章节定位。
+
+## 完整中文 NLU 项目
+
+第 28 章配有 [可复现中文 NLU 教学项目](examples/chinese_nlu_capstone/README.md)：60 条人工合成输入样本、标准库字符 n-gram 基线、分组防泄漏检查、Macro F1/混淆矩阵、可选本地 checkpoint 的 BERT 微调脚本。**教学语料和自动化单测不构成真实模型 benchmark**；可选 PyTorch/Transformers 微调需要另外准备兼容权重与依赖。
