@@ -102,6 +102,11 @@ async function main() {
       'articles/18-albert-factorized-sharing.html',
       'articles/19-deberta-disentangled-attention.html',
       'articles/20-chinese-bert-whole-word-masking.html',
+      'articles/21-longformer-bigbird-sparse-attention.html',
+      'articles/22-simcse-contrastive-sentence-embeddings.html',
+      'articles/23-distilbert-tinybert-knowledge-distillation.html',
+      'articles/24-mobilebert-edge-inference.html',
+      'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html',
     ];
     for (const articlePath of articlePages) {
       await page.goto(baseUrl + '/' + articlePath, { waitUntil: 'networkidle' });
@@ -127,12 +132,30 @@ async function main() {
         const output = await page.locator('[data-wordpiece-output]').textContent();
         if (!output.includes('##ing')) throw new Error('WordPiece toy tokenizer did not segment playing');
       } else {
-        const demoOutput = page.locator('[data-demo-output]');
-        const buttons = page.locator('[data-demo-action]');
+        const demoOutput = page.locator('[data-demo]').first().locator('[data-demo-output]');
+        const buttons = page.locator('[data-demo]').first().locator('[data-demo-action]');
         const before = await demoOutput.textContent();
         await buttons.nth(1).click();
         const after = await demoOutput.textContent();
         if (before === after) throw new Error(articlePath + ': demo interaction did not change output');
+      }
+
+      if (articlePages.indexOf(articlePath) >= 20) {
+        const demos = page.locator('[data-demo]');
+        if (await demos.count() !== 2) throw new Error(articlePath + ': expected two demonstrations');
+        for (let idx = 0; idx < 2; idx++) {
+          const demo = demos.nth(idx);
+          const before = await demo.locator('[data-demo-output]').textContent();
+          await demo.locator('[data-demo-action]').nth(idx === 0 ? 0 : 1).click();
+          const after = await demo.locator('[data-demo-output]').textContent();
+          if (before === after) throw new Error(articlePath + ': demo ' + idx + ' did not respond');
+        }
+        if (await page.locator('.article-body figure img').count() < 2) {
+          throw new Error(articlePath + ': second illustration missing');
+        }
+        await page.locator('[data-demo-action]').first().focus();
+        const focusTag = await page.evaluate(() => document.activeElement?.tagName);
+        if (focusTag !== 'BUTTON') throw new Error(articlePath + ': button cannot receive focus');
       }
 
       for (const width of [1440, 768, 390, 360]) {
@@ -159,7 +182,7 @@ async function main() {
     if (offlineCount !== 28) throw new Error('file:// homepage rendered ' + offlineCount + ' chapters, expected 28');
 
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, twenty article interactions, MathML, and 1440/768/390/360px layouts.');
+    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, twenty-five article interactions, MathML, and 1440/768/390/360px layouts.');
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

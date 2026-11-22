@@ -1,0 +1,55 @@
+{
+  "article_id": "22",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Unsupervised SimCSE uses independently sampled standard dropout as the sole augmentation for a positive sentence pair",
+      "source_url": "https://aclanthology.org/2021.emnlp-main.552/",
+      "locator": "§3.1; Figure 1a",
+      "status": "verified",
+      "verification_note": "Same text, two encoder passes and distinct dropout masks."
+    },
+    {
+      "id": "c02",
+      "claim": "Supervised SimCSE uses NLI entailment as positives and contradiction as hard negatives",
+      "source_url": "https://aclanthology.org/2021.emnlp-main.552/",
+      "locator": "§3.2; Figure 1b",
+      "status": "verified",
+      "verification_note": "Neutral is not universally treated as contradiction."
+    },
+    {
+      "id": "c03",
+      "claim": "Batch contrastive softmax uses positives and in-batch negatives with a temperature parameter",
+      "source_url": "https://arxiv.org/abs/2104.08821",
+      "locator": "§3.1 Eq. 1; §3.2 Eq. 2",
+      "status": "verified",
+      "verification_note": "Single-direction concept equation; real pipeline may differ in batch organization."
+    },
+    {
+      "id": "c04",
+      "claim": "Unsupervised BERT base and supervised BERT base reported 76.3 and 81.6 averaged STS Spearman scores",
+      "source_url": "https://aclanthology.org/2021.emnlp-main.552/",
+      "locator": "Abstract; §4 STS evaluation",
+      "status": "verified",
+      "verification_note": "These are mean Spearman correlation scores, not accuracy."
+    },
+    {
+      "id": "c05",
+      "claim": "Sentence embedding alignment and uniformity are geometric analysis concepts",
+      "source_url": "https://arxiv.org/abs/1908.10084",
+      "locator": "§2–3 alignment and uniformity",
+      "status": "verified",
+      "verification_note": "Two-dimensional diagram is independent toy visualization."
+    },
+    {
+      "id": "c06",
+      "claim": "Official SimCSE implementation offers unsup/sup variants and pooling choices",
+      "source_url": "https://github.com/princeton-nlp/SimCSE",
+      "locator": "README; evaluation.py and model implementations",
+      "status": "verified",
+      "verification_note": "Pooling/head handling depends on checkpoint and task."
+    }
+  ]
+}

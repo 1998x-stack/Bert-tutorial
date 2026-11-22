@@ -1,0 +1,55 @@
+{
+  "article_id": "21",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Longformer combines local/sliding and task-motivated global attention",
+      "source_url": "https://arxiv.org/abs/2004.05150",
+      "locator": "§2 and Figure 2",
+      "status": "verified",
+      "verification_note": "Global mask is task dependent, not an automatic all-token shortcut."
+    },
+    {
+      "id": "c02",
+      "claim": "Longformer-Encoder-Decoder is a separate seq2seq extension",
+      "source_url": "https://arxiv.org/abs/2004.05150",
+      "locator": "§4 LED",
+      "status": "verified",
+      "verification_note": "Separate encoder-only from generative encoder-decoder."
+    },
+    {
+      "id": "c03",
+      "claim": "BigBird mixes global, local, and random sparse edges",
+      "source_url": "https://arxiv.org/abs/2007.14062",
+      "locator": "§2 and Figure 1",
+      "status": "verified",
+      "verification_note": "Theoretical universality has structural assumptions."
+    },
+    {
+      "id": "c04",
+      "claim": "Official BigBird code uses block_size and num_rand_blocks",
+      "source_url": "https://github.com/google-research/bigbird",
+      "locator": "README configuration and sparse implementation",
+      "status": "verified",
+      "verification_note": "Do not equate toy random single-token edge with official block sparse layout."
+    },
+    {
+      "id": "c05",
+      "claim": "Sparse attention pair counts are linear for fixed local/global budgets",
+      "source_url": "https://arxiv.org/abs/2004.05150",
+      "locator": "§2 complexity analysis",
+      "status": "verified",
+      "verification_note": "Algebraic pair count is not an actual runtime measurement."
+    },
+    {
+      "id": "c06",
+      "claim": "FlashAttention IO gains differ from changing attention sparsity",
+      "source_url": "https://arxiv.org/abs/2205.14135",
+      "locator": "Abstract and §2",
+      "status": "verified",
+      "verification_note": "Exact dense arithmetic is still quadratic in T."
+    }
+  ]
+}

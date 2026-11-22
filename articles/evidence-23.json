@@ -1,0 +1,55 @@
+{
+  "article_id": "23",
+  "updated": "2026-11-22",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "DistilBERT uses triple pretraining loss: masked LM, distillation and cosine embeddings",
+      "source_url": "https://arxiv.org/abs/1910.01108",
+      "locator": "§3.2 Triple loss",
+      "status": "verified",
+      "verification_note": "Three separate objectives; no universal reduction constant."
+    },
+    {
+      "id": "c02",
+      "claim": "DistilBERT paper reports 40 percent fewer parameters, 60 percent faster and 97 percent of evaluated language understanding capabilities",
+      "source_url": "https://arxiv.org/abs/1910.01108",
+      "locator": "Abstract and evaluation tables",
+      "status": "verified",
+      "verification_note": "Results scoped to reported benchmarks, not universal hardware speed."
+    },
+    {
+      "id": "c03",
+      "claim": "TinyBERT distills embeddings, intermediate hidden states, attention, prediction layer with general/task-specific stages",
+      "source_url": "https://aclanthology.org/2020.findings-emnlp.372/",
+      "locator": "§2 and Figure 1; §3",
+      "status": "verified",
+      "verification_note": "Pretraining and task-specific stage distinguished."
+    },
+    {
+      "id": "c04",
+      "claim": "TinyBERT 4-layer reported teacher relative GLUE aggregate and inference gains for specific comparison",
+      "source_url": "https://aclanthology.org/2020.findings-emnlp.372/",
+      "locator": "Abstract; Tables 2–3",
+      "status": "verified",
+      "verification_note": "Do not interpret relative aggregate as per-task accuracy."
+    },
+    {
+      "id": "c05",
+      "claim": "Temperature-scaled distillation compares softened teacher/student output distributions",
+      "source_url": "https://arxiv.org/abs/1503.02531",
+      "locator": "§2 Distillation, temperature and T-squared factor",
+      "status": "verified",
+      "verification_note": "T squared scaling is common formulation, not mandatory in each repo."
+    },
+    {
+      "id": "c06",
+      "claim": "TinyBERT released research code provides two-stage scripts",
+      "source_url": "https://github.com/huawei-noah/Pretrained-Language-Model/tree/master/TinyBERT",
+      "locator": "README task-specific and general distillation",
+      "status": "verified",
+      "verification_note": "Official code for mapping details; no results reproduced."
+    }
+  ]
+}
