@@ -1,0 +1,55 @@
+{
+  "article_id": "22",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Unsupervised SimCSE uses independent dropout masks as the only augmentation for two views of a sentence.",
+      "source_url": "https://aclanthology.org/2021.emnlp-main.552/",
+      "locator": "§3.1; Figure 1(a)",
+      "status": "verified",
+      "verification_note": "No word substitution or external augmentation is required."
+    },
+    {
+      "id": "c02",
+      "claim": "Supervised SimCSE uses NLI entailment positives and contradiction hard negatives.",
+      "source_url": "https://aclanthology.org/2021.emnlp-main.552/",
+      "locator": "§3.2; Figure 1(b)",
+      "status": "verified",
+      "verification_note": "Do not conflate neutral with contradiction labels."
+    },
+    {
+      "id": "c03",
+      "claim": "SimCSE trains sentence vectors with an in-batch contrastive InfoNCE objective using temperature.",
+      "source_url": "https://aclanthology.org/2021.emnlp-main.552/",
+      "locator": "§3 Equations (1)–(2)",
+      "status": "verified",
+      "verification_note": "Column/candidate softmax with positive diagonal, tutorial writes one directional loss."
+    },
+    {
+      "id": "c04",
+      "claim": "Paper abstract reports 76.3 and 81.6 Spearman STS values for specific unsupervised/supervised BERT-base settings.",
+      "source_url": "https://aclanthology.org/2021.emnlp-main.552/",
+      "locator": "Abstract; Table 1",
+      "status": "verified",
+      "verification_note": "Not Chinese dataset performance or retrieval Recall@k."
+    },
+    {
+      "id": "c05",
+      "claim": "Princeton code documents multiple pooling modes and use of dropout in training.",
+      "source_url": "https://github.com/princeton-nlp/SimCSE",
+      "locator": "README, model/pooling instructions",
+      "status": "verified",
+      "verification_note": "Pooling choice is checkpoint- and evaluation-dependent."
+    },
+    {
+      "id": "c06",
+      "claim": "The encoder returns token states [B,T,H] before sentence pooling.",
+      "source_url": "https://github.com/princeton-nlp/SimCSE",
+      "locator": "§3 and official model code",
+      "status": "verified",
+      "verification_note": "Mean pooling on padded input must use attention masks."
+    }
+  ]
+}
