@@ -1,0 +1,55 @@
+{
+  "article_id": "24",
+  "updated": "2026-11-22",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "MobileBERT uses inverted-bottleneck IB-BERT teacher and a compact student for resource-limited devices",
+      "source_url": "https://aclanthology.org/2020.acl-main.195/",
+      "locator": "§3; Figure 1",
+      "status": "verified",
+      "verification_note": "Teacher is specially designed and not necessarily ordinary BERT-large."
+    },
+    {
+      "id": "c02",
+      "claim": "MobileBERT incorporates bottleneck architecture and stacked feed-forward structures",
+      "source_url": "https://arxiv.org/abs/2004.02984",
+      "locator": "§3 architecture",
+      "status": "verified",
+      "verification_note": "Distinguish outer hidden from inner bottleneck and stacked FFN configuration."
+    },
+    {
+      "id": "c03",
+      "claim": "Common MobileBERT config values 512 hidden, 128 intra bottleneck, 24 layers, four FFNs",
+      "source_url": "https://huggingface.co/docs/transformers/model_doc/mobilebert",
+      "locator": "MobileBertConfig parameter descriptions",
+      "status": "verified",
+      "verification_note": "Defaults not universal to all community checkpoints."
+    },
+    {
+      "id": "c04",
+      "claim": "Quantization variants require calibration for static activations and compatible operators",
+      "source_url": "https://onnxruntime.ai/docs/performance/model-optimizations/quantization.html",
+      "locator": "Quantization overview; dynamic vs static",
+      "status": "verified",
+      "verification_note": "Engineering guidance not an original MobileBERT-paper claim."
+    },
+    {
+      "id": "c05",
+      "claim": "MobileBERT paper compares downstream SQuAD dev F1 and edge inference efficiency",
+      "source_url": "https://aclanthology.org/2020.acl-main.195/",
+      "locator": "§4 experiment tables",
+      "status": "verified",
+      "verification_note": "Do not import reported device latencies as current device guarantees."
+    },
+    {
+      "id": "c06",
+      "claim": "Narrowing internal matmul dimensions reduces some costs but layer depth and extra projections remain",
+      "source_url": "https://arxiv.org/abs/2004.02984",
+      "locator": "§3 bottleneck architecture",
+      "status": "verified",
+      "verification_note": "512x128 parameter count is a toy standalone projection calculation."
+    }
+  ]
+}
