@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 470" role="img" aria-labelledby="title desc">
+<title id="title">ModernBERT 的 Unpadding 与序列打包张量账本</title>
+<desc id="desc">教学计算：三个样本长度 16、64、128。统一 pad 到 128 时得到 3×128=384 个 token 槽位，有效 token 只有 16+64+128=208 个。Unpadding 把有效 token 压紧成 208 个连续槽位；序列打包把多个样本放进同一缓冲区时，必须用块对角注意力掩码隔离不同样本文本。注意力 token-pair 账本按长度平方计算：dense 配对 3×128²=49152，有效配对 16²+64²+128²=20736，所以槽位节省与配对节省不是同一个比例。</desc>
+<rect width="960" height="470" rx="22" fill="#f5f7f2"/>
+<g font-family="system-ui,sans-serif">
+<text x="480" y="38" text-anchor="middle" font-size="21" font-weight="700" fill="#203035">Unpadding 省下的是槽位，不是等比例的 token-pair</text>
+<text x="480" y="64" text-anchor="middle" font-size="14" fill="#53676d">教学计算，样本长度 16 / 64 / 128；数字只说明账本结构，不代表任何 checkpoint 实测</text>
+<text x="46" y="106" font-size="15" font-weight="700" fill="#203035">① 统一 pad 到 128</text>
+<text x="914" y="106" text-anchor="end" font-size="14" fill="#53676d">3 × 128 = 384 槽位</text>
+<rect x="80" y="118" width="100" height="26" fill="#e0f1ea" stroke="#168579" stroke-width="2"/>
+<rect x="180" y="118" width="700" height="26" fill="#d9e0dd"/>
+<text x="130" y="136" text-anchor="middle" font-size="13" fill="#176056">16</text>
+<text x="530" y="136" text-anchor="middle" font-size="13" fill="#7d8c88">PAD（无效槽位）</text>
+<rect x="80" y="152" width="400" height="26" fill="#fbe7cf" stroke="#c07a1e" stroke-width="2"/>
+<rect x="480" y="152" width="400" height="26" fill="#d9e0dd"/>
+<text x="280" y="170" text-anchor="middle" font-size="13" fill="#8a5411">64</text>
+<rect x="80" y="186" width="800" height="26" fill="#e6e0f7" stroke="#6b4fbf" stroke-width="2"/>
+<text x="480" y="204" text-anchor="middle" font-size="13" fill="#4b3690">128（无 PAD）</text>
+<text x="46" y="252" font-size="15" font-weight="700" fill="#203035">② Unpadding / packing 后</text>
+<text x="914" y="252" text-anchor="end" font-size="14" fill="#53676d">16 + 64 + 128 = 208 有效槽位</text>
+<rect x="80" y="264" width="61" height="26" fill="#e0f1ea" stroke="#168579" stroke-width="2"/>
+<rect x="141" y="264" width="246" height="26" fill="#fbe7cf" stroke="#c07a1e" stroke-width="2"/>
+<rect x="387" y="264" width="493" height="26" fill="#e6e0f7" stroke="#6b4fbf" stroke-width="2"/>
+<text x="110" y="282" text-anchor="middle" font-size="12" fill="#176056">16</text>
+<text x="264" y="282" text-anchor="middle" font-size="12" fill="#8a5411">64</text>
+<text x="634" y="282" text-anchor="middle" font-size="12" fill="#4b3690">128</text>
+<text x="480" y="312" text-anchor="middle" font-size="13" fill="#53676d">三条样本相邻放置时，块对角掩码阻止样本 i 读取样本 j 的内容</text>
+<text x="46" y="352" font-size="15" font-weight="700" fill="#203035">③ 注意力 token-pair 账本（按长度平方）</text>
+<rect x="80" y="366" width="800" height="22" fill="#d9e0dd"/>
+<text x="80" y="384" font-size="13" fill="#53676d">dense 配对 3 × 128² = 49,152</text>
+<rect x="80" y="398" width="338" height="22" fill="#f0c9c9" stroke="#b0453f" stroke-width="2"/>
+<text x="80" y="416" font-size="13" fill="#53676d">有效配对 16² + 64² + 128² = 20,736 ≈ 42%</text>
+<text x="914" y="440" text-anchor="end" font-size="13" fill="#8a3b34">槽位节省 45.8%，配对节省 57.8%；两者不可互相替代</text>
+</g>
+</svg>
