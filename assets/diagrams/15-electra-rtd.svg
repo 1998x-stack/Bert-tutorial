@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 410" role="img" aria-labelledby="title desc">
+<title id="title">ELECTRA 的 Generator 和 Discriminator 计算流程</title><desc id="desc">原始序列 the chef cooked the meal；采样选中 cooked 位置，在 Generator 预测后可能替换为 ate，Discriminator 读入完整序列并逐 token 输出 real 或 replaced；如果采样仍是 cooked，标签为 original。</desc>
+<rect width="960" height="410" rx="20" fill="#f5f7f2"/><g font-family="system-ui,sans-serif">
+<text x="30" y="43" font-size="21" fill="#203035" font-weight="700">ELECTRA：学习识别替换，不是“猜哪里曾被 mask”</text>
+<rect x="25" y="79" width="260" height="100" rx="15" fill="#fff" stroke="#dce5df" stroke-width="2"/>
+<text x="155" y="113" fill="#203035" text-anchor="middle" font-size="15" font-weight="700">原始序列</text>
+<text x="155" y="142" fill="#53676d" text-anchor="middle" font-size="16">the chef cooked the meal</text>
+<rect x="349" y="79" width="254" height="100" rx="15" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/>
+<text x="476" y="109" fill="#203035" text-anchor="middle" font-size="16" font-weight="700">Generator · MLM</text>
+<text x="476" y="136" fill="#53676d" text-anchor="middle" font-size="14">masked cooked → sample</text><text x="476" y="159" fill="#7461ba" text-anchor="middle" font-size="15" font-weight="700">ate</text>
+<rect x="667" y="79" width="270" height="100" rx="15" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/>
+<text x="802" y="109" fill="#203035" text-anchor="middle" font-size="16" font-weight="700">Discriminator · RTD</text><text x="802" y="139" fill="#53676d" text-anchor="middle" font-size="15">the chef ate the meal</text>
+<path d="M285 129 H349 M603 129 H667" stroke="#147f80" stroke-width="3"/>
+<text x="636" y="105" fill="#53676d" font-size="12" text-anchor="middle">sample</text>
+<rect x="93" y="240" width="773" height="90" rx="15" fill="#203035"/>
+<text x="480" y="272" fill="#fff" text-anchor="middle" font-size="16" font-weight="700">逐 token 二分类（对非 padding 位置）</text>
+<text x="480" y="301" fill="#dce8e3" text-anchor="middle" font-size="15">the: 0   chef: 0   ate: 1   the: 0   meal: 0</text>
+<path d="M802 179 V222 H480 V240" stroke="#147f80" stroke-width="2" fill="none"/>
+<text x="480" y="362" text-anchor="middle" fill="#c96c4c" font-size="15" font-weight="700">关键边界：若 Generator 采回 cooked，则该位置标签也是 0（original）</text>
+<text x="480" y="383" text-anchor="middle" fill="#53676d" font-size="13">原词与采样词是否相同决定标签；仅 Generator 的部分位置被 mask，但 Discriminator 监督所有有效位置</text>
+</g></svg>

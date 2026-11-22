@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 410" role="img" aria-labelledby="title desc">
+<title id="title">Encoder 模型选型的约束和评估流程</title><desc id="desc">从任务类型出发，逐级检查语言覆盖、输入长度和部署设备，再用相同数据、训练预算与设备测量准确率、p95 延迟、吞吐与内存，选择 Pareto 合适的模型。</desc>
+<rect width="960" height="410" rx="20" fill="#f5f7f2"/><g font-family="system-ui,sans-serif">
+<text x="32" y="44" font-size="21" fill="#203035" font-weight="700">模型选择不是论文数字的排序</text>
+<g text-anchor="middle"><rect x="27" y="85" width="206" height="84" rx="14" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="130" y="118" fill="#203035" font-size="16" font-weight="700">任务与输出头</text><text x="130" y="143" fill="#53676d" font-size="13">分类 / NER / QA / 检索</text>
+<rect x="265" y="85" width="206" height="84" rx="14" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="368" y="118" fill="#203035" font-size="16" font-weight="700">语种 / tokenizer</text><text x="368" y="143" fill="#53676d" font-size="13">域外词和截断率</text>
+<rect x="503" y="85" width="206" height="84" rx="14" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/><text x="606" y="118" fill="#203035" font-size="16" font-weight="700">长度与覆盖</text><text x="606" y="143" fill="#53676d" font-size="13">P95 / P99 context</text>
+<rect x="741" y="85" width="192" height="84" rx="14" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="837" y="118" fill="#203035" font-size="16" font-weight="700">设备与资源</text><text x="837" y="143" fill="#53676d" font-size="13">CPU / GPU / 内存</text></g>
+<path d="M233 127 H265 M471 127 H503 M709 127 H741" stroke="#147f80" stroke-width="3"/>
+<path d="M837 169 V203 H480 V227" stroke="#94a8a1" stroke-width="2" fill="none"/>
+<rect x="166" y="227" width="628" height="72" rx="14" fill="#203035"/>
+<text x="480" y="254" fill="#fff" text-anchor="middle" font-size="17" font-weight="700">统一训练 / 测试 / 部署测量协议</text>
+<text x="480" y="278" fill="#dce8e3" text-anchor="middle" font-size="13">dev vs test · single vs ensemble · batch / dtype / hardware</text>
+<path d="M480 299 V319" stroke="#147f80" stroke-width="3"/>
+<rect x="166" y="325" width="628" height="57" rx="14" fill="#fff" stroke="#147f80" stroke-width="2"/>
+<text x="480" y="347" fill="#203035" text-anchor="middle" font-size="16" font-weight="700">共同看 macro-F1 / EM-F1 / Recall@k 与 p95 latency / memory</text>
+<text x="480" y="367" fill="#53676d" text-anchor="middle" font-size="13">留下 Pareto 候选，而不是强行认定只有一个“最强”模型</text>
+</g></svg>

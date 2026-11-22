@@ -215,83 +215,83 @@
     },
     {
       "num": "11",
-      "title": "预训练数据规模与计算分配",
+      "title": "Encoder 规模效应：数据、参数与计算预算",
       "topics": [
-        "Scaling Law",
-        "数据量",
-        "参数量",
-        "计算预算"
+        "Scaling",
+        "Chinchilla 边界",
+        "Token Accounting",
+        "Compute FLOPs"
       ],
-      "file": "11.html",
+      "file": "articles/11-encoder-scaling-compute.html",
       "stageId": "scaling",
       "stage": "数据规模与工程",
       "level": "高级",
-      "duration": 45,
-      "summary": "比较数据、参数和训练 token 的配置，理解计算预算如何影响模型质量。"
+      "duration": 26,
+      "summary": "严格区分语料 GB、词与训练 token；用 BERT、RoBERTa、Chinchilla、ModernBERT 讨论 Encoder 的计算预算与证据边界。"
     },
     {
       "num": "12",
-      "title": "训练稳定性与高效注意力",
+      "title": "Encoder 训练稳定性：精度、梯度与 FlashAttention",
       "topics": [
-        "BF16",
+        "FP16 / BF16",
+        "AMP",
         "梯度裁剪",
-        "梯度累积",
         "FlashAttention"
       ],
-      "file": "12.html",
+      "file": "articles/12-numerical-stability-attention.html",
       "stageId": "scaling",
       "stage": "数据规模与工程",
       "level": "高级",
-      "duration": 45,
-      "summary": "分析数值精度、梯度管理、显存优化和注意力 kernel 的工程边界。"
+      "duration": 27,
+      "summary": "解释 FP16/BF16、GradScaler 与裁剪顺序、梯度累积、显存账本，以及 FlashAttention 的 IO 优化边界。"
     },
     {
       "num": "13",
-      "title": "多语言 BERT 与跨语言迁移",
+      "title": "多语言 Encoder：mBERT、XLM-R 与零样本迁移",
       "topics": [
         "mBERT",
         "XLM-R",
-        "零样本迁移",
-        "语言覆盖"
+        "语言采样",
+        "Zero-shot XNLI"
       ],
-      "file": "13.html",
+      "file": "articles/13-multilingual-transfer.html",
       "stageId": "scaling",
       "stage": "数据规模与工程",
       "level": "高级",
-      "duration": 40,
-      "summary": "比较共享词表、多语言预训练数据和跨语言迁移的能力与限制。"
+      "duration": 25,
+      "summary": "比较语言平滑采样、共享参数、XLM-R 语料规模与 zero-shot/translate-train/test 评估协议。"
     },
     {
       "num": "14",
-      "title": "BERT 变体生态与选型",
+      "title": "Encoder 选型：任务、语种、长度与部署成本",
       "topics": [
-        "架构对比",
-        "训练目标",
-        "参数效率",
-        "任务适配"
+        "Model Selection",
+        "Pareto",
+        "p95 latency",
+        "Evaluation"
       ],
-      "file": "14.html",
+      "file": "articles/14-encoder-model-selection.html",
       "stageId": "scaling",
       "stage": "数据规模与工程",
       "level": "高级",
-      "duration": 45,
-      "summary": "用训练目标、模型结构、算力成本和下游任务建立变体选型框架。"
+      "duration": 25,
+      "summary": "避免混用开发集和测试集及不同硬件的速度数字；建立可复现的准确率、延迟与显存选型流程。"
     },
     {
       "num": "15",
-      "title": "ELECTRA 判别式预训练",
+      "title": "ELECTRA：Generator、Discriminator 与 RTD",
       "topics": [
+        "ELECTRA",
         "Generator",
         "Discriminator",
-        "RTD",
-        "样本效率"
+        "RTD"
       ],
-      "file": "15.html",
+      "file": "articles/15-electra-replaced-token-detection.html",
       "stageId": "variants",
       "stage": "模型家族与变体",
       "level": "高级",
-      "duration": 40,
-      "summary": "理解替换 token 检测如何把监督信号扩展到更多输入位置。"
+      "duration": 27,
+      "summary": "说明生成器采样、被替换标签的精确定义、联合损失与判别器微调的完整计算路径。"
     },
     {
       "num": "16",

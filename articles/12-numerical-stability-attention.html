@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="理解 FP16、BF16、AMP、GradScaler、梯度裁剪、累积、激活重计算与 FlashAttention 的机制与可复现验收。">
+<title>Encoder 训练稳定性：精度、梯度与 FlashAttention</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
+<body data-chapter-id="12"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
+<a href="#problem">NaN 从哪里来</a><a href="#formats">FP32、FP16 与 BF16</a><a href="#amp">AMP 的正确更新顺序</a><a href="#accumulation">梯度累积的等价边界</a><a href="#memory">训练显存账本</a><a href="#flash">FlashAttention 优化了什么</a><a href="#test">运行前的数值验收</a><a href="#demo">交互：故障诊断</a><a href="#references">原始资料</a></aside>
+<main id="content" class="article-main"><header class="article-header">
+<p class="eyebrow">BERT 系列 · 深度精读 12</p><h1>Encoder 训练稳定性：精度、梯度与 FlashAttention</h1>
+<p class="article-dek">训练 loss 突然变成 NaN，可能是 FP16 梯度溢出、坏样本、错误的 label mask，或者过大的更新；显存不足则可能来自激活值而非模型权重。要先分离故障机制，再决定用哪种工程工具。</p>
+<div class="article-meta"><span>阅读约 27 分钟</span><span>主题：AMP / Gradient / Memory / IO-aware Attention</span><span>核心问题：如何区分稳定性与吞吐优化</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
+<article class="article-body">
+<section id="problem"><h2>1. NaN、OOM 与训练缓慢不是同一种故障</h2>
+<p>设你正在微调一个包含数百兆参数的 Encoder。第一轮开始时损失正常，但若某个 step 后梯度全是 <code>inf</code> 或 <code>nan</code>，后续优化器状态可能被污染。另一种场景是显存 OOM，此时损失甚至尚未计算。第三种场景是训练可继续，只是 GPU 花大量时间在显存搬运上。三者要按不同链路诊断。</p>
+<figure><img src="../assets/diagrams/12-stability-pipeline.svg" alt="模型训练流程中 AMP 前向、缩放后的反传、梯度 unscale、裁剪、优化器更新与数值检查的先后顺序，并标出显存与 IO 瓶颈"><figcaption>图 12. 先区分非有限梯度、显存峰值与带宽瓶颈；GradScaler 的 unscale 必须发生在裁剪之前。</figcaption></figure>
+<p>在动参数前先记录异常发生的 batch ID、输入 token 数、loss 组成、优化器步数、学习率、grad norm、AMP scale 和 GPU 显存。检查输入 <code>input_ids</code> 是否越界、所有标签是否被 ignore、attention mask 是否错误覆盖 padding，以及是否有被全屏蔽的 query 行。</p>
+</section>
+<section id="formats"><h2>2. FP32、FP16 与 BF16：位数相同不代表数值范围相同</h2>
+<div class="table-wrap"><table><thead><tr><th>格式</th><th>指数位</th><th>尾数位（不计隐含位）</th><th>训练相关性质</th></tr></thead><tbody>
+<tr><td>FP32</td><td>8</td><td>23</td><td>范围与精度较高，通常耗用更多激活显存与带宽</td></tr>
+<tr><td>FP16</td><td>5</td><td>10</td><td>较小指数范围，容易在很小梯度或很大激活时下溢/上溢</td></tr>
+<tr><td>BF16</td><td>8</td><td>7</td><td>指数范围接近 FP32，但有效精度更低</td></tr>
+</tbody></table></div>
+<p>常说“混合精度训练用低精度做全部前向，再保存 FP32 主权重”是一种简化，不能覆盖所有实现。PyTorch <code>torch.autocast</code> 按算子选择 dtype；某些归约和数值敏感算子仍可能执行于 FP32，参数与优化器状态是否 FP32 依具体实现而定。</p>
+<p>对支持 BF16 的硬件，BF16 往往能减少 FP16 的指数范围问题，通常无需 GradScaler；但 BF16 并不自动解决坏数据、过大学习率或软件错误。对 FP16，loss scaling 通过放大反传梯度减少下溢，并在更新前恢复原尺度。</p>
+</section>
+<section id="amp"><h2>3. AMP 与梯度裁剪：顺序错误会改变更新方向</h2>
+<p>若标量损失为 L、放大比例为 s，反向传播得到的是 s∇L。此时直接裁剪 <code>clip_grad_norm_</code>，会按放大后的范数判断阈值，等价于意外把裁剪上限缩小了 s 倍。正确顺序是：<strong>autocast 前向 → scale(loss).backward → scaler.unscale_(optimizer) → clip → scaler.step → scaler.update</strong>。</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="梯度缩放与恢复公式"><math display="block" aria-label="放大后的梯度为 s 乘原始梯度，unscale 后再次得到原始梯度"><mrow><msub><mi>g</mi><mtext>scaled</mtext></msub><mo>=</mo><mi>s</mi><mi>∇</mi><mi>L</mi><mo>,</mo><mspace width=".6em"/><msub><mi>g</mi><mtext>unscaled</mtext></msub><mo>=</mo><mfrac><msub><mi>g</mi><mtext>scaled</mtext></msub><mi>s</mi></mfrac></mrow></math></div></div>
+<pre><code># PyTorch 2.x / CUDA FP16 训练循环骨架（不是完整预训练）
+import torch
+from torch.nn.utils import clip_grad_norm_
+
+model.train()
+scaler = torch.amp.GradScaler("cuda")
+for batch in loader:
+    optimizer.zero_grad(set_to_none=True)
+    with torch.autocast(device_type="cuda", dtype=torch.float16):
+        loss = model(**batch).loss
+    if not torch.isfinite(loss):
+        raise ValueError("Non-finite loss: inspect batch and labels")
+    scaler.scale(loss).backward()
+    scaler.unscale_(optimizer)  # 必须在裁剪之前
+    grad_norm = clip_grad_norm_(model.parameters(), 1.0)
+    if not torch.isfinite(grad_norm):
+        raise ValueError("Non-finite grad norm")
+    scaler.step(optimizer)       # 若检测到 inf/NaN，可跳过本次 optimizer.step
+    scaler.update()</code></pre>
+<p>上面是便于检查步骤顺序的示意。生产工程中还应处理 resume/checkpoint、学习率 scheduler、分布式训练、梯度累积和不同参数组。<strong>不要</strong>只根据代码里存在 <code>GradScaler</code> 就断言真实运行没有溢出：必须记录实际 scale、skip 次数与 loss。</p>
+</section>
+<section id="accumulation"><h2>4. 梯度累积：扩大有效 batch，不是把更新频率保持不变</h2>
+<p>若每设备 micro-batch 为 b、GPU 数为 n、累积次数为 a，有效 batch 为 b×n×a；每收集 a 个 micro-batch 才做一次 optimizer.step。为近似求平均梯度，通常将每个 micro-batch 的 loss 除以 a，再反传。</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="梯度累积有效 batch 公式"><math display="block" aria-label="有效 batch 等于每设备 batch 乘设备数乘梯度累积次数"><mrow><msub><mi>B</mi><mtext>eff</mtext></msub><mo>=</mo><mi>b</mi><mo>×</mo><mi>n</mi><mo>×</mo><mi>a</mi></mrow></math></div></div>
+<p>不完整的最后一个累积窗口、不同 micro-batch 的 token 数不一致、token-level loss 的不同归一化方式，以及 dropout/BatchNorm 等状态行为都可能使它与一次大 batch 训练不严格相同。对于 token loss，应按有效监督 token 数加权，而不是假设每个 micro-batch 的 token 数相等。</p>
+<p>使用 FP16 + GradScaler + accumulation 时，不应在每个 micro-batch 调用 <code>unscale_</code>；应在累积完成后统一 unscale、裁剪、更新。Scheduler 也按实际执行的优化器更新次数前进；若 scaler 跳过 step，还要避免 scheduler 与 optimizer 脱节。</p>
+</section>
+<section id="memory"><h2>5. 训练显存账本：权重、梯度、优化器状态、激活</h2>
+<p>以 AdamW FP32 参数和两个 FP32 动量状态为粗略例子，单个参数在训练中可能占参数 4B、梯度 4B、m 4B、v 4B，合计约 16 bytes/parameter，<strong>不含</strong>激活、临时 kernel workspace、模型副本、分布式分片等。真实混合精度实现可能维护额外权重副本，因此不能将 16B/param 当作通用精确上限。</p>
+<p>激活显存与 batch、序列长度、层数和保存的中间张量有关。激活重计算（gradient checkpointing）不保存全部中间激活，而是在反传时重算一部分前向，交换更多计算以节省显存；它不会减少模型参数量。Zero Redundancy Optimizer / FSDP 等分片技术则在设备之间拆分 optimizer states、梯度或参数，目标不同。</p>
+<p>从 512 增长到 1024 token，标准注意力分数矩阵的元素数增长 4 倍；若实际瓶颈来自 attention score 的物化和 HBM 访问，IO-aware kernel 可带来显存或速度收益。但如果瓶颈来自巨大的 embedding/FFN 激活、数据加载或跨卡通信，替换 attention kernel 可能不是主要解法。</p>
+</section>
+<section id="flash"><h2>6. FlashAttention：减少数据搬运，而不是把精确注意力改成 O(T)</h2>
+<p>标准全注意力计算 QKᵀ，沿 key 位置 softmax，再乘 V。直接实现常会物化一个 T×T 分数/概率矩阵。FlashAttention 的关键是把 Q/K/V 分块，从 HBM 把块搬进更快的片上 SRAM，在分块计算中维护稳定的在线 softmax 统计，而不必把完整注意力矩阵存回 HBM。</p>
+<p>因此它属于<strong>精确注意力的 IO-aware 实现</strong>：在相同数学注意力目标与合理数值误差范围内，减少 HBM 读写与中间张量物化。对长度 T 的密集全注意力，QKᵀ 的算术计算规模仍随 T² 增长。局部窗口或稀疏注意力可以改变连接图与算术量，但那是另一类算法选择。</p>
+<div class="callout warning"><strong>区分三件事：</strong>FlashAttention 降低实际显存 IO 与中间矩阵存储；attention kernel 的速度依 GPU、dtype、head dim、causal/padding mask 而变；精确密集注意力的二次序列长度计算并没有消失。</div>
+<p>PyTorch 的 <code>scaled_dot_product_attention</code> 会在符合条件时选择可用的后端，但并非所有 mask、dtype、设备组合都会调用相同实现。需要用 profiler 和实际 GPU benchmark 确认使用的 kernel，并检查 forward/backward 与未优化参考实现的数值误差。</p>
+</section>
+<section id="test"><h2>7. 一份可靠的数值验收清单</h2>
+<ol><li>固定一个 2–4 条样本的 tiny batch，在 FP32 下检查 loss、logits shape、标签 ignore index 与 attention mask。</li>
+<li>在同一 batch 上对比 FP32 与 FP16/BF16 前向误差、loss 范围、非有限值比例；设置合理的相对/绝对误差容忍度。</li>
+<li>记录每步 grad norm、学习率、GradScaler scale、skip 数、optimizer state 是否包含 NaN。</li>
+<li>在 checkpoint resume 后比较 token 计数、step 数、scheduler 状态与随机状态，避免隐蔽的训练重置。</li>
+<li>分别测量 tokens/s、峰值显存和端到端 step time；不要只看 attention kernel 的 isolated microbenchmark。</li></ol>
+<p>对于分布式训练，至少对一个短周期实验检查不同 rank 的参数同步、有效 batch 和数据采样是否正确；在故障批次重现之前，不要靠随机改变五个超参数“修复”不可解释的 NaN。</p>
+</section>
+<section id="demo"><h2>8. 交互：根据症状选择第一个诊断点</h2><div class="demo" data-demo><h3>训练故障分流</h3><p class="demo-intro">这是诊断顺序示例，不是自动修复或真实 GPU 性能测量。</p>
+<div class="demo-controls"><button type="button" data-demo-action="nan" aria-pressed="true">Loss 出现 NaN</button><button type="button" data-demo-action="oom" aria-pressed="false">显存 OOM</button><button type="button" data-demo-action="slow" aria-pressed="false">训练很慢</button><button type="button" data-demo-action="clip" aria-pressed="false">梯度裁剪异常</button></div>
+<pre class="demo-output" data-demo-output aria-live="polite">先复现具体 batch，记录 loss 与 grad norm；排查标签、mask 和非有限输入，再检查学习率与 FP16 scale。不要把所有 NaN 先归结为“学习率太大”。</pre>
+<script type="application/json" data-demo-states>{"nan":"先复现具体 batch，记录 loss 与 grad norm；排查标签、mask 和非有限输入，再检查学习率与 FP16 scale。不要把所有 NaN 先归结为“学习率太大”。","oom":"区分参数/优化器状态与激活显存峰值；记录 batch、长度和 padding。尝试更小 micro-batch、激活重计算或分片优化器，并测量 step-time 变化。","slow":"先测 end-to-end tokens/s；分解数据读取、padding、attention kernel、FFN、跨卡同步。FlashAttention 只能改善与对应 attention kernel 和 IO 有关的瓶颈。","clip":"检查是否在 FP16 反传后先 scaler.unscale_(optimizer)，再 clip_grad_norm_；若未 unscale，裁剪阈值相当于被意外缩小。累积梯度必须在更新前统一裁剪。"}</script></div></section>
+<section class="article-summary"><h2>关键结论</h2><ul>
+<li>FP16 与 BF16 都是 16-bit，但指数位数不同；AMP 的算子 dtype 与优化器状态需按实现确认。</li>
+<li>FP16 loss scaling 需要在梯度裁剪前 unscale；梯度累积与 scheduler 都按真实 optimizer step 管理。</li>
+<li>激活重计算、分布式分片与 FlashAttention 分别针对不同的显存或计算瓶颈。</li>
+<li>FlashAttention 是精确密集注意力的 IO 优化，不等于 O(T) 的全注意力算法。</li>
+</ul></section>
+<section id="references"><h2>原始资料与实现文档</h2><ol class="article-references">
+<li>Dao et al., <a href="https://arxiv.org/abs/2205.14135" target="_blank" rel="noopener noreferrer">FlashAttention</a>, §2–3（IO-aware exact attention 与 online softmax）。</li>
+<li>PyTorch, <a href="https://docs.pytorch.org/docs/stable/notes/amp_examples.html" target="_blank" rel="noopener noreferrer">Automatic Mixed Precision examples</a>（梯度 unscale、裁剪与累积顺序）。</li>
+<li>PyTorch, <a href="https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html" target="_blank" rel="noopener noreferrer">scaled_dot_product_attention</a>（可用后端与 mask 语义）。</li>
+<li>Chen et al., <a href="https://arxiv.org/abs/1604.06174" target="_blank" rel="noopener noreferrer">Training Deep Nets with Sublinear Memory Cost</a>（激活重计算的早期方法）。</li>
+</ol></section>
+</article><nav class="article-nav" aria-label="专题文章导航"><a href="11-encoder-scaling-compute.html">← 上一篇：规模预算</a><a href="13-multilingual-transfer.html">下一篇：多语言迁移 →</a></nav><p class="article-footer">示例代码仅演示操作顺序；是否稳定、是否节省显存都需在指定设备上实际测量。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>

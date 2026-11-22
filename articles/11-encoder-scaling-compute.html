@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="以 BERT、RoBERTa、Chinchilla 和 ModernBERT 为证据，区分语料字节、词、训练 token 与 FLOPs，解释 Encoder 的规模预算。">
+<title>Encoder 规模效应：数据、参数与计算预算如何权衡</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
+<body data-chapter-id="11"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div>
+<div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
+<a href="#question">真正的资源约束</a><a href="#units">先统一计量单位</a><a href="#axes">模型、数据与计算的三轴</a><a href="#chinchilla">Chinchilla 的适用范围</a><a href="#encoder">Encoder 的独立证据</a><a href="#budget">如何设计受控实验</a><a href="#signals">如何诊断欠训练</a><a href="#demo">交互：token 账本</a><a href="#references">原始资料</a></aside>
+<main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 11</p>
+<h1>Encoder 规模效应：数据、参数与计算预算如何权衡</h1>
+<p class="article-dek">模型从 110M 参数扩大到 340M 参数，究竟该把预算花在更大的网络，还是更多训练 token 上？回答之前，必须把“数据集占多少 GB”“模型实际读过多少 token”和“训练消耗多少 FLOPs”区分开来。</p>
+<div class="article-meta"><span>阅读约 26 分钟</span><span>主题：Scaling / Token Accounting / Compute</span><span>核心问题：怎样比较不同训练预算</span></div>
+<div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
+<article class="article-body">
+<section id="question"><h2>1. 一个预算问题：再加参数，还是再训练一轮</h2>
+<p>假设一支团队有固定的 GPU 训练预算，要训练用于文本分类和检索的双向 Encoder。方案 A 是扩大隐藏维度与层数，方案 B 是保持模型不变但增加训练数据与步数。哪一个会在部署时更好？答案取决于目标任务、训练数据质量、上下文长度、推理延迟和算力预算。只比较参数量并不足够。</p>
+<p>同一类 Encoder 的历史提供了对照：BERT 原论文使用 BooksCorpus 与英文 Wikipedia，RoBERTa 在更大更多样的语料上改进训练配方，ModernBERT 则综合更新架构和长上下文训练。性能变化来自多种因素，不能仅因为更强模型使用更多数据，就将差距全部归因于数据量。</p>
+<figure><img src="../assets/diagrams/11-scaling-budget.svg" alt="三条资源轴分别为模型参数 N、实际处理 token D 与训练计算预算 C；展示字节数不是 token 数以及 Encoder 与 Decoder 经验公式的适用范围"><figcaption>图 11. 参数、训练 token 和计算量分别回答“模型能表示多少”“模型看过多少”“投入了多少计算”；未经换算不能直接并列比较。</figcaption></figure>
+</section>
+<section id="units"><h2>2. 先统一计量单位：GB、词、token 与训练步数不同</h2>
+<p><strong>语料字节</strong>描述磁盘上的文本大小，受编码、压缩、语言、清洗方式影响；<strong>词数</strong>依赖分词规则；<strong>token 数</strong>依赖具体模型的 tokenizer 与特殊符号；<strong>训练中处理的 token 数</strong>还要乘上数据重复呈现、序列填充和丢弃情况。因此不能把 13GB 文本直接当成 13B token，也不能把 3.3B 英语词直接当成 3.3B WordPiece token。</p>
+<p>若一次优化更新处理有效 batch B 条序列、每条平均 L 个实际参与计算的 token，更新 S 次，则 token 处理量的一阶近似为：</p>
+<div class="math-group"><div class="math-scroll" role="region" aria-label="训练 token 总量估算，可横向滚动" tabindex="0"><math display="block" aria-label="训练中处理的 token 总量约等于更新步数乘有效 batch 的序列条数乘平均序列长度"><mrow><msub><mi>D</mi><mtext>seen</mtext></msub><mo>≈</mo><mi>S</mi><mo>×</mo><mi>B</mi><mo>×</mo><mover><mi>L</mi><mo>¯</mo></mover></mrow></math></div></div>
+<p>这个公式记录的是“被处理的 token 次数”，不是“互不重复的 unique token 数”。假设 10 万步、batch 256、每条有效长度 128，则约处理 32.768 亿 token 次数；假设其余不变而长度 512，则变为约 131.072 亿。<strong>两者都属于教学算术示例</strong>，不表示 BERT 全部训练步骤都使用了某个固定长度。</p>
+<p>对于 BERT 原论文尤其要注意：前 90% 的步骤主要使用 128 长度，最后 10% 使用 512 长度；若忽略这种长度日程，就会高估每步计算。</p>
+</section>
+<section id="axes"><h2>3. 三条轴：容量、数据覆盖与计算</h2>
+<p>参数 N 决定模型容量与部署成本，数据 D 决定被优化的经验分布覆盖，计算 C 是实际使用的硬件运算资源。固定 C 时，提高 N 往往意味着必须减少可处理的训练 token 或缩短上下文；反过来固定 N 时可以投入更多优化步骤或更长序列。</p>
+<p>Decoder-only Transformer 常见的简化训练计算近似为 C≈6ND FLOPs，但它忽略注意力项、架构细节、输出层、实际长度和工程开销。对于带 MLM 词表头、可能附加辅助目标以及不同 attention 实现的 Encoder，这个式子最多是规划数量级的起点，不应当作精确账单。</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="计算量数量级近似"><math display="block" aria-label="粗略训练计算量 C 约为六乘参数量 N 乘处理 token 次数 D"><mrow><mi>C</mi><mo>≈</mo><mn>6</mn><mi>N</mi><mi>D</mi><mspace width=".6em"/><mtext>（仅粗略估算）</mtext></mrow></math></div></div>
+<p>对实际项目，建议以 profiler 或真实吞吐量测量 <code>tokens/s</code>、GPU-hours、平均显存与训练 loss，并记录 optimizer step、batch、tokenizer、序列长度及是否启用激活重计算。指标不统一时，不应该声称某个模型“计算效率高出几倍”。</p>
+</section>
+<section id="chinchilla"><h2>4. Chinchilla 究竟说了什么——又没有说什么</h2>
+<p>Hoffmann 等人在 2022 年对<strong>自回归语言模型</strong>进行规模实验，发现固定计算预算下，模型参数量与训练 token 数应大致同步增长。其代表性实验中，Chinchilla 使用约 70B 参数和约 1.4T token，在与 280B 参数的 Gopher 类似训练计算预算下取得更好的任务表现。常被概括的“约 20 tokens/parameter”来自这类特定模型族、目标、数据与计算设定下的经验配比。</p>
+<div class="callout warning"><strong>边界必须写清楚：</strong>“20:1 是所有 BERT / Encoder 的最优定律”没有对应证据。MLM 直接监督的目标位置比例、双向注意力、训练语料和下游评价目标均不同；不能直接将 BERT 的参数量乘以 20，然后断言它被过度或不足训练。</div>
+<p>即使在自回归模型里，若推理需求昂贵，固定总生命周期成本的最优选择也可能不同于“只计训练 FLOPs”的最优选择。Encoder 常面向批量分类或检索，延迟和向量存储成本也是目标函数的一部分。</p>
+</section>
+<section id="encoder"><h2>5. Encoder 的证据链：BERT → RoBERTa → ModernBERT</h2>
+<div class="table-wrap"><table><thead><tr><th>工作</th><th>事实锚点</th><th>可以得出的结论</th><th>不能直接推导</th></tr></thead><tbody>
+<tr><td>BERT（2018/2019）</td><td>BooksCorpus + Wikipedia；BERT-Base 约 110M、Large 约 340M 参数</td><td>预训练 + 微调支持多种理解任务</td><td>某个固定数据大小已足够所有 Encoder</td></tr>
+<tr><td>RoBERTa（2019）</td><td>约 160GB 多源英文语料，优化 mask、batch、长文本打包、训练步数</td><td>原始 BERT 配方仍可改进</td><td>提升 100% 来自数据规模单因素</td></tr>
+<tr><td>ModernBERT（2024/2025）</td><td>论文报告约 2T training tokens，原生 8192 上下文，现代化 Encoder 训练设计</td><td>现代 Encoder 可以在更大 token 预算和更长上下文下训练</td><td>Chinchilla 20:1 已被验证为 Encoder 最优</td></tr>
+</tbody></table></div>
+<p>ModernBERT 的训练 token 统计是训练中处理的 token 次数，不能与 BERT 论文中“33 亿英语词”或 RoBERTa 语料 GB 直接相除。ModernBERT 同时改变 attention、位置编码、激活、归一化与训练阶段等配置；跨论文只比较预训练 token 数并不构成受控实验。</p>
+</section>
+<section id="budget"><h2>6. 真正可执行的受控实验设计</h2>
+<ol>
+<li>确定任务组合与验证集：例如文本分类、NER、句向量检索。用固定的下游指标选择模型，而不只看 MLM loss。</li>
+<li>统一 tokenizer 与语料分布；或明确记录它们的变化。保持清洗和去重策略一致，分离数据量与领域多样性。</li>
+<li>建立 N×D 小网格：例如 50M / 100M / 200M 参数 × 5B / 10B / 20B 训练 token；这是<strong>试验设计示例</strong>，不是预测哪个点最好。</li>
+<li>报告每组实际 FLOPs、GPU-hours、不同长度分布、吞吐、峰值显存；比较相同训练计算预算的等值曲线。</li>
+<li>在多个随机种子上重复预训练或至少重复下游微调，报告方差；锁定测试集直到选型结束。</li>
+</ol>
+<p>如果语料有大量重复，增加重复 epoch 可能主要提高训练 token 计数，却没有等比例增加新信息。应同时记录 <code>D_seen</code> 与去重后 <code>D_unique</code>。对低资源语言或专业领域，数据质量、采样概率和语言覆盖可能比盲目增加总 token 更关键。</p>
+</section>
+<section id="signals"><h2>7. 怎样判断欠训练、过拟合与目标错配</h2>
+<p>仅凭训练 loss 持续下降不能说明泛化改善。更有信息量的是对同一 held-out 语料监控 MLM loss，并用任务组验证迁移。训练 loss 与验证 loss 同时下降可能意味着尚未收敛；训练 loss 下降而验证 loss 上升说明可能过拟合或分布错配；如果两者都不动，首先检查优化器、mask 标签、有效 batch、学习率和 tokenization。</p>
+<p>还应区分三个资源瓶颈：<strong>算力瓶颈</strong>（GPU 利用率与吞吐不足）、<strong>容量瓶颈</strong>（适当扩大 N 有收益）与<strong>数据瓶颈</strong>（新领域/更高质量数据有效）。它们的诊断方法不同，不能用“模型再大一点”作为统一解法。</p>
+</section>
+<section id="demo"><h2>8. 交互：把长度日程写进 token 账本</h2><p>下面用相同 batch 与 step 数比较训练 token 处理量；只做确定性的乘法，不模拟模型质量。</p>
+<div class="demo" data-demo><h3>三种处理量计算</h3><p class="demo-intro">Batch 均为 256 条序列、总 100 万次更新。数值是算术示例，不包含 padding 与重复数据治理。</p>
+<div class="demo-controls"><button type="button" data-demo-action="short" aria-pressed="true">全部 128</button><button type="button" data-demo-action="mixed" aria-pressed="false">90% 128 + 10% 512</button><button type="button" data-demo-action="long" aria-pressed="false">全部 512</button></div>
+<pre class="demo-output" data-demo-output aria-live="polite">1,000,000 × 256 × 128 = 32.768B token 次数
+注意：这是固定长度的反事实示意，不是 BERT 训练的完整实测 token 统计。</pre>
+<script type="application/json" data-demo-states>{"short":"1,000,000 × 256 × 128 = 32.768B token 次数\n注意：这是固定长度的反事实示意，不是 BERT 训练的完整实测 token 统计。","mixed":"(900,000 × 128 + 100,000 × 512) × 256 = 42.5984B token 次数\n接近 BERT 原论文的长度阶段分配，但仍未扣除实际 padding/特殊符号差异。","long":"1,000,000 × 256 × 512 = 131.072B token 次数\n这是全部使用最大长度的反事实情况；不可把它当作 BERT 原始预训练 token 总量。"}</script></div>
+</section>
+<section class="article-summary"><h2>关键结论</h2><ul><li>语料 GB、英语词数、分词后 token 和训练中累计处理 token 是不同单位。</li><li>Chinchilla 来源于自回归模型的固定计算实验，20:1 不能直接用于评判 Encoder 的最优比例。</li><li>跨 BERT、RoBERTa 和 ModernBERT 的差异同时包含数据、目标、架构和工程配方，不能做未经控制的因果归因。</li><li>用受控的 N×D×C 实验、held-out loss 与下游任务指标做决策，并把推理成本纳入预算。</li></ul></section>
+<section id="references"><h2>原始资料与核查定位</h2><ol class="article-references">
+<li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>, §3、Appendix A.2（训练数据、规模与长度阶段）。</li>
+<li>Liu et al., <a href="https://arxiv.org/abs/1907.11692" target="_blank" rel="noopener noreferrer">RoBERTa</a>, §3.2、§4、Table 4（配方和开发集控制比较）。</li>
+<li>Hoffmann et al., <a href="https://arxiv.org/abs/2203.15556" target="_blank" rel="noopener noreferrer">Training Compute-Optimal Large Language Models</a>, §3–4（针对自回归 LM 的计算最优实验）。</li>
+<li>Warner et al., <a href="https://arxiv.org/abs/2412.13663" target="_blank" rel="noopener noreferrer">ModernBERT</a>, §3、Appendix（训练 token 与长上下文配置）。</li>
+</ol></section>
+</article><nav class="article-nav" aria-label="专题文章导航"><a href="10-bert-optimization-hyperparameters.html">← 上一篇：优化器</a><a href="12-numerical-stability-attention.html">下一篇：数值稳定性 →</a></nav><p class="article-footer">训练 token 的算术例子是机制练习，不是新模型实验成绩。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>

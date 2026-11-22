@@ -1,0 +1,63 @@
+{
+  "article_id": "15",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "ELECTRA jointly trains a masked-language-model generator and replaced-token discriminator.",
+      "source_url": "https://arxiv.org/abs/2003.10555",
+      "locator": "§2; Figure 2",
+      "status": "verified",
+      "verification_note": "Generator outputs sampled replacements, not argmax-only."
+    },
+    {
+      "id": "c02",
+      "claim": "RTD labels correspond to whether sampled token ID differs from original input token, even when that position was previously selected for generator masking.",
+      "source_url": "https://github.com/google-research/electra/blob/master/run_pretraining.py",
+      "locator": "_get_fake_data; is_fake_tokens label computation",
+      "status": "verified",
+      "verification_note": "Official code compares sampled token IDs to original IDs."
+    },
+    {
+      "id": "c03",
+      "claim": "ELECTRA discriminator predicts labels at each nonpadding token while generator MLM targets selected token positions.",
+      "source_url": "https://arxiv.org/abs/2003.10555",
+      "locator": "§2.2, objective definitions",
+      "status": "verified",
+      "verification_note": "Clarifies 'all positions' means effective nonpadding tokens."
+    },
+    {
+      "id": "c04",
+      "claim": "Official ELECTRA default loss weights are generator=1.0 and discriminator=50.0.",
+      "source_url": "https://github.com/google-research/electra/blob/master/configure_pretraining.py",
+      "locator": "PretrainingConfig gen_weight and disc_weight defaults",
+      "status": "verified",
+      "verification_note": "Weights are code implementation defaults, not universal loss-scale constants."
+    },
+    {
+      "id": "c05",
+      "claim": "ELECTRA trains with sampled discrete replacements and does not use standard GAN adversarial gradient propagation through samples.",
+      "source_url": "https://arxiv.org/abs/2003.10555",
+      "locator": "§2.2 Training",
+      "status": "verified",
+      "verification_note": "Separates generator MLM and discriminator RTD objectives."
+    },
+    {
+      "id": "c06",
+      "claim": "ELECTRA experiments demonstrate greater sample efficiency compared with MLM baselines under specified compute budgets.",
+      "source_url": "https://arxiv.org/abs/2003.10555",
+      "locator": "§4; efficiency figures",
+      "status": "verified",
+      "verification_note": "No invented fixed multiplier or universal improvement is claimed."
+    },
+    {
+      "id": "c07",
+      "claim": "At fine-tuning, the discriminator encoder is the retained pretrained model.",
+      "source_url": "https://github.com/google-research/electra/blob/master/README.md",
+      "locator": "Fine-tuning from released checkpoints",
+      "status": "verified",
+      "verification_note": "Generator need not run at inference."
+    }
+  ]
+}

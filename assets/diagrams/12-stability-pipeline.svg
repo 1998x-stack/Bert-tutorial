@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 405" role="img" aria-labelledby="title desc">
+<title id="title">FP16 AMP 反向传播与裁剪的正确顺序</title><desc id="desc">依次为 autocast 前向，scaler.scale loss 反向，unscale 梯度，梯度裁剪，scaler.step，scaler.update；异常路径检查非有限值，底部标出 FlashAttention 是 attention kernel 的 IO 优化。</desc>
+<rect width="960" height="405" rx="20" fill="#f5f7f2"/><g font-family="system-ui,sans-serif">
+<text x="32" y="42" font-size="20" fill="#203035" font-weight="700">FP16 训练：梯度恢复原尺度，才能安全裁剪</text>
+<g text-anchor="middle" font-size="14"><rect x="24" y="95" width="143" height="82" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="95" y="126" fill="#203035" font-weight="700">Autocast</text><text x="95" y="148" fill="#53676d" font-size="12">Forward + loss</text>
+<rect x="185" y="95" width="143" height="82" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="256" y="126" fill="#203035" font-weight="700">Scale + backward</text><text x="256" y="148" fill="#53676d" font-size="12">scaled gradients</text>
+<rect x="346" y="95" width="143" height="82" rx="12" fill="#fff2db" stroke="#d09d3c" stroke-width="2"/><text x="417" y="126" fill="#203035" font-weight="700">Unscale</text><text x="417" y="148" fill="#53676d" font-size="12">恢复真实梯度</text>
+<rect x="507" y="95" width="143" height="82" rx="12" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="578" y="126" fill="#203035" font-weight="700">Clip grad norm</text><text x="578" y="148" fill="#53676d" font-size="12">按真实梯度裁剪</text>
+<rect x="668" y="95" width="125" height="82" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="730" y="126" fill="#203035" font-weight="700">Scaler.step</text><text x="730" y="148" fill="#53676d" font-size="12">可能跳过更新</text>
+<rect x="811" y="95" width="125" height="82" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="874" y="126" fill="#203035" font-weight="700">Scaler.update</text><text x="874" y="148" fill="#53676d" font-size="12">调整 scale</text></g>
+<path d="M167 136 H185 M328 136 H346 M489 136 H507 M650 136 H668 M793 136 H811" stroke="#147f80" stroke-width="3"/>
+<path d="M179 129 L189 136 L179 143 M340 129 L350 136 L340 143 M501 129 L511 136 L501 143 M662 129 L672 136 L662 143 M805 129 L815 136 L805 143" fill="none" stroke="#147f80" stroke-width="2"/>
+<rect x="120" y="221" width="720" height="64" rx="14" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/>
+<text x="480" y="248" text-anchor="middle" font-size="16" fill="#203035" font-weight="700">诊断分支：NaN → 检查输入/标签/scale/learning rate</text>
+<text x="480" y="268" text-anchor="middle" font-size="13" fill="#53676d">OOM → 参数、优化器状态、激活重算和序列长度分别核对</text>
+<rect x="120" y="307" width="720" height="67" rx="14" fill="#fff" stroke="#dce5df"/>
+<text x="480" y="334" text-anchor="middle" font-size="15" fill="#203035" font-weight="700">FlashAttention：避免物化完整 T×T 注意力矩阵，降低 HBM IO</text>
+<text x="480" y="354" text-anchor="middle" font-size="13" fill="#53676d">密集精确注意力仍需 O(T²) 算术量；它不是上面数值稳定性的替代品</text>
+</g></svg>

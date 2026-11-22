@@ -1,0 +1,55 @@
+{
+  "article_id": "12",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "FP16 autocast training commonly uses gradient scaling; unscale must precede gradient clipping.",
+      "source_url": "https://docs.pytorch.org/docs/stable/notes/amp_examples.html",
+      "locator": "Gradient clipping; Gradient accumulation",
+      "status": "verified",
+      "verification_note": "PyTorch official sequence and skip semantics."
+    },
+    {
+      "id": "c02",
+      "claim": "Modern PyTorch API supports torch.autocast and torch.amp.GradScaler for CUDA mixed precision training.",
+      "source_url": "https://docs.pytorch.org/docs/stable/amp.html",
+      "locator": "Autocasting and Gradient Scaling",
+      "status": "verified",
+      "verification_note": "Code is an operational skeleton, not a performance result."
+    },
+    {
+      "id": "c03",
+      "claim": "FlashAttention uses IO-aware tiling and online softmax to reduce GPU high-bandwidth-memory reads/writes without materializing the full attention matrix.",
+      "source_url": "https://arxiv.org/abs/2205.14135",
+      "locator": "Abstract; §3–4",
+      "status": "verified",
+      "verification_note": "Exact dense attention is preserved within numerical tolerances."
+    },
+    {
+      "id": "c04",
+      "claim": "FlashAttention is not an algorithm that reduces exact dense self-attention arithmetic complexity to linear sequence length.",
+      "source_url": "https://arxiv.org/abs/2205.14135",
+      "locator": "§3 Analysis",
+      "status": "verified",
+      "verification_note": "Separates IO complexity from arithmetic operation count."
+    },
+    {
+      "id": "c05",
+      "claim": "Activation checkpointing saves activation memory by recomputing activations during backpropagation.",
+      "source_url": "https://arxiv.org/abs/1604.06174",
+      "locator": "§2–3",
+      "status": "verified",
+      "verification_note": "Memory-versus-compute tradeoff, not reduced parameter count."
+    },
+    {
+      "id": "c06",
+      "claim": "PyTorch SDPA selects eligible implementations conditionally according to dtype, device and mask.",
+      "source_url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.functional.scaled_dot_product_attention.html",
+      "locator": "SDPA backend selection and warnings",
+      "status": "verified",
+      "verification_note": "Implementation-dependent kernel selection must be profiled."
+    }
+  ]
+}

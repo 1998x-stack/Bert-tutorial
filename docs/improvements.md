@@ -42,3 +42,16 @@
 - Cross-check sources: BERT arXiv:1810.04805 and official preprocessing/optimizer code; RoBERTa arXiv:1907.11692; ALBERT arXiv:1909.11942; SpanBERT arXiv:1907.10529; Adam arXiv:1412.6980; AdamW arXiv:1711.05101; versioned Transformers 4.46.3 docs.
 - Validation: GitHub Actions run 9 passed the Node catalog/content tests, 12 Python reference tests, and HTTP/file:// Playwright checks across all ten article pages and 1440/768/390/360 px viewports; 41 screenshots were uploaded. The first CI run caught a missing Article 07 diagram, which was added before the final passing run. GitHub Pages refresh is checked after merge. No new pretraining or benchmark run is claimed.
 - Compatibility: root 06.html–10.html redirect to articles; chapter metadata points to articles; original legacy page bodies remain available in Git history.
+
+
+### 2026-11-22 — Olah-style deep reading expansion, 11–15
+- Scope: standalone articles 11–15, five original SVG diagrams, five evidence ledgers, and root compatibility redirects for 11.html–15.html; preserve 16–28 legacy URLs.
+- Chapter 11: distinguish GB/words/token IDs/token exposures; explain Chinchilla's autoregressive compute-optimal evidence without applying its approximate 20:1 ratio mechanically to MLM Encoders.
+- Chapter 12: compare FP16/BF16/FP32 precision, AMP unscale-before-clipping, accumulation, optimizer state and activation memory, and distinguish FlashAttention IO complexity from dense arithmetic complexity.
+- Chapter 13: compare mBERT cased 104-language checkpoint, smoothed sampling alpha=0.7 and XLM-R 100-language CC-100 corpus; distinguish 2.5TB raw text from training tokens; define zero-shot/translate-train/test protocols.
+- Chapter 14: replace unsupported cross-paper latency/throughput and GLUE scoreboard claims with a measurement protocol covering task, tokenizer, split, hardware, batch, latency and Pareto comparison.
+- Chapter 15: distinguish generator-masked positions from actual sampled replacements; reproduce RTD label semantics from the official ELECTRA implementation; explain combined objectives, data efficiency and downstream discriminator use.
+- New reference implementation: examples/encoder_budget_lab.py and tests/test_encoder_budget_lab.py use Python stdlib for token arithmetic, language sampling, RTD identity labels and masked softmax. They are not a complete neural network or benchmark reproduction.
+- Editorial source policy: primary papers and official code are linked per article; evidence-11.json through evidence-15.json record source locators and verification notes.
+- Engineering: expand 28-chapter catalog with 15 article URLs; synchronized offline JSON snapshot, articles/index.html, README, article interactions and browser test list.
+- Validation: pending CI and browser checks for this branch. Do not claim deployment or QA success before inspecting run results.

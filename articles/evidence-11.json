@@ -1,0 +1,55 @@
+{
+  "article_id": "11",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "BERT-Base and BERT-Large use about 110M and 340M parameters and original pretraining uses BooksCorpus and English Wikipedia.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "§3; Appendix A.2",
+      "status": "verified",
+      "verification_note": "Original paper scale, corpora and sequence-length schedule."
+    },
+    {
+      "id": "c02",
+      "claim": "Original BERT uses short 128-token sequences for 90% of steps and 512 tokens for the last 10%.",
+      "source_url": "https://arxiv.org/abs/1810.04805",
+      "locator": "Appendix A.2 Pre-training Procedure",
+      "status": "verified",
+      "verification_note": "This condition prevents assuming every step has length 512."
+    },
+    {
+      "id": "c03",
+      "claim": "RoBERTa changes data sources, batch, masking and training duration, confounding attribution of final quality to data size alone.",
+      "source_url": "https://arxiv.org/abs/1907.11692",
+      "locator": "§3–4; Table 4",
+      "status": "verified",
+      "verification_note": "Different factors move together in the full recipe."
+    },
+    {
+      "id": "c04",
+      "claim": "Hoffmann et al. derive compute-optimal parameter and training-token scaling for autoregressive language models.",
+      "source_url": "https://arxiv.org/abs/2203.15556",
+      "locator": "Abstract; §3; Table 3",
+      "status": "verified",
+      "verification_note": "The approximately 20 tokens/parameter rule is not an Encoder-specific benchmark."
+    },
+    {
+      "id": "c05",
+      "claim": "ModernBERT reports training on approximately 2 trillion tokens and native 8192 context.",
+      "source_url": "https://arxiv.org/abs/2412.13663",
+      "locator": "Abstract; §3 Training",
+      "status": "verified",
+      "verification_note": "Training token count is distinguished from unique corpus bytes."
+    },
+    {
+      "id": "c06",
+      "claim": "The C≈6ND formula is a simplified Transformer training compute approximation, not exact measured Encoder FLOPs.",
+      "source_url": "https://arxiv.org/abs/2203.15556",
+      "locator": "§2 Computational cost assumptions",
+      "status": "verified",
+      "verification_note": "Article explicitly marks the formula as rough modeling."
+    }
+  ]
+}

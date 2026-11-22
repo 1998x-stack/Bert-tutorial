@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="从 Generator 的 MLM 采样到 Discriminator 的逐 token 替换检测，准确解释 ELECTRA 的 RTD 标签、目标损失、样本效率与局限。">
+<title>ELECTRA：让判别器识别被替换的 Token</title>
+<link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
+<body data-chapter-id="15"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
+<a href="#question">MLM 的监督位置</a><a href="#architecture">Generator 与 Discriminator</a><a href="#labels">“替换”标签的精确定义</a><a href="#loss">两个损失如何联合</a><a href="#sampling">为什么要采样</a><a href="#efficiency">样本效率与计算成本</a><a href="#finetune">训练与推理接口</a><a href="#limits">失败与适用边界</a><a href="#demo">交互：RTD 标签</a><a href="#references">原始论文</a></aside>
+<main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 15</p>
+<h1>ELECTRA：让判别器识别被替换的 Token</h1>
+<p class="article-dek">BERT 的 MLM 只在选中的位置预测原始 token，但未选中的位置并没有“白白浪费”——它们仍为上下文建模和梯度传播服务。ELECTRA 进一步改变监督信号：不要求主模型恢复原词，而是判断每个 token 是否来自原文。</p>
+<div class="article-meta"><span>阅读约 27 分钟</span><span>主题：Generator / Discriminator / RTD</span><span>核心问题：逐位置判别监督如何产生</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
+<article class="article-body">
+<section id="question"><h2>1. 从 MLM 的稀疏目标位置出发</h2>
+<p>标准 BERT MLM 从输入中选约 15% 的 token 位置，使用双向 Encoder 的隐藏状态恢复它们的原始 ID。未选中位置并非“不参与训练”：它们参与注意力与上下文构建，只是不直接承担词表交叉熵目标。ELECTRA 改变的是<strong>每个位置接受何种直接监督</strong>。</p>
+<p>假设原句是 <em>the chef cooked the meal</em>。若生成器把 <code>cooked</code> 换成了 <code>ate</code>，判别器看到 <em>the chef ate the meal</em>，要判断每个位置是否来自原始输入。和 MLM 不同，它不需要对整个词表进行“原词是什么”的分类；在每个位置做 real/replaced 二分类即可。</p>
+<figure><img src="../assets/diagrams/15-electra-rtd.svg" alt="原文经过 15% 位置 Mask 后交给小 Generator 预测和采样；采样替换后的完整序列进入 Discriminator，对每个非 padding token 输出 real 或 replaced 标签"><figcaption>图 15. Generator 负责制造具语言合理性的扰动；Discriminator 的标签由采样后的 token 是否等于原 token 决定，并非由“这个位置曾被 mask”决定。</figcaption></figure>
+</section>
+<section id="architecture"><h2>2. 两个 Encoder 的分工：小 Generator 和主 Discriminator</h2>
+<p>ELECTRA 的预训练由两个不同职责的网络组成。Generator G 接收掩码后的序列，使用 MLM 在选定位置预测词表概率分布，然后从分布中<strong>采样</strong>一个 token ID；这些采样结果替换输入中相应位置。Discriminator D 接收这个完整的“可能受损”序列，对每个非 padding token 输出一个二分类 logit。</p>
+<p>Generator 通常比 Discriminator 小，其目的是在有限预算内产生具有一定迷惑性的负例，而不是成为最终部署模型。两者通过各自损失一起训练；生成采样的离散选择一般不把梯度从判别器直接反传穿过采样操作。最终下游微调通常<strong>只保留 Discriminator 的 Encoder</strong>，丢弃 Generator 与预训练时的二分类头。</p>
+<p>若 Generator 太弱，负例可能荒谬，判别器过于容易；若 Generator 太强，生成过程本身消耗大量预算，并且常常采样到真实 token，使被替换标签更少。原论文比较了 Generator 与 Discriminator 容量配比，这也是训练效率设计的一部分。</p>
+</section>
+<section id="labels"><h2>3. 最容易写错的一点：曾被选中不等于真的被替换</h2>
+<p>定义原始 token x_i 和 Generator 采样后输入 token x̃_i。若二者不同，RTD 的 <code>replaced</code> 标签为 1；若相同则为 0。即使一个位置被选进 MLM 子集，Generator 最后采样得到原词，它对于 Discriminator 仍然属于 <code>original</code>。</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="ELECTRA RTD 标签公式"><math display="block" aria-label="第 i 个位置的替换标签等于样本 token 与原始 token 不相等时为一，否则为零"><mrow><msub><mi>y</mi><mi>i</mi></msub><mo>=</mo><mi mathvariant="double-struck">1</mi><mo>[</mo><msub><mover><mi>x</mi><mo>˜</mo></mover><mi>i</mi></msub><mo>≠</mo><msub><mi>x</mi><mi>i</mi></msub><mo>]</mo></mrow></math></div></div>
+<p>如果某个原始词是 <code>cooked</code>，Generator 在该处又采样出 <code>cooked</code>，该位置标签是 0；采样出 <code>ate</code>，则标签是 1。判别器目标不是“预测哪些位置曾被 mask”，而是“对受损输入中的每个实际词形判断是否与原文相同”。</p>
+<p>RTD 损失通常只在真实 token 位置统计，不在 padding 上训练；在常见配置下，各个有效 token 都会有二分类标签。由于大部分输入来自原词，类别往往明显不平衡，应同时观察 replaced 与 original 的召回、precision 或分层错误，而不只看总体 accuracy。</p>
+</section>
+<section id="loss"><h2>4. 联合优化：Generator 的 MLM 与 Discriminator 的 RTD</h2>
+<p>Generator 在抽到的掩码位置上做词表预测，得到 MLM loss；Discriminator 在全部有效输入位置上做真假判别，得到 RTD 二分类 loss。训练目标通常写作：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="ELECTRA 联合目标公式"><math display="block" aria-label="总损失等于 Generator 的 MLM 损失加权加上判别器 RTD 损失加权"><mrow><msub><mi mathvariant="script">L</mi><mtext>total</mtext></msub><mo>=</mo><msub><mi>λ</mi><mi>G</mi></msub><msub><mi mathvariant="script">L</mi><mtext>MLM</mtext></msub><mo>+</mo><msub><mi>λ</mi><mi>D</mi></msub><msub><mi mathvariant="script">L</mi><mtext>RTD</mtext></msub></mrow></math></div></div>
+<p>Google 官方预训练参考实现的默认权重是 <code>gen_weight=1.0</code> 和 <code>disc_weight=50.0</code>。这两个系数补偿了目标和归一化尺度的差别，不是“判别器总损失一定比生成器重要 50 倍”的普遍结论；不同实现的 loss reduction 方式变化时，需要重新校准。</p>
+<p>判别器的单位置二分类损失（这里 y=1 代表 replaced、D_i 是该位置被替换的概率）为：</p>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="RTD 二分类交叉熵"><math display="block" aria-label="负对数似然等于 y 乘 log D 加一减 y 乘 log 一减 D 后取负"><mrow><msub><mi>ℓ</mi><mi>i</mi></msub><mo>=</mo><mo>−</mo><mo>[</mo><msub><mi>y</mi><mi>i</mi></msub><mi>log</mi><msub><mi>D</mi><mi>i</mi></msub><mo>+</mo><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>y</mi><mi>i</mi></msub><mo>)</mo><mi>log</mi><mo>(</mo><mn>1</mn><mo>−</mo><msub><mi>D</mi><mi>i</mi></msub><mo>)</mo><mo>]</mo></mrow></math></div></div>
+<p>有些代码约定 y=1 为 real，因此在阅读实现时必须检查 sigmoid 输出语义与标签构造，不要只看变量名 <code>labels</code> 就认为正类和本文一致。</p>
+</section>
+<section id="sampling"><h2>5. 为什么让 Generator 采样，而不是取词表 argmax</h2>
+<p>如果总选择概率最高的词，替换分布可能过于单一，判别器更容易记住某些固定替换模式。采样保留了不确定性，使模型面对多种语法与语义上都可能成立的候选词。训练时的受损输入可能完全自然，判别器需要学习更细致的上下文兼容性。</p>
+<p>但并非每个 sampled token 都是假 token：Generator 可能恰好采到原 token，标签仍为 original。也并非所有“语义不通”都是被替换样本，因为原始自然语料自身可能不完美。RTD 训练信号来自构造过程的 token 身份，而不是人工评定文本是否正确。</p>
+<p>这说明 ELECTRA 不是标准 GAN：Generator 主要由 MLM 目标训练，不是通过对判别器的对抗性梯度直接学习生成难例。它们在同一个预训练流程里协作构造判别任务，但“Generator-Discriminator”名称不能替代具体的优化结构。</p>
+</section>
+<section id="efficiency"><h2>6. 为什么更密集的监督可能提高数据利用率</h2>
+<p>MLM 在约 15% 位置承担直接词表预测损失；RTD 对绝大多数有效位置都有二分类监督。监督位置更多并不代表梯度信息或计算收益按 1/0.15 线性增加。判别目标更简单、类别不平衡、Generator 的额外计算和样本质量都影响真实效率。</p>
+<p>ELECTRA 原论文在不同计算预算与规模上报告 RTD 特别适合预算受限的文本 Encoder 预训练，并将模型与相近计算预算的 MLM baseline 比较。但论文结论的正确表述是“在指定训练/下游评估协议下有更高样本/计算效率”，不是“每个 token 都直接训练，因此所有任务必然提升 6.7 倍”。</p>
+<p>另一个重要的成本事实：预训练时需要同时运行 Generator 与 Discriminator，<strong>下游推理</strong>则只保留 Discriminator。这是为什么不能把预训练双网络成本直接当作部署模型的推理成本。</p>
+</section>
+<section id="finetune"><h2>7. 下游微调与普通 BERT 有什么不同</h2>
+<p>预训练结束后取 Discriminator 的 encoder 参数，按照具体任务安装序列级分类头、每 token 标签头或 QA 起止头，并端到端微调。与 BERT 微调的总体流程相似：输入仍是 token IDs、attention mask 等，输出由任务头决定。</p>
+<p>迁移时必须配套 ELECTRA checkpoint 的 tokenizer 与配置；即使官方原始英文模型沿用 BERT uncased 词表，也不能将所有社区 ELECTRA 模型推广成统一词表。也不应该在预测阶段继续运行 Generator 制造假 token，除非有明确另一个实验目的。</p>
+<p>对于文本生成任务，ELECTRA 的判别器不提供自回归 next-token probability 接口，因此不能直接把它当作一个自回归 decoder。</p>
+</section>
+<section id="limits"><h2>8. 失败模式与核查边界</h2>
+<ul><li><strong>生成器过弱：</strong>替换样本太容易，判别器可能学会辨别明显异常而非深入理解上下文。</li><li><strong>生成器过强：</strong>消耗更高训练 FLOPs，并可能更常采到原词。</li><li><strong>类不平衡：</strong>高总体准确率可能来自永远预测 original；应报告 replaced 类精确率与召回率。</li><li><strong>标签构造错误：</strong>把“被 mask 的位置”全部标成 replaced 会误标 Generator 采回原 token 的情况。</li><li><strong>推理接口错位：</strong>将预训练 Generator 或 RTD head 当作下游分类器会混淆目标与部署阶段。</li></ul>
+</section>
+<section id="demo"><h2>9. 交互：同样被选中的位置，为什么标签会不同</h2><div class="demo" data-demo><h3>RTD 标签检查</h3><p class="demo-intro">原句：the chef cooked the meal；训练时 selected position 为 cooked。</p>
+<div class="demo-controls"><button type="button" data-demo-action="different" aria-pressed="true">采样 ate</button><button type="button" data-demo-action="same" aria-pressed="false">采样 cooked</button><button type="button" data-demo-action="none" aria-pressed="false">未选其他位置</button></div>
+<pre class="demo-output" data-demo-output aria-live="polite">原词 cooked → Generator 采样 ate
+判别器输入：the chef ate the meal
+cooked 所在位置被真正替换，RTD 标签 y=1（replaced）。
+其他有效位置与原文相同，标签 y=0（original）。</pre>
+<script type="application/json" data-demo-states>{"different":"原词 cooked → Generator 采样 ate\n判别器输入：the chef ate the meal\ncooked 所在位置被真正替换，RTD 标签 y=1（replaced）。\n其他有效位置与原文相同，标签 y=0（original）。","same":"原词 cooked → Generator 恰好采样 cooked\n判别器输入：the chef cooked the meal\n尽管该位置曾被选为 MLM 目标，RTD 标签仍为 y=0（original）。\n所以 RTD 不是“猜哪个位置曾被选中”。","none":"原句其他位置（the / chef / the / meal）没有被选为生成器替换目标。\n判别器仍然为这些有效位置预测 y=0（original）。\n未选中的有效位置照样产生二分类损失。"}</script></div></section>
+<section class="article-summary"><h2>关键结论</h2><ul><li>Generator 用 MLM 采样替换候选；Discriminator 对全部有效位置做 real/replaced 二分类。</li><li>RTD 标签取决于采样后 token 是否真的不同于原 token；被选中但采回原词应标 original。</li><li>生成器 MLM 与判别器 RTD 联合训练，官方实现默认 <code>gen_weight=1</code>、<code>disc_weight=50</code>；实现的 loss 约定必须核对。</li><li>预训练需要两个网络，微调/推理一般仅保留 Discriminator，不能把它当作自回归语言模型。</li></ul></section>
+<section id="references"><h2>原始论文与官方代码</h2><ol class="article-references">
+<li>Clark et al., <a href="https://arxiv.org/abs/2003.10555" target="_blank" rel="noopener noreferrer">ELECTRA: Pre-training Text Encoders as Discriminators Rather Than Generators</a>, §2–4、Figure 2。</li>
+<li>Google Research, <a href="https://github.com/google-research/electra/blob/master/run_pretraining.py" target="_blank" rel="noopener noreferrer">run_pretraining.py</a>（sampled token、is_fake label、combined loss）。</li>
+<li>Google Research, <a href="https://github.com/google-research/electra/blob/master/configure_pretraining.py" target="_blank" rel="noopener noreferrer">configure_pretraining.py</a>（Generator/Discriminator loss weights）。</li>
+<li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>, §3.1（MLM 对照）。</li>
+</ol></section>
+</article><nav class="article-nav" aria-label="专题文章导航"><a href="14-encoder-model-selection.html">← 上一篇：模型选型</a><a href="index.html">专题精读总览 →</a></nav><p class="article-footer">RTD 标签示例是离散采样规则的教学检查，不是下游任务性能实验。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>

@@ -15,6 +15,11 @@ const articles = [
   'articles/08-roberta-training-recipe.html',
   'articles/09-pretraining-data-engineering.html',
   'articles/10-bert-optimization-hyperparameters.html',
+  'articles/11-encoder-scaling-compute.html',
+  'articles/12-numerical-stability-attention.html',
+  'articles/13-multilingual-transfer.html',
+  'articles/14-encoder-model-selection.html',
+  'articles/15-electra-replaced-token-detection.html',
 ];
 
 function read(relativePath) {
@@ -72,18 +77,18 @@ test('all article assets and local links resolve inside the repository', () => {
   }
 });
 
-test('ten articles use ten different subject-specific diagrams', () => {
+test('fifteen articles use fifteen different subject-specific diagrams', () => {
   const diagramPaths = articles.map((pagePath) => {
     const html = read(pagePath);
     const match = html.match(/<img[^>]+src="([^"]+\.svg)"/i);
     assert.ok(match, pagePath + ': diagram path missing');
     return match[1];
   });
-  assert.equal(new Set(diagramPaths).size, 10);
+  assert.equal(new Set(diagramPaths).size, 15);
 });
 
 test('each article has an evidence ledger with verified source locators', () => {
-  for (let index = 1; index <= 10; index += 1) {
+  for (let index = 1; index <= 15; index += 1) {
     const articleId = String(index).padStart(2, '0');
     const ledgerPath = 'articles/evidence-' + articleId + '.json';
     const ledger = JSON.parse(read(ledgerPath));
@@ -111,7 +116,7 @@ test('each article includes a meaningful interaction or tokenizer experiment', (
   }
 });
 
-test('legacy chapter entry points 01–10 redirect to the new article pages', () => {
+test('legacy chapter entry points 01–15 redirect to the new article pages', () => {
   const targets = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
@@ -123,12 +128,32 @@ test('legacy chapter entry points 01–10 redirect to the new article pages', ()
     'articles/08-roberta-training-recipe.html',
     'articles/09-pretraining-data-engineering.html',
     'articles/10-bert-optimization-hyperparameters.html',
+    'articles/11-encoder-scaling-compute.html',
+    'articles/12-numerical-stability-attention.html',
+    'articles/13-multilingual-transfer.html',
+    'articles/14-encoder-model-selection.html',
+    'articles/15-electra-replaced-token-detection.html',
   ];
   targets.forEach((target, index) => {
     const html = read(String(index + 1).padStart(2, '0') + '.html');
     assert.ok(html.includes(target), target);
     assert.match(html, /http-equiv="refresh"/i);
   });
+});
+
+
+test('all declared teaching states parse and have distinct outputs', () => {
+  for (const pagePath of articles) {
+    const html = read(pagePath);
+    const matches = [...html.matchAll(/<script type="application\/json" data-demo-states>([\s\S]*?)<\/script>/g)];
+    if (pagePath.endsWith('05-wordpiece-inputs.html')) continue;
+    assert.ok(matches.length >= 1, pagePath + ': demo states missing');
+    for (const [, raw] of matches) {
+      const states = JSON.parse(raw);
+      assert.ok(Object.keys(states).length >= 2);
+      assert.ok(new Set(Object.values(states)).size >= 2);
+    }
+  }
 });
 
 test('shared local stylesheet and script exist', () => {

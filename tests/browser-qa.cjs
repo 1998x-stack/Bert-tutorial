@@ -92,6 +92,11 @@ async function main() {
       'articles/08-roberta-training-recipe.html',
       'articles/09-pretraining-data-engineering.html',
       'articles/10-bert-optimization-hyperparameters.html',
+      'articles/11-encoder-scaling-compute.html',
+      'articles/12-numerical-stability-attention.html',
+      'articles/13-multilingual-transfer.html',
+      'articles/14-encoder-model-selection.html',
+      'articles/15-electra-replaced-token-detection.html',
     ];
     for (const articlePath of articlePages) {
       await page.goto(baseUrl + '/' + articlePath, { waitUntil: 'networkidle' });
@@ -99,7 +104,8 @@ async function main() {
       const h1Count = await page.locator('.article-main h1').count();
       if (h1Count !== 1) throw new Error(articlePath + ': expected exactly one H1');
       const mathCount = await page.locator('math').count();
-      const mathAudit = await page.locator('math').evaluateAll((nodes) => nodes.map((node) => ({ namespace: node.namespaceURI, label: node.getAttribute('aria-label') })));
+      const mathAudit = await page.locator('math').evaluateAll((nodes) => nodes.map((node) => ({ namespace: node.namespaceURI, label: node.getAttribute('aria-label'), width: node.getBoundingClientRect().width, height: node.getBoundingClientRect().height })));
+      for (const f of mathAudit) if (f.width <= 0 || f.height <= 0) throw new Error(articlePath + ': zero-area MathML formula');
       for (const formula of mathAudit) {
         if (formula.namespace !== 'http://www.w3.org/1998/Math/MathML') throw new Error(articlePath + ': MathML namespace is incorrect');
         if (!formula.label) throw new Error(articlePath + ': MathML aria-label missing');
@@ -148,7 +154,7 @@ async function main() {
     if (offlineCount !== 28) throw new Error('file:// homepage rendered ' + offlineCount + ' chapters, expected 28');
 
     if (errors.length) throw new Error(errors.join('\n'));
-    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, ten article interactions, MathML, and 1440/768/390/360px layouts.');
+    console.log('Browser QA passed: homepage HTTP + file://, search/filter/progress, fifteen article interactions, MathML, and 1440/768/390/360px layouts.');
   } finally {
     await browser.close();
     await new Promise((resolve) => server.close(resolve));

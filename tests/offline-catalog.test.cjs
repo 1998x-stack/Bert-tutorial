@@ -24,7 +24,7 @@ test('all 28 chapter links point to existing files', () => {
   }
 });
 
-test('the first ten catalog entries link to the deep-reading articles', () => {
+test('the first fifteen catalog entries link to the deep-reading articles', () => {
   const expected = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
@@ -36,8 +36,13 @@ test('the first ten catalog entries link to the deep-reading articles', () => {
     'articles/08-roberta-training-recipe.html',
     'articles/09-pretraining-data-engineering.html',
     'articles/10-bert-optimization-hyperparameters.html',
+    'articles/11-encoder-scaling-compute.html',
+    'articles/12-numerical-stability-attention.html',
+    'articles/13-multilingual-transfer.html',
+    'articles/14-encoder-model-selection.html',
+    'articles/15-electra-replaced-token-detection.html',
   ];
-  assert.deepEqual(source.chapters.slice(0, 10).map((chapter) => chapter.file), expected);
+  assert.deepEqual(source.chapters.slice(0, 15).map((chapter) => chapter.file), expected);
 });
 
 test('file mode uses the embedded snapshot and HTTP mode falls back to courses.json', () => {
