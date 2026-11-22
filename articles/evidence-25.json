@@ -1,0 +1,55 @@
+{
+  "article_id": "25",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "LoRA freezes pretrained weights and parameterizes low-rank updates using two trainable matrices.",
+      "source_url": "https://arxiv.org/abs/2106.09685",
+      "locator": "§3, Equation (1)–(3)",
+      "status": "verified",
+      "verification_note": "ΔW is adapted, not original W reconstructed."
+    },
+    {
+      "id": "c02",
+      "claim": "LoRA common scale is alpha divided by rank and init can make the initial adapter update zero.",
+      "source_url": "https://arxiv.org/abs/2106.09685",
+      "locator": "§4 implementation choices",
+      "status": "verified",
+      "verification_note": "Shapes and sign conventions depend on linear layer orientation."
+    },
+    {
+      "id": "c03",
+      "claim": "AdaLoRA uses importance-aware budget allocation of SVD-inspired triplets without repeated exact SVD of full weight matrices.",
+      "source_url": "https://arxiv.org/abs/2303.10512",
+      "locator": "§3, Algorithm 1",
+      "status": "verified",
+      "verification_note": "Dynamic rank allocation must include scheduling and scoring."
+    },
+    {
+      "id": "c04",
+      "claim": "BitFit fine-tunes bias terms and reports competitive small-to-medium-data outcomes.",
+      "source_url": "https://aclanthology.org/2022.acl-short.1/",
+      "locator": "Abstract; §2–4",
+      "status": "verified",
+      "verification_note": "Performance is task/data specific; does not imply success on bias-free models."
+    },
+    {
+      "id": "c05",
+      "claim": "LoRA update can merge into a standard linear weight for inference when arithmetic permits.",
+      "source_url": "https://arxiv.org/abs/2106.09685",
+      "locator": "§3, deployment discussion",
+      "status": "verified",
+      "verification_note": "Quantized/fused versions require explicit parity checks."
+    },
+    {
+      "id": "c06",
+      "claim": "AdaLoRA reference PEFT settings expose target rank and allocation schedule.",
+      "source_url": "https://huggingface.co/docs/peft/main/package_reference/adalora",
+      "locator": "AdaLoraConfig and schedule options",
+      "status": "verified",
+      "verification_note": "Library implementation is versioned, separate from paper."
+    }
+  ]
+}
