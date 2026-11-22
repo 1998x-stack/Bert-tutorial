@@ -1,0 +1,55 @@
+{
+  "article_id": "25",
+  "updated": "2026-11-22",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "LoRA freezes pretrained weights and trains a low-rank decomposition for weight updates",
+      "source_url": "https://arxiv.org/abs/2106.09685",
+      "locator": "§3.1; Eq. (3)",
+      "status": "verified",
+      "verification_note": "The update is BA scaled by alpha/r in original formulation."
+    },
+    {
+      "id": "c02",
+      "claim": "Common LoRA initialization zeros one factor, preserving initial base forward",
+      "source_url": "https://arxiv.org/abs/2106.09685",
+      "locator": "§3.1 implementation notes",
+      "status": "verified",
+      "verification_note": "A and B both zero is not equivalent to standard LoRA initialization."
+    },
+    {
+      "id": "c03",
+      "claim": "LoRA updates can be merged into dense base weights for inference under compatible representation",
+      "source_url": "https://github.com/microsoft/LoRA",
+      "locator": "README loralib merge_weights",
+      "status": "verified",
+      "verification_note": "Merged inference does not reduce base dense storage."
+    },
+    {
+      "id": "c04",
+      "claim": "AdaLoRA uses SVD-based adaptation and importance-aware dynamic rank allocation",
+      "source_url": "https://arxiv.org/abs/2303.10512",
+      "locator": "§3.2–3.3",
+      "status": "verified",
+      "verification_note": "Rank allocation has training schedule and orthogonality regularization."
+    },
+    {
+      "id": "c05",
+      "claim": "BitFit trains bias parameters or subsets plus task-specific outputs",
+      "source_url": "https://aclanthology.org/2022.acl-short.1/",
+      "locator": "§2 Method",
+      "status": "verified",
+      "verification_note": "Bias-only depends on model containing such parameters."
+    },
+    {
+      "id": "c06",
+      "claim": "Hugging Face PEFT LoRA supports target_modules, alpha scaling, and merge paths with caveats",
+      "source_url": "https://huggingface.co/docs/peft/main/conceptual_guides/lora",
+      "locator": "LoRA guide; merge and scaling",
+      "status": "verified",
+      "verification_note": "Implementation-specific behavior, not all original-paper facts."
+    }
+  ]
+}
