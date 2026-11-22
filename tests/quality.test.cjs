@@ -270,3 +270,33 @@ test('final 26–28 technical deep dives have standalone math, diagrams and evid
     assert.ok(JSON.parse(read('articles/evidence-' + id + '.json')).claims.length >= 4);
   }
 });
+
+test('chapters 26–28 each have two complementary diagrams and two independent interactive demos', () => {
+  const pages = [
+    'articles/26-modernbert-modern-encoder.html',
+    'articles/27-model-compression-quantization.html',
+    'articles/28-end-to-end-chinese-nlu-project.html'
+  ];
+  for (const page of pages) {
+    const html = read(page);
+    const imagePaths = [...html.matchAll(/<img[^>]+src="([^"]+\.svg)"/g)].map(x => x[1]);
+    assert.equal(imagePaths.length, 2, page + ': exactly two explanatory images');
+    assert.equal(new Set(imagePaths).size, 2, page + ': duplicate diagrams');
+    for (const src of imagePaths) {
+      assert.ok(existsFrom(page, src), page + ': missing figure ' + src);
+      const svg = read(path.posix.join('assets/diagrams', path.basename(src)));
+      assert.match(svg, /<title id=/, page);
+      assert.match(svg, /<desc id=/, page);
+      assert.match(svg, /viewBox=/, page);
+    }
+    const demonstrations = [...html.matchAll(/<script type="application\/json" data-demo-states>([\s\S]*?)<\/script>/g)];
+    assert.equal(demonstrations.length, 2, page + ': expected two separate demos');
+    for (const [, json] of demonstrations) {
+      const states = JSON.parse(json);
+      assert.ok(Object.keys(states).length >= 3, page);
+      assert.equal(new Set(Object.values(states)).size, Object.values(states).length, page);
+    }
+    assert.ok([...html.matchAll(/<math display="block"/g)].length >= 1, page + ': missing substantial MathML');
+    assert.match(html, /<section id="references"/);
+  }
+});

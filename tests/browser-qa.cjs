@@ -143,13 +143,19 @@ async function main() {
         if (before === after) throw new Error(articlePath + ': demo interaction did not change output');
       }
 
-      if (articlePages.indexOf(articlePath) >= 20 && articlePages.indexOf(articlePath) < 25) {
+      if (articlePages.indexOf(articlePath) >= 20) {
         const demos = page.locator('[data-demo]');
         if (await demos.count() !== 2) throw new Error(articlePath + ': expected two demonstrations');
         for (let idx = 0; idx < 2; idx++) {
           const demo = demos.nth(idx);
+          const buttons = demo.locator('[data-demo-action]');
           const before = await demo.locator('[data-demo-output]').textContent();
-          await demo.locator('[data-demo-action]').nth(idx === 0 ? 0 : 1).click();
+          const buttonCount = await buttons.count();
+          let target = 0;
+          for (let b = 0; b < buttonCount; b++) {
+            if ((await buttons.nth(b).getAttribute('aria-pressed')) !== 'true') { target = b; break; }
+          }
+          await buttons.nth(target).click();
           const after = await demo.locator('[data-demo-output]').textContent();
           if (before === after) throw new Error(articlePath + ': demo ' + idx + ' did not respond');
         }
