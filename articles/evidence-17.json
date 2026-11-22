@@ -1,0 +1,55 @@
+{
+  "article_id": "17",
+  "updated": "2026-11-22",
+  "status": "verified",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "MPNet combines dependency among predicted tokens with auxiliary full-sentence positional information.",
+      "source_url": "https://arxiv.org/abs/2004.09297",
+      "locator": "Abstract; §1; §2.3",
+      "status": "verified",
+      "verification_note": "Both contributions corroborated in Microsoft Research explainer."
+    },
+    {
+      "id": "c02",
+      "claim": "MPNet pretraining conditions on previous real tokens in permutation plus mask symbols for all target positions, rather than naively adding MLM and PLM losses.",
+      "source_url": "https://arxiv.org/abs/2004.09297",
+      "locator": "§2.2 Eq. (3)-(4); §2.3 Eq. (5)",
+      "status": "verified",
+      "verification_note": "Preserves distinction x_z<t vs M_z>c and only sums t=c+1...n."
+    },
+    {
+      "id": "c03",
+      "claim": "Position compensation supplies masked placeholders and position information for all predicted positions.",
+      "source_url": "https://www.microsoft.com/en-us/research/blog/mpnet-combines-strengths-of-masked-and-permuted-language-modeling-for-language-understanding/",
+      "locator": "Figure 2; Input consistency",
+      "status": "verified",
+      "verification_note": "Official explanatory figure cross-checks main paper §2.3."
+    },
+    {
+      "id": "c04",
+      "claim": "MPNet uses separate masks for query and content streams to allow dependencies while preventing target leakage.",
+      "source_url": "https://arxiv.org/abs/2004.09297",
+      "locator": "§2.3; Figure 2b and text",
+      "status": "verified",
+      "verification_note": "Illustrative demo summarizes sets, not full implementation masks."
+    },
+    {
+      "id": "c05",
+      "claim": "MPNet official release provides model code and pretrained checkpoints.",
+      "source_url": "https://github.com/microsoft/MPNet",
+      "locator": "README; source code",
+      "status": "verified",
+      "verification_note": "Official code link in paper abstract; no benchmark reproduction claimed."
+    },
+    {
+      "id": "c06",
+      "claim": "MPNet reported comparison and ablation on GLUE and SQuAD, including position compensation.",
+      "source_url": "https://arxiv.org/abs/2004.09297",
+      "locator": "§3; §3.6 Table 5",
+      "status": "verified",
+      "verification_note": "No table scores repeated without protocol; avoid conflating evaluation splits."
+    }
+  ]
+}
