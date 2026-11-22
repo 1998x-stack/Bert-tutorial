@@ -55,3 +55,11 @@
 - Editorial source policy: primary papers and official code are linked per article; evidence-11.json through evidence-15.json record source locators and verification notes.
 - Engineering: expand 28-chapter catalog with 15 article URLs; synchronized offline JSON snapshot, articles/index.html, README, article interactions and browser test list.
 - Validation: pending CI and browser checks for this branch. Do not claim deployment or QA success before inspecting run results.
+
+### 2026-11-22 — Olah-style BERT model-family deep reads 16–20
+- Source branch: main @ 638e8951ee52ded5730218f39b1b713968210c2e; working branch: olah-style/bert-16-20-in-depth-20261122.
+- Editorial sequence: five individually committed stand-alone long-form Chinese articles on XLNet, MPNet, ALBERT, DeBERTa and Chinese pretraining; each carries one subject-specific original SVG, offline HTML/MathML learning demo, and source-located evidence JSON.
+- Technical controls: distinguish permutation order from physical text order; prevent two-stream target leakage; keep masked target location versus content separate; calculate ALBERT embedding/weight sharing without inventing FLOP savings; preserve DeBERTa c2c/c2p/p2c relative direction; and keep Chinese WordPiece tokenization separate from WWM target grouping.
+- Architecture: preserve all 28 course chapters, redirect legacy 16–20 URLs, synchronize courses.json with index.html offline catalog, extend the 20-card article index, update README and automated test coverage.
+- Code examples: stdlib variant-mechanism checks for visibility, target positions, embedding parameters, relative indices and Chinese whole-word groups. Teaching experiments are not performance replication.
+- Verification: pending new branch GitHub Actions results; test status/deployment to be reported separately, not assumed.

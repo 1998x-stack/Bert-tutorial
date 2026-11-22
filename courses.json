@@ -295,83 +295,83 @@
     },
     {
       "num": "16",
-      "title": "XLNet 排列语言模型",
+      "title": "XLNet：排列语言模型与双流注意力",
       "topics": [
         "Permutation LM",
-        "Two-Stream Attention",
-        "目标泄漏",
-        "自回归"
+        "Two-Stream",
+        "Target Leakage",
+        "Transformer-XL"
       ],
-      "file": "16.html",
+      "file": "articles/16-xlnet-permutation-two-stream.html",
       "stageId": "variants",
       "stage": "模型家族与变体",
       "level": "高级",
-      "duration": 45,
-      "summary": "解释排列语言模型的目标分解、双流注意力和与 MLM 的设计差异。"
+      "duration": 35,
+      "summary": "从概率分解顺序而非自然语序出发，推导 XLNet 的双流注意力、目标泄漏防护与部分目标预测。"
     },
     {
       "num": "17",
-      "title": "MPNet：掩码与排列融合",
+      "title": "MPNet：排列预测与完整位置补偿",
       "topics": [
-        "MLM",
-        "Permutation LM",
-        "位置补偿",
-        "句向量"
+        "MPNet",
+        "Position Compensation",
+        "Output Dependency",
+        "Two-Stream"
       ],
-      "file": "17.html",
+      "file": "articles/17-mpnet-masked-permuted.html",
       "stageId": "variants",
       "stage": "模型家族与变体",
       "level": "高级",
-      "duration": 40,
-      "summary": "分析 MPNet 如何结合掩码预测与排列建模，缓解各自的训练限制。"
+      "duration": 35,
+      "summary": "辨析 MLM 缺少目标间依赖和 PLM 缺少完整位置覆盖，解释 mask 占位与排列预测的组合。"
     },
     {
       "num": "18",
-      "title": "ALBERT 参数高效设计",
+      "title": "ALBERT：嵌入分解、跨层共享与 SOP",
       "topics": [
-        "嵌入分解",
-        "参数共享",
+        "Factorized Embedding",
+        "Cross-layer Sharing",
         "SOP",
-        "模型深度"
+        "Parameter Budget"
       ],
-      "file": "18.html",
+      "file": "articles/18-albert-parameter-sharing.html",
       "stageId": "variants",
       "stage": "模型家族与变体",
       "level": "高级",
-      "duration": 40,
-      "summary": "拆解词嵌入分解、跨层参数共享和 Sentence Order Prediction。"
+      "duration": 35,
+      "summary": "计算 V×H 与 V×E+E×H 的参数差异，理解层间共享不等于 FLOPs 同比下降，以及 SOP 的负例。"
     },
     {
       "num": "19",
-      "title": "DeBERTa 解耦注意力",
+      "title": "DeBERTa：三项解耦注意力与增强掩码解码",
       "topics": [
-        "内容位置解耦",
-        "相对位置",
-        "增强掩码解码",
-        "注意力"
+        "C2C / C2P / P2C",
+        "Relative Position",
+        "EMD",
+        "Attention"
       ],
-      "file": "19.html",
+      "file": "articles/19-deberta-disentangled-attention.html",
       "stageId": "variants",
       "stage": "模型家族与变体",
       "level": "高级",
-      "duration": 45,
-      "summary": "理解内容向量与位置向量分离建模的动机、公式和实现代价。"
+      "duration": 38,
+      "summary": "逐项推导内容与位置的三种关系，核对相对索引方向、√(3d) 缩放及 EMD 的职责。"
     },
     {
       "num": "20",
-      "title": "中文预训练模型与全词掩码",
+      "title": "中文 BERT：全词掩码、ERNIE 与字形拼音",
       "topics": [
-        "中文 BERT",
-        "WWM",
-        "ERNIE",
-        "字形拼音"
+        "Chinese WordPiece",
+        "Whole-word Mask",
+        "ERNIE / MacBERT",
+        "Glyph / Pinyin"
       ],
-      "file": "20.html",
+      "file": "articles/20-chinese-bert-masking.html",
       "stageId": "chinese-longtext",
       "stage": "中文与长文本",
-      "level": "进阶",
-      "duration": 45,
-      "summary": "比较中文字符切分、全词掩码、知识增强和字形拼音信息的不同路线。"
+      "level": "高级",
+      "duration": 40,
+      "summary": "分清中文 token IDs、外部分词的整词目标、MacBERT 替换策略以及 ERNIE/ChineseBERT 的不同增强。"
     },
     {
       "num": "21",

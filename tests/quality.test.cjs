@@ -20,6 +20,11 @@ const articles = [
   'articles/13-multilingual-transfer.html',
   'articles/14-encoder-model-selection.html',
   'articles/15-electra-replaced-token-detection.html',
+  'articles/16-xlnet-permutation-two-stream.html',
+  'articles/17-mpnet-masked-permuted.html',
+  'articles/18-albert-parameter-sharing.html',
+  'articles/19-deberta-disentangled-attention.html',
+  'articles/20-chinese-bert-masking.html',
 ];
 
 function read(relativePath) {
@@ -77,18 +82,18 @@ test('all article assets and local links resolve inside the repository', () => {
   }
 });
 
-test('fifteen articles use fifteen different subject-specific diagrams', () => {
+test('twenty articles use twenty different subject-specific diagrams', () => {
   const diagramPaths = articles.map((pagePath) => {
     const html = read(pagePath);
     const match = html.match(/<img[^>]+src="([^"]+\.svg)"/i);
     assert.ok(match, pagePath + ': diagram path missing');
     return match[1];
   });
-  assert.equal(new Set(diagramPaths).size, 15);
+  assert.equal(new Set(diagramPaths).size, 20);
 });
 
 test('each article has an evidence ledger with verified source locators', () => {
-  for (let index = 1; index <= 15; index += 1) {
+  for (let index = 1; index <= 20; index += 1) {
     const articleId = String(index).padStart(2, '0');
     const ledgerPath = 'articles/evidence-' + articleId + '.json';
     const ledger = JSON.parse(read(ledgerPath));
@@ -116,7 +121,7 @@ test('each article includes a meaningful interaction or tokenizer experiment', (
   }
 });
 
-test('legacy chapter entry points 01–15 redirect to the new article pages', () => {
+test('legacy chapter entry points 01–20 redirect to the new article pages', () => {
   const targets = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
@@ -133,6 +138,11 @@ test('legacy chapter entry points 01–15 redirect to the new article pages', ()
     'articles/13-multilingual-transfer.html',
     'articles/14-encoder-model-selection.html',
     'articles/15-electra-replaced-token-detection.html',
+  'articles/16-xlnet-permutation-two-stream.html',
+  'articles/17-mpnet-masked-permuted.html',
+  'articles/18-albert-parameter-sharing.html',
+  'articles/19-deberta-disentangled-attention.html',
+  'articles/20-chinese-bert-masking.html',
   ];
   targets.forEach((target, index) => {
     const html = read(String(index + 1).padStart(2, '0') + '.html');
