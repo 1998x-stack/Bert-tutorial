@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 490" role="img" aria-labelledby="title desc">
+<title id="title">量化误差来源与稀疏是否真正加速</title>
+<desc id="desc">上半部分是逐张量对称仿射量化管线：FP32 权重 w 经校准得到 scale 与零点，四舍五入并截断为整数 q，反量化得 w~ = s（q−z）；clip 丢弃越界值，round 引入不超过半个 scale 的误差。中间区分 Weight-only INT8 与 Weights+Activations INT8 两条执行路径，前者激活保持浮点需要反复转换。下半部分是 768×768 权重矩阵把 80% 置零后的账本：稠密张量仍有 589824 个参数槽，只有配合稀疏存储与 sparse kernel 才会减少算术。</desc>
+<rect width="960" height="490" rx="22" fill="#f5f7f2"/>
+<g font-family="system-ui,sans-serif">
+<text x="480" y="38" text-anchor="middle" font-size="21" font-weight="700" fill="#203035">量化误差与稀疏加速是三本不同的账</text>
+<text x="480" y="64" text-anchor="middle" font-size="14" fill="#53676d">教学结构图：数值为示例，未在具体硬件上测量延迟或 RSS</text>
+<text x="46" y="104" font-size="15" font-weight="700" fill="#203035">① 逐张量对称仿射量化：误差来自 clip 与 round</text>
+<rect x="46" y="118" width="150" height="52" rx="10" fill="#e6e0f7" stroke="#6b4fbf" stroke-width="2"/>
+<text x="121" y="140" text-anchor="middle" font-size="14" fill="#4b3690">FP32 权重 w</text>
+<text x="121" y="159" text-anchor="middle" font-size="12" fill="#6b6360">校准 amax / 通道范围</text>
+<rect x="236" y="118" width="150" height="52" rx="10" fill="#e0f1ea" stroke="#168579" stroke-width="2"/>
+<text x="311" y="140" text-anchor="middle" font-size="14" fill="#176056">scale s, 零点 z</text>
+<text x="311" y="159" text-anchor="middle" font-size="12" fill="#53676d">per-tensor / per-channel</text>
+<rect x="426" y="118" width="170" height="52" rx="10" fill="#fbe7cf" stroke="#c07a1e" stroke-width="2"/>
+<text x="511" y="140" text-anchor="middle" font-size="14" fill="#8a5411">q = clip(round(w/s))</text>
+<text x="511" y="159" text-anchor="middle" font-size="12" fill="#8a5411">有限整数区间</text>
+<rect x="636" y="118" width="170" height="52" rx="10" fill="#e0f1ea" stroke="#168579" stroke-width="2"/>
+<text x="721" y="140" text-anchor="middle" font-size="14" fill="#176056">w̃ = s(q − z)</text>
+<text x="721" y="159" text-anchor="middle" font-size="12" fill="#53676d">反量化回浮点</text>
+<text x="840" y="140" font-size="12" fill="#53676d">clip 丢</text>
+<text x="840" y="158" font-size="12" fill="#53676d">越界值</text>
+<text x="46" y="204" font-size="15" font-weight="700" fill="#203035">② 两条执行路径，转换开销不同</text>
+<rect x="46" y="218" width="420" height="60" rx="10" fill="#e0f1ea" stroke="#168579" stroke-width="2"/>
+<text x="256" y="242" text-anchor="middle" font-size="14" fill="#176056">Weight-only INT8</text>
+<text x="256" y="263" text-anchor="middle" font-size="12" fill="#53676d">权重变小；激活/LayerNorm/softmax 仍浮点，需反复转换</text>
+<rect x="494" y="218" width="420" height="60" rx="10" fill="#fbe7cf" stroke="#c07a1e" stroke-width="2"/>
+<text x="704" y="242" text-anchor="middle" font-size="14" fill="#8a5411">Weights + Activations INT8</text>
+<text x="704" y="263" text-anchor="middle" font-size="12" fill="#8a5411">整数 kernel 才可能同时省体积与算术，依赖后端覆盖</text>
+<text x="46" y="322" font-size="15" font-weight="700" fill="#203035">③ 768×768 置零 80%：稠密形状没变</text>
+<rect x="46" y="336" width="600" height="30" rx="8" fill="#d9e0dd" stroke="#8a9a95" stroke-width="2"/>
+<text x="346" y="356" text-anchor="middle" font-size="13" fill="#4a5a56">dense 张量：仍 768×768 = 589,824 个参数槽</text>
+<rect x="46" y="378" width="600" height="30" rx="8" fill="#f0c9c9" stroke="#b0453f" stroke-width="2"/>
+<text x="346" y="398" text-anchor="middle" font-size="13" fill="#8a3b34">sparse 存储：保留非零值 117,965 + indices 元信息</text>
+<text x="46" y="440" font-size="14" fill="#b0453f">零值本身不会加速 dense matmul；只有配对的支持 sparse kernel 才可能减少算术</text>
+<text x="46" y="466" font-size="14" fill="#53676d">若未测量目标设备 p95 与峰值 RSS，就不能由压缩率推断端到端提速</text>
+</g>
+</svg>
