@@ -1,0 +1,55 @@
+{
+  "article_id": "21",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Longformer combines sliding-window local attention and task-motivated global attention.",
+      "source_url": "https://arxiv.org/abs/2004.05150",
+      "locator": "§2, Figure 2",
+      "status": "verified",
+      "verification_note": "Global token choice is task-defined and distinct from padding mask."
+    },
+    {
+      "id": "c02",
+      "claim": "Longformer also describes dilated sliding-window patterns and an encoder-decoder application (LED).",
+      "source_url": "https://arxiv.org/abs/2004.05150",
+      "locator": "§2–4",
+      "status": "verified",
+      "verification_note": "Separate encoder classification from generative LED."
+    },
+    {
+      "id": "c03",
+      "claim": "BigBird combines local window, global and random attention mechanisms.",
+      "source_url": "https://arxiv.org/abs/2007.14062",
+      "locator": "§2–3, sparse patterns",
+      "status": "verified",
+      "verification_note": "Explains block-sparse hardware implementations, not universal random sampling."
+    },
+    {
+      "id": "c04",
+      "claim": "BigBird theoretical properties require the paper's sparse attention graph assumptions.",
+      "source_url": "https://arxiv.org/abs/2007.14062",
+      "locator": "§3 and Appendix theory",
+      "status": "verified",
+      "verification_note": "Do not generalize to arbitrary sparse masks."
+    },
+    {
+      "id": "c05",
+      "claim": "When local/global/random degrees are bounded, sparse attention pair count scales linearly in length.",
+      "source_url": "https://arxiv.org/abs/2007.14062",
+      "locator": "§2 complexity discussion",
+      "status": "verified",
+      "verification_note": "O(n(w+g+r)) is teaching edge-count expression, not measured latency."
+    },
+    {
+      "id": "c06",
+      "claim": "Task global attention differs from padding and uses explicit attention masks in Longformer code.",
+      "source_url": "https://github.com/allenai/longformer",
+      "locator": "README, global attention examples",
+      "status": "verified",
+      "verification_note": "Implementation-specific mask values must follow checkpoint/API."
+    }
+  ]
+}
