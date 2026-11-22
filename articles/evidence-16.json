@@ -1,0 +1,55 @@
+{
+  "article_id": "16",
+  "status": "verified",
+  "updated": "2026-11-22",
+  "claims": [
+    {
+      "id": "c01",
+      "claim": "Permutation language modeling permutes factorization order without reordering natural token positions.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.2, Equation (3)",
+      "status": "verified",
+      "verification_note": "Distinguishes attention prediction order from physical text order."
+    },
+    {
+      "id": "c02",
+      "claim": "Two-stream self-attention separates target-position query representation from target-containing content representation to avoid leakage.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.3, Figure 1 and Equation (4)",
+      "status": "verified",
+      "verification_note": "Query stream cannot attend to its own current token content; content stream can."
+    },
+    {
+      "id": "c03",
+      "claim": "XLNet introduces partial prediction, optimizing a subset of prediction factors.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.3, Equation (5)",
+      "status": "verified",
+      "verification_note": "Full permutation log-likelihood is conceptual objective, practical training uses partial prediction."
+    },
+    {
+      "id": "c04",
+      "claim": "XLNet integrates Transformer-XL recurrence and relative position encoding.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.4",
+      "status": "verified",
+      "verification_note": "Distinguishes architecture change from PLM objective change."
+    },
+    {
+      "id": "c05",
+      "claim": "The implementation exposes permutation attention masks and target mappings.",
+      "source_url": "https://huggingface.co/docs/transformers/model_doc/xlnet",
+      "locator": "XLNetModel forward arguments perm_mask and target_mapping",
+      "status": "verified",
+      "verification_note": "Implementation interface is not presented as exact original paper pseudocode."
+    },
+    {
+      "id": "c06",
+      "claim": "The toy four-token permutation does not imply every target sees all natural left/right context in one forward pass.",
+      "source_url": "https://arxiv.org/abs/1906.08237",
+      "locator": "§2.2, Equation (3)",
+      "status": "verified",
+      "verification_note": "Expected over factorization orders; each prediction conditions only on earlier permutation positions."
+    }
+  ]
+}
