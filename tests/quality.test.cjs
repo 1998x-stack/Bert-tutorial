@@ -30,6 +30,9 @@ const articles = [
   'articles/23-distilbert-tinybert-knowledge-distillation.html',
   'articles/24-mobilebert-edge-inference.html',
   'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html',
+  'articles/26-modernbert-modern-encoder.html',
+  'articles/27-model-compression-quantization.html',
+  'articles/28-end-to-end-chinese-nlu-project.html',
 ];
 
 function read(relativePath) {
@@ -87,18 +90,18 @@ test('all article assets and local links resolve inside the repository', () => {
   }
 });
 
-test('twenty-five articles use twenty-five different subject-specific diagrams', () => {
+test('twenty-eight articles use twenty-eight different subject-specific diagrams', () => {
   const diagramPaths = articles.map((pagePath) => {
     const html = read(pagePath);
     const match = html.match(/<img[^>]+src="([^"]+\.svg)"/i);
     assert.ok(match, pagePath + ': diagram path missing');
     return match[1];
   });
-  assert.equal(new Set(diagramPaths).size, 25);
+  assert.equal(new Set(diagramPaths).size, 28);
 });
 
 test('each article has an evidence ledger with verified source locators', () => {
-  for (let index = 1; index <= 25; index += 1) {
+  for (let index = 1; index <= 28; index += 1) {
     const articleId = String(index).padStart(2, '0');
     const ledgerPath = 'articles/evidence-' + articleId + '.json';
     const ledger = JSON.parse(read(ledgerPath));
@@ -126,7 +129,7 @@ test('each article includes a meaningful interaction or tokenizer experiment', (
   }
 });
 
-test('legacy chapter entry points 01–25 redirect to the new article pages', () => {
+test('legacy chapter entry points 01–28 redirect to the new article pages', () => {
   const targets = [
     'articles/01-pretraining-evolution.html',
     'articles/02-transformer-encoder.html',
@@ -153,6 +156,9 @@ test('legacy chapter entry points 01–25 redirect to the new article pages', ()
     'articles/23-distilbert-tinybert-knowledge-distillation.html',
     'articles/24-mobilebert-edge-inference.html',
     'articles/25-lora-adalora-bitfit-parameter-efficient-tuning.html',
+    'articles/26-modernbert-modern-encoder.html',
+    'articles/27-model-compression-quantization.html',
+    'articles/28-end-to-end-chinese-nlu-project.html',
   ];
   targets.forEach((target, index) => {
     const html = read(String(index + 1).padStart(2, '0') + '.html');
@@ -243,5 +249,24 @@ test('new chapters 21–25 each have two distinct conceptual diagrams and two in
     const equations = [...html.matchAll(/<math display="block"/g)];
     assert.ok(equations.length >= 1, page + ': missing substantial MathML');
     assert.match(html, /<section id="references"/);
+  }
+});
+
+
+test('final 26–28 technical deep dives have standalone math, diagrams and evidence', () => {
+  for (const id of ['26','27','28']) {
+    const chapter = JSON.parse(read('courses.json')).chapters.find(row => row.num === id);
+    const html = read(chapter.file);
+    assert.ok((html.match(/<section id=/g)||[]).length >= 7, chapter.file);
+    assert.match(html, /<math display="block" aria-label=/, chapter.file);
+    const images = [...html.matchAll(/<img[^>]+src="([^"]+\.svg)"/g)];
+    assert.ok(images.length >= 1, chapter.file);
+    for (const [,src] of images) {
+      assert.ok(existsFrom(chapter.file, src));
+      const svg = read(path.posix.join('assets/diagrams', path.basename(src)));
+      assert.match(svg, /<title id=/); assert.match(svg, /<desc id=/); assert.match(svg, /viewBox=/);
+    }
+    assert.match(html, /data-demo-states/);
+    assert.ok(JSON.parse(read('articles/evidence-' + id + '.json')).claims.length >= 4);
   }
 });

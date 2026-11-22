@@ -455,51 +455,51 @@
     },
     {
       "num": "26",
-      "title": "ModernBERT 与现代编码器设计",
+      "title": "ModernBERT：RoPE、GeGLU 与交替局部/全局注意力",
       "topics": [
-        "长上下文",
-        "位置编码",
-        "Gated FFN",
-        "吞吐"
+        "ModernBERT",
+        "RoPE",
+        "GeGLU",
+        "Alternating Attention"
       ],
-      "file": "26.html",
+      "file": "articles/26-modernbert-modern-encoder.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
       "duration": 45,
-      "summary": "从现代编码器的结构、训练数据和长上下文能力理解 BERT 家族的演进。"
+      "summary": "解释 8192-token Encoder 的 RoPE、GeGLU、交替 attention、unpadding、packing 的信息隔离与版本边界。"
     },
     {
       "num": "27",
-      "title": "模型压缩、量化与端侧推理",
+      "title": "模型压缩：量化、剪枝与端侧质量门禁",
       "topics": [
-        "量化",
-        "剪枝",
-        "蒸馏",
-        "延迟预算"
+        "INT8 / PTQ / QAT",
+        "Pruning",
+        "Distillation",
+        "p95 / Memory"
       ],
-      "file": "27.html",
+      "file": "articles/27-model-compression-quantization.html",
       "stageId": "efficient",
       "stage": "轻量化与部署",
       "level": "高级",
       "duration": 45,
-      "summary": "比较压缩策略对模型大小、吞吐、精度与端侧资源的影响。"
+      "summary": "区分权重位宽、非结构化与结构化剪枝、模型激活和真实推理延迟，以质量/p95/peak RSS 统一验收。"
     },
     {
       "num": "28",
-      "title": "端到端中文 NLU 实战项目",
+      "title": "中文 NLU 综合项目：训练、评估与部署",
       "topics": [
-        "数据流水线",
-        "微调",
-        "误差分析",
-        "部署"
+        "Chinese Intent Classification",
+        "Data Leakage",
+        "Macro F1",
+        "Reproducible Pipeline"
       ],
-      "file": "28.html",
+      "file": "articles/28-end-to-end-chinese-nlu-project.html",
       "stageId": "capstone",
       "stage": "综合项目",
       "level": "高级",
       "duration": 60,
-      "summary": "把数据准备、模型微调、评估、误差分析与部署串成可复现项目。"
+      "summary": "从 JSONL 数据合同、分组切分与防泄漏到可运行的标准库基线、可选 BERT 微调、Macro F1 与可回滚发布。"
     }
   ]
 }
