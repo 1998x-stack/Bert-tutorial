@@ -46,7 +46,33 @@
           <p>这引出表示学习的核心问题：模型要学习的是“词是什么”，还是“词在当前句子里是什么意思”？早期词向量主要解决前者；上下文表示模型把后者也纳入了表示函数。</p>
           <figure>
             <img src="../assets/diagrams/01-representation-timeline.svg" alt="从 one-hot、静态词向量、ELMo、GPT-1 到 BERT 的表示学习时间轴">
-            <figcaption>图 1. 表示学习的关键变化是可用上下文与迁移方式逐步改变，而不只是网络规模变大。</figcaption>
+            <figcaption>图 1A. 表示学习的关键变化是可用上下文与迁移方式逐步改变，而不只是网络规模变大。</figcaption>
+          </figure>
+          <figure>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 360" role="img" aria-labelledby="c01reprTitle c01reprDesc">
+              <title id="c01reprTitle">静态查表与上下文编码器的表示函数对比</title>
+              <desc id="c01reprDesc">左侧静态词向量对词条 bank 只查表一次，得到与句子无关的固定向量 e_bank；右侧上下文编码器读取整句 token，由 Transformer Encoder 计算位置相关的 h_bank。</desc>
+              <rect width="880" height="360" rx="20" fill="#f5f7f2"/>
+              <g font-family="system-ui, sans-serif" fill="#203035">
+                <rect x="20" y="50" width="390" height="280" rx="16" fill="#ffffff" stroke="#e2eae3" stroke-width="2"/>
+                <text x="215" y="84" text-anchor="middle" font-size="17" font-weight="700">静态词向量：同一词条只查表一次</text>
+                <rect x="60" y="150" width="110" height="60" rx="10" fill="#e4e9e5" stroke="#7d918a" stroke-width="2"/><text x="115" y="186" text-anchor="middle" font-size="18" font-weight="700">bank</text>
+                <path d="M170 180 H244" stroke="#7d918a" stroke-width="3"/><path d="M234 172 L246 180 L234 188" fill="none" stroke="#7d918a" stroke-width="3"/>
+                <rect x="250" y="150" width="130" height="60" rx="10" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="315" y="186" text-anchor="middle" font-size="17" font-weight="700">e_bank</text>
+                <text x="215" y="250" text-anchor="middle" font-size="13" fill="#53676d">向量与句子无关：河岸句和银行句得到同一个 e_bank</text>
+                <rect x="470" y="50" width="390" height="280" rx="16" fill="#ffffff" stroke="#e2eae3" stroke-width="2"/>
+                <text x="665" y="84" text-anchor="middle" font-size="17" font-weight="700">上下文编码器：整句参与计算</text>
+                <rect x="487" y="100" width="76" height="42" rx="8" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="525" y="127" text-anchor="middle" font-size="14">The</text>
+                <rect x="571" y="100" width="76" height="42" rx="8" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="609" y="127" text-anchor="middle" font-size="14">river</text>
+                <rect x="655" y="100" width="76" height="42" rx="8" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/><text x="693" y="127" text-anchor="middle" font-size="14" font-weight="700">bank</text>
+                <rect x="739" y="100" width="76" height="42" rx="8" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="777" y="127" text-anchor="middle" font-size="14">was</text>
+                <path d="M693 142 V176" stroke="#c96c4c" stroke-width="3"/><path d="M685 168 L693 180 L701 168" fill="none" stroke="#c96c4c" stroke-width="3"/>
+                <rect x="548" y="180" width="235" height="46" rx="10" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="665" y="209" text-anchor="middle" font-size="15" font-weight="700">Transformer Encoder</text>
+                <path d="M665 226 V260" stroke="#147f80" stroke-width="3"/><path d="M657 252 L665 264 L673 252" fill="none" stroke="#147f80" stroke-width="3"/>
+                <rect x="548" y="264" width="235" height="46" rx="10" fill="#d7eee7" stroke="#147f80" stroke-width="2"/><text x="665" y="293" text-anchor="middle" font-size="15" font-weight="700">h_bank = Encoder(整句, 位置)</text>
+              </g>
+            </svg>
+            <figcaption>图 1B. 同一个词条在两种表示函数下的取值：静态方案只依赖词表索引，上下文方案依赖整句 token 与该词所在位置。</figcaption>
           </figure>
         </section>
 
@@ -141,12 +167,13 @@
             <div class="demo-controls">
               <button type="button" data-demo-action="river" aria-pressed="true">河岸语境</button>
               <button type="button" data-demo-action="finance" aria-pressed="false">金融语境</button>
+              <button type="button" data-demo-action="verb" aria-pressed="false">动词语境</button>
             </div>
             <pre class="demo-output" data-demo-output aria-live="polite">句子：The river bank was covered with grass.
 静态词向量：查表 bank → 同一个 e_bank
 上下文表示：h_bank = Encoder(整句, bank 所在位置)
 解释：当前上下文包含 river 与 grass，帮助模型解释 bank 的用法。</pre>
-            <script type="application/json" data-demo-states>{"river":"句子：The river bank was covered with grass.\n静态词向量：查表 bank → 同一个 e_bank\n上下文表示：h_bank = Encoder(整句, bank 所在位置)\n解释：当前上下文包含 river 与 grass，帮助模型解释 bank 的用法。","finance":"句子：She deposited the check at the bank.\n静态词向量：查表 bank → 仍然是同一个 e_bank\n上下文表示：h_bank = Encoder(整句, bank 所在位置)\n解释：当前上下文包含 deposited 与 check，帮助模型解释 bank 的金融含义。"}</script>
+            <script type="application/json" data-demo-states>{"river":"句子：The river bank was covered with grass.\n静态词向量：查表 bank → 同一个 e_bank\n上下文表示：h_bank = Encoder(整句, bank 所在位置)\n解释：当前上下文包含 river 与 grass，帮助模型解释 bank 的用法。","finance":"句子：She deposited the check at the bank.\n静态词向量：查表 bank → 仍然是同一个 e_bank\n上下文表示：h_bank = Encoder(整句, bank 所在位置)\n解释：当前上下文包含 deposited 与 check，帮助模型解释 bank 的金融含义。","verb":"句子：The plane banked steeply to the left.\n静态词向量：查表 bank → 还是同一个 e_bank\n上下文表示：h_bank = Encoder(整句, bank 所在位置)\n解释：banked 在此作动词（倾斜转弯），词性也需根据左右文判断；静态词向量不区分词性。"}</script>
           </div>
         </section>
 
