@@ -25,7 +25,31 @@
 <section id="objective">
 <h2>1. MLM 的监督对象：先选位置，再生成受损输入</h2>
 <p>设一条已经完成 tokenization 的序列为 <code>x₁,…,xₜ</code>。BERT 从可预测的 token 位置中抽取目标集合 M，原始论文设置的目标预算约为序列 token 数的 15%。输入端按 80/10/10 规则改变这些位置，但监督标签始终保留原 token ID。</p>
-<figure><img src="../assets/diagrams/06-objective-family.svg" alt="比较 token-level MLM、whole-word 与 span masking，以及 NSP 和 SOP 两类句间任务"><figcaption>图 6. 预训练目标的差异不仅在于“遮盖多少”，还包括遮盖单位、样本生成方式与是否额外预测句间关系。</figcaption></figure>
+<figure><img src="../assets/diagrams/06-objective-family.svg" alt="比较 token-level MLM、whole-word 与 span masking，以及 NSP 和 SOP 两类句间任务"><figcaption>图 6A. 预训练目标的差异不仅在于“遮盖多少”，还包括遮盖单位、样本生成方式与是否额外预测句间关系。</figcaption></figure>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 300" role="img" aria-labelledby="c06maskTitle c06maskDesc">
+<title id="c06maskTitle">静态遮盖与动态遮盖的样本生成时机</title>
+<desc id="c06maskDesc">左侧静态遮盖在预处理阶段一次性生成若干份固定遮盖副本，训练时重复复用，同一序列在不同 epoch 看到相同受损输入；右侧动态遮盖在每个 epoch 在线重新采样遮盖位置，同一序列在每次迭代得到不同的受损输入。</desc>
+<rect width="880" height="300" rx="20" fill="#f5f7f2"/>
+<g font-family="system-ui, sans-serif" fill="#203035">
+<rect x="20" y="50" width="400" height="200" rx="16" fill="#ffffff" stroke="#e2eae3" stroke-width="2"/>
+<text x="220" y="82" text-anchor="middle" font-size="16" font-weight="700">静态遮盖：预处理阶段固定</text>
+<rect x="48" y="108" width="96" height="52" rx="10" fill="#e4e9e5" stroke="#7d918a" stroke-width="2"/><text x="96" y="140" text-anchor="middle" font-size="14">语料</text>
+<path d="M144 134 H182" stroke="#7d918a" stroke-width="3"/><path d="M172 126 L184 134 L172 142" fill="none" stroke="#7d918a" stroke-width="3"/>
+<rect x="188" y="108" width="200" height="52" rx="10" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="288" y="140" text-anchor="middle" font-size="13">生成 N 份遮盖副本</text>
+<text x="220" y="200" text-anchor="middle" font-size="13" fill="#53676d">训练时重复复用同一份副本</text>
+<text x="220" y="226" text-anchor="middle" font-size="13" fill="#53676d">同一序列在不同 epoch 看到相同 mask</text>
+<rect x="460" y="50" width="400" height="200" rx="16" fill="#ffffff" stroke="#e2eae3" stroke-width="2"/>
+<text x="660" y="82" text-anchor="middle" font-size="16" font-weight="700">动态遮盖：每个 epoch 在线采样</text>
+<rect x="488" y="108" width="96" height="52" rx="10" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="536" y="140" text-anchor="middle" font-size="14">每步</text>
+<path d="M584 134 H622" stroke="#147f80" stroke-width="3"/><path d="M612 126 L624 134 L612 142" fill="none" stroke="#147f80" stroke-width="3"/>
+<rect x="628" y="108" width="200" height="52" rx="10" fill="#d7eee7" stroke="#147f80" stroke-width="2"/><text x="728" y="140" text-anchor="middle" font-size="13">重新采样 mask 位置</text>
+<text x="660" y="200" text-anchor="middle" font-size="13" fill="#53676d">同一序列在不同 epoch 看到不同 mask</text>
+<text x="660" y="226" text-anchor="middle" font-size="13" fill="#53676d">RoBERTa 明确比较并采用动态遮盖</text>
+</g>
+</svg>
+<figcaption>图 6B. 静态与动态遮盖的差别在“mask 何时生成”：前者是一次性样本生成，后者把采样放进每个训练步；两者都不改变 MLM 只在目标位置计损的规则。</figcaption>
+</figure>
 <p>令受损输入为 x̃，MLM 只在 M 中的位置计算词表交叉熵：</p>
 <div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="MLM 损失只对选中位置求和"><math display="block" aria-label="MLM loss 等于对选中位置集合 M 中每个原始 token 的负对数条件概率求和"><mrow><msub><mi mathvariant="script">L</mi><mtext>MLM</mtext></msub><mo>=</mo><mo>−</mo><munder><mo>∑</mo><mrow><mi>i</mi><mo>∈</mo><mi>M</mi></mrow></munder><mi>log</mi><msub><mi>p</mi><mi>θ</mi></msub><mo>(</mo><msub><mi>x</mi><mi>i</mi></msub><mo>|</mo><mover><mi>x</mi><mo>˜</mo></mover><mo>)</mo></mrow></math></div><p class="math-caption">未选中的 token 仍然参与 Encoder 前向计算并提供上下文；它们只是不在本次 MLM 目标中直接作为词表分类位置。</p></div>
 <p>这里有两个不同的集合：<strong>输入序列中的全部位置</strong>决定 attention 计算；<strong>目标集合 M</strong>决定哪些位置计算 MLM loss。因此“只有 15% token 参与计算”是错误说法。15% 指直接承担词表预测监督的位置比例，而不是 Transformer 只处理 15% 的输入。</p>
