@@ -89,7 +89,36 @@
           </ul>
           <figure>
             <img src="../assets/diagrams/05-input-representation.svg" alt="BERT 句对输入由 CLS、A 段、SEP、B 段和 SEP 构成，并叠加 token、segment、position 三类 embedding">
-            <figcaption>图 5. 句对结构与三类输入 embedding。每个位置的三类向量维度相同，按元素相加而不是拼接。</figcaption>
+            <figcaption>图 5A. 句对结构与三类输入 embedding。每个位置的三类向量维度相同，按元素相加而不是拼接。</figcaption>
+          </figure>
+          <figure>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" role="img" aria-labelledby="c05tokTitle c05tokDesc">
+              <title id="c05tokTitle">同一个字符串在不同 BERT tokenizer 下的不同 token 序列</title>
+              <desc id="c05tokDesc">字符串 Don't stop 在 bert-base-uncased 下切为 don、'、t、stop，在 bert-base-cased 下保留首字母大写为 Don、'、t、stop；中文串你好 在 bert-base-chinese 下按字切为你、好。token 序列与对应 id 随 checkpoint 与词表变化。</desc>
+              <rect width="900" height="340" rx="20" fill="#f5f7f2"/>
+              <text x="40" y="34" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#203035">同一个字符串，三套 tokenizer 的不同切分（示意）</text>
+              <g font-family="system-ui, sans-serif" fill="#203035">
+                <rect x="20" y="56" width="230" height="48" rx="10" fill="#e4e9e5" stroke="#7d918a" stroke-width="2"/><text x="135" y="85" text-anchor="middle" font-size="13">bert-base-uncased</text>
+                <rect x="266" y="56" width="90" height="48" rx="10" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="311" y="85" text-anchor="middle" font-size="14">don</text>
+                <rect x="362" y="56" width="60" height="48" rx="10" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="392" y="85" text-anchor="middle" font-size="14">'</text>
+                <rect x="428" y="56" width="60" height="48" rx="10" fill="#d7eee7" stroke="#147f80" stroke-width="2"/><text x="458" y="85" text-anchor="middle" font-size="14">t</text>
+                <rect x="494" y="56" width="100" height="48" rx="10" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/><text x="544" y="85" text-anchor="middle" font-size="14">stop</text>
+                <text x="620" y="85" font-size="13" fill="#53676d">小写化后首词为 don</text>
+                <rect x="20" y="122" width="230" height="48" rx="10" fill="#e4e9e5" stroke="#7d918a" stroke-width="2"/><text x="135" y="151" text-anchor="middle" font-size="13">bert-base-cased</text>
+                <rect x="266" y="122" width="90" height="48" rx="10" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="311" y="151" text-anchor="middle" font-size="14">Don</text>
+                <rect x="362" y="122" width="60" height="48" rx="10" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="392" y="151" text-anchor="middle" font-size="14">'</text>
+                <rect x="428" y="122" width="60" height="48" rx="10" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="458" y="151" text-anchor="middle" font-size="14">t</text>
+                <rect x="494" y="122" width="100" height="48" rx="10" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/><text x="544" y="151" text-anchor="middle" font-size="14">stop</text>
+                <text x="620" y="151" font-size="13" fill="#53676d">保留大小写，首词为 Don</text>
+                <rect x="20" y="188" width="230" height="76" rx="10" fill="#e4e9e5" stroke="#7d918a" stroke-width="2"/><text x="135" y="219" text-anchor="middle" font-size="13">bert-base-chinese</text><text x="135" y="241" text-anchor="middle" font-size="12" fill="#53676d">输入：你好</text>
+                <rect x="266" y="188" width="70" height="76" rx="10" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/><text x="301" y="232" text-anchor="middle" font-size="20">你</text>
+                <rect x="342" y="188" width="70" height="76" rx="10" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/><text x="377" y="232" text-anchor="middle" font-size="20">好</text>
+                <text x="432" y="232" font-size="13" fill="#53676d">中文常按字或词切分</text>
+              </g>
+              <text x="450" y="300" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#203035">同一个词在不同词表下会得到不同的 piece 与不同 id；英文 WordPiece 的行为不能直接套用到中文 checkpoint。</text>
+              <text x="450" y="322" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#53676d">上表为便于对比的教学示意，真实切分以对应 checkpoint 的 tokenizer 输出为准。</text>
+            </svg>
+            <figcaption>图 5B. tokenizer 与 checkpoint 必须配套：同一字符串在三套词表下得到不同 token 与 id，跨 checkpoint 混用会错位。</figcaption>
           </figure>
         </section>
 
