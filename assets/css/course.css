@@ -95,6 +95,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,[t
 .article-body strong{color:#1d3438}
 .article-body figure{margin:22px 0;padding:16px;background:#f1f5f1;border:1px solid #e2eae3;border-radius:16px}
 .article-body figure img{display:block;width:100%;height:auto}
+.article-body figure svg{display:block;width:100%;height:auto}
 .article-body figcaption{margin-top:11px;color:var(--muted);font-size:13px;line-height:1.65}
 .callout{margin:20px 0;padding:14px 17px;border-left:4px solid var(--accent);border-radius:0 12px 12px 0;background:var(--accent-soft)}
 .callout.warning{border-color:var(--coral);background:var(--coral-soft)}
