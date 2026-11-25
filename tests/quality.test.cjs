@@ -300,3 +300,23 @@ test('chapters 26–28 each have two complementary diagrams and two independent 
     assert.match(html, /<section id="references"/);
   }
 });
+
+test('foundational deep dives 01–06 carry two complementary figures with accessible inline SVG', () => {
+  const pages = [
+    'articles/01-pretraining-evolution.html',
+    'articles/02-transformer-encoder.html',
+    'articles/03-bert-pretraining.html',
+    'articles/05-wordpiece-inputs.html',
+    'articles/06-mlm-nsp-masking-objectives.html',
+  ];
+  for (const page of pages) {
+    const html = read(page);
+    assert.ok((html.match(/<figure>/g) || []).length >= 2, page + ': expected two figures');
+    assert.match(html, /<svg[^>]+viewBox="[^"]+"[^>]*>/, page + ': missing inline SVG with viewBox');
+    assert.match(html, /<title id="[^"]+"/, page + ': SVG title missing');
+    assert.match(html, /aria-labelledby="[^"]+"/, page + ': SVG accessible label missing');
+    for (const [, caption] of html.matchAll(/<figcaption>([^<]*)<\/figcaption>/g)) {
+      assert.ok(caption.trim().length > 0, page + ': empty figcaption');
+    }
+  }
+});

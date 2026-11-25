@@ -202,6 +202,7 @@
             <div class="demo-controls">
               <button type="button" data-demo-action="bi" aria-pressed="true">Encoder 双向</button>
               <button type="button" data-demo-action="causal" aria-pressed="false">Decoder 因果</button>
+              <button type="button" data-demo-action="padding" aria-pressed="false">含 padding</button>
             </div>
             <pre class="demo-output" data-demo-output aria-live="polite">Encoder 双向 mask
       k1 k2 k3 k4
@@ -210,7 +211,7 @@ q2     1  1  1  1
 q3     1  1  1  1
 q4     1  1  1  1
 位置 q2 可以读取整段输入（实际还会屏蔽 padding）。</pre>
-            <script type="application/json" data-demo-states>{"bi":"Encoder 双向 mask\n      k1 k2 k3 k4\nq1     1  1  1  1\nq2     1  1  1  1\nq3     1  1  1  1\nq4     1  1  1  1\n位置 q2 可以读取整段输入（实际还会屏蔽 padding）。","causal":"Decoder 因果 mask\n      k1 k2 k3 k4\nq1     1  0  0  0\nq2     1  1  0  0\nq3     1  1  1  0\nq4     1  1  1  1\n位置 q2 只能读取当前位置及其左侧，不能读取未来 token。"}</script>
+            <script type="application/json" data-demo-states>{"bi":"Encoder 双向 mask\n      k1 k2 k3 k4\nq1     1  1  1  1\nq2     1  1  1  1\nq3     1  1  1  1\nq4     1  1  1  1\n位置 q2 可以读取整段输入（实际还会屏蔽 padding）。","causal":"Decoder 因果 mask\n      k1 k2 k3 k4\nq1     1  0  0  0\nq2     1  1  0  0\nq3     1  1  1  0\nq4     1  1  1  1\n位置 q2 只能读取当前位置及其左侧，不能读取未来 token。","padding":"含 padding 的可见 mask（k4 为 pad）\n      k1 k2 k3 k4\nq1     1  1  1  0\nq2     1  1  1  0\nq3     1  1  1  0\npadding 位置在所有 query 行都置 0，不参与 softmax 归一化。"}</script>
           </div>
         </section>
 
