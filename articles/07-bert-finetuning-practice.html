@@ -138,7 +138,7 @@ for word_id in word_ids:
 
 <section id="evaluation"><h2>7. 评估与复现：报告结果，也报告不确定性</h2>
 <ul><li>分类任务报告 accuracy 与适合类别不平衡的 macro/micro F1；说明正类定义、阈值和标签映射。</li><li>NER 使用实体级 span F1，并说明子词标签对齐策略。</li><li>QA 报告 EM/F1，说明不可回答阈值、滑窗 stride 和最大答案长度。</li><li>至少固定 split、checkpoint revision、tokenizer、最大长度、优化器、学习率日程、随机种子与评测脚本版本。</li><li>小数据集对随机种子敏感。应报告多个种子的均值和标准差，而不是只挑最好的一次。</li></ul>
-<div class="callout">**最重要的实验边界：** validation 可以参与选择，test 不参与调参。论文排行榜成绩、单次本地运行成绩和多种子复现实验是三种不同证据。</div>
+<div class="callout"><strong>最重要的实验边界：</strong> validation 可以参与选择，test 不参与调参。论文排行榜成绩、单次本地运行成绩和多种子复现实验是三种不同证据。</div>
 </section>
 
 <section id="demo"><h2>8. 交互：选择任务，检查数据与标签接口</h2>

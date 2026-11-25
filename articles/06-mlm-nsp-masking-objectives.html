@@ -45,7 +45,7 @@
 <tr><td>主要代价</td><td>数据文件体积与预处理时间增加</td><td>DataLoader / collator 需要在运行时执行 mask 逻辑</td></tr>
 </tbody></table></div>
 <p>RoBERTa 的消融实验并没有显示动态遮盖对每个任务都带来巨大跃升：在其 BERT-Base 重实现上，静态与动态的 SQuAD 2.0、MNLI-m、SST-2 指标相近，动态遮盖整体表现为相当或略好。作者选择动态遮盖，也考虑了它在更长训练和更大数据集上的效率优势。</p>
-<div class="callout warning">**纠正一个常见说法：** 原始 BERT 并不是“每个 epoch 都重新 mask”。它在预处理阶段生成遮盖样本，并用多个副本增加模式多样性；动态遮盖是 RoBERTa 明确比较并采用的改进。</div>
+<div class="callout warning"><strong>纠正一个常见说法：</strong> 原始 BERT 并不是“每个 epoch 都重新 mask”。它在预处理阶段生成遮盖样本，并用多个副本增加模式多样性；动态遮盖是 RoBERTa 明确比较并采用的改进。</div>
 </section>
 
 <section id="whole-word">

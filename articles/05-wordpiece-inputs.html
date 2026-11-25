@@ -54,7 +54,7 @@
           <h2>3. WordPiece 与 BPE 不相同</h2>
           <p>BPE（Byte Pair Encoding）最初来自压缩算法，Sennrich 等人将其用于机器翻译中的子词表示。典型 BPE 训练过程统计相邻符号对并反复合并高频 pair；推理时按学到的 merge 规则构造子词。</p>
           <p>WordPiece 与 BPE 都属于子词建模思路，都能在固定词表中复用词根、词缀和常见字符片段，但二者的词表学习准则和具体实现并不等同。尤其不能把“BPE 每轮合并最高频 pair”写成 WordPiece 的通用训练算法。对复现 BERT 来说，应直接使用与 checkpoint 匹配的 tokenizer 文件，而不是自行猜测训练算法。</p>
-          <div class="callout note">**模型与 tokenizer 必须配套。** 同一个字符串在不同 BERT checkpoint、cased/uncased 词表或多语言 tokenizer 下，可能得到不同 token 序列和 token ID。</div>
+          <div class="callout note"><strong>模型与 tokenizer 必须配套。</strong> 同一个字符串在不同 BERT checkpoint、cased/uncased 词表或多语言 tokenizer 下，可能得到不同 token 序列和 token ID。</div>
         </section>
 
         <section id="special">
