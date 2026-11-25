@@ -20,7 +20,7 @@
 </section>
 <section id="sampling"><h2>3. 为什么不能按 Wikipedia 字数直接抽样</h2>
 <p>假设英语训练文本比某个低资源语言多 100 倍。若按原始数据比例采样，英语可能在有限训练预算内占据大量更新，低资源语言几乎没有足够的学习机会。mBERT 官方说明采用指数平滑采样，平滑指数 S=0.7：</p>
-<div class="math-group"><div class="math-scroll" tabindex="0" role="region" tabindex="0" aria-label="语言采样概率"><math display="block" aria-label="语言 l 的采样概率等于它的数据量占比的 alpha 次方，除以所有语言同样幂次之和"><mrow><msub><mi>p</mi><mi>ℓ</mi></msub><mo>=</mo><mfrac><msubsup><mi>n</mi><mi>ℓ</mi><mi>α</mi></msubsup><munder><mo>∑</mo><mi>j</mi></munder><msubsup><mi>n</mi><mi>j</mi><mi>α</mi></msubsup></mfrac><mo>,</mo><mspace width=".6em"/><mi>α</mi><mo>=</mo><mn>0.7</mn></mrow></math></div></div>
+<div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="语言采样概率"><math display="block" aria-label="语言 l 的采样概率等于它的数据量占比的 alpha 次方，除以所有语言同样幂次之和"><mrow><msub><mi>p</mi><mi>ℓ</mi></msub><mo>=</mo><mfrac><msubsup><mi>n</mi><mi>ℓ</mi><mi>α</mi></msubsup><mrow><munder><mo>∑</mo><mi>j</mi></munder><msubsup><mi>n</mi><mi>j</mi><mi>α</mi></msubsup></mrow></mfrac><mo>,</mo><mspace width=".6em"/><mi>α</mi><mo>=</mo><mn>0.7</mn></mrow></math></div></div>
 <p>其中 n_ℓ 表示该语言训练数据量，分母让所有语言采样概率归一化。若只有两种语言，数据量比 100:1，在 α=1 的不平滑采样下比例仍是 100:1；用 α=0.7 后约为 25.1:1；若 α=0 则趋近 1:1。<strong>这些比例是数学算例，不是 mBERT 对某两种语言的真实数据份额。</strong></p>
 <p>平滑的代价也明显：小语种虽然被更多采样，却可能反复看到同一批文档；过度提升小语种采样会增加过拟合和训练分布偏差。因此采样温度应结合有效语料量、语言覆盖和下游质量调节。</p>
 </section>
