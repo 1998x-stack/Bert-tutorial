@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="从数据契约、切分与泄漏、动态 padding、分类、NER、抽取式 QA 到 Trainer 训练循环，构建可复现的 BERT 微调流程。"><title>BERT 微调实战：数据契约、任务头、训练循环与评估</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="07"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
-<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#contract">先定义数据契约</a><a href="#split">切分与泄漏</a><a href="#classification">分类任务完整流程</a><a href="#ner">NER 子词标签对齐</a><a href="#qa">QA 字符偏移与窗口</a><a href="#training">训练循环与调度器</a><a href="#evaluation">评估与复现</a><a href="#demo">交互：选择任务输入</a><a href="#references">官方文档</a></aside>
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#contract">先定义数据契约</a><a href="#split">切分与泄漏</a><a href="#classification">分类任务完整流程</a><a href="#ner">NER 子词标签对齐</a><a href="#qa">QA 字符偏移与窗口</a><a href="#training">训练循环与调度器</a><a href="#evaluation">评估与复现</a><a href="#demo">交互：选择任务输入</a><a href="#ledger">交互二：对齐与步数账本</a><a href="#references">官方文档</a></aside>
 <main id="content" class="article-main">
 <header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 07</p><h1>BERT 微调实战：数据契约、任务头、训练循环与评估</h1><p class="article-dek">微调不是把模型名换成某个 checkpoint 就结束。数据字段、tokenizer、标签映射、padding、损失掩码、验证集和测试集的使用方式，决定实验是否正确、是否可复现。</p><div class="article-meta"><span>阅读约 25 分钟</span><span>主题：Dataset / Trainer / Evaluation</span><span>核心问题：怎样避免“训练跑完但实验无效”</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
 <article class="article-body">
@@ -120,6 +120,26 @@ for word_id in word_ids:
         aligned.append(-100)          # continuation sub-token
     previous_word_id = word_id</code></pre>
 <p>不要把 <code>-100</code> 当作真实类别；它是损失函数的 ignore_index。评估时应把 WordPiece 预测还原到原始词级别，再计算实体级 precision、recall、F1，而不是直接对所有 sub-token 计算 token accuracy。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" role="img" aria-labelledby="c07alignTitle c07alignDesc">
+  <title id="c07alignTitle">词级标签到 WordPiece sub-token 的对齐账本</title>
+  <desc id="c07alignDesc">教学示例：词序列 I love Beijing 的标签为 O O B-LOC，词数 3。WordPiece 切分为 [CLS] I love Bei ##jing [SEP]，共 6 个位置；word_ids 依次为 无、0、1、2、2、无；token 级标签依次为 -100、O、O、B-LOC、-100、-100。即每个原始词的第一个 sub-token 继承词级标签，后续 sub-token 与特殊 token 设为损失忽略项。</desc>
+  <rect width="900" height="320" rx="20" fill="#f5f7f2"/>
+  <text x="450" y="36" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#203035">词级标签 → WordPiece token 级标签（教学示例）</text>
+  <g font-family="system-ui,sans-serif">
+    <text x="100" y="86" text-anchor="end" font-size="13" font-weight="700" fill="#53676d">WordPiece</text>
+    <text x="100" y="141" text-anchor="end" font-size="13" font-weight="700" fill="#53676d">word_ids()</text>
+    <text x="100" y="196" text-anchor="end" font-size="13" font-weight="700" fill="#53676d">token 标签</text>
+    <rect x="110" y="61" width="120" height="40" rx="8" fill="#eef1f2" stroke="#7d918a" stroke-width="1.5"/><rect x="238" y="61" width="120" height="40" rx="8" fill="#e4e9e5" stroke="#7d918a" stroke-width="1.5"/><rect x="366" y="61" width="120" height="40" rx="8" fill="#e4e9e5" stroke="#7d918a" stroke-width="1.5"/><rect x="494" y="61" width="120" height="40" rx="8" fill="#fbede7" stroke="#c96c4c" stroke-width="1.5"/><rect x="622" y="61" width="120" height="40" rx="8" fill="#fbede7" stroke="#c96c4c" stroke-width="1.5"/><rect x="750" y="61" width="120" height="40" rx="8" fill="#eef1f2" stroke="#7d918a" stroke-width="1.5"/>
+    <g font-size="14" text-anchor="middle" fill="#203035"><text x="170" y="86">[CLS]</text><text x="298" y="86">I</text><text x="426" y="86">love</text><text x="554" y="86">Bei</text><text x="682" y="86">##jing</text><text x="810" y="86">[SEP]</text></g>
+    <g font-size="13" text-anchor="middle" fill="#53676d"><text x="170" y="141">无</text><text x="298" y="141">0</text><text x="426" y="141">1</text><text x="554" y="141">2</text><text x="682" y="141">2</text><text x="810" y="141">无</text></g>
+    <g font-size="13" text-anchor="middle" fill="#203035"><text x="170" y="196">-100</text><text x="298" y="196">O</text><text x="426" y="196">O</text><text x="554" y="196" font-weight="700">B-LOC</text><text x="682" y="196">-100</text><text x="810" y="196">-100</text></g>
+  </g>
+  <text x="450" y="250" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13.5" fill="#203035">Beijing 被拆成 Bei 与 ##jing：只有第一个 sub-token 继承 B-LOC，##jing 设为 -100。</text>
+  <text x="450" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#53676d">-100 是 CrossEntropyLoss 的 ignore_index，不是类别；推理后须把 token 预测还原到词级再算实体 F1。</text>
+</svg>
+<figcaption>图 7B. 标注在词级，模型却按 sub-token 输出：这份账本用 I / love / Beijing 三词说明对齐规则；实际词表切分以所用 checkpoint 的 tokenizer 为准。</figcaption>
+</figure>
 </section>
 
 <section id="qa"><h2>5. 抽取式 QA：字符偏移、溢出窗口与合法 span</h2>
@@ -147,6 +167,14 @@ Tokenizer：单句编码，truncation=True，动态 padding
 标签：一个整数类别 ID
 输出：[CLS] logits，shape [batch, num_labels]
 损失：CrossEntropyLoss</pre><script type="application/json" data-demo-states>{"cls":"记录字段：text、label\nTokenizer：单句编码，truncation=True，动态 padding\n标签：一个整数类别 ID\n输出：[CLS] logits，shape [batch, num_labels]\n损失：CrossEntropyLoss","ner":"记录字段：words、word_labels\nTokenizer：is_split_into_words=True\n对齐：word_ids() 将 sub-token 映射回原始词\n忽略：特殊 token、padding 和非首 sub-token 可设为 -100\n输出：每个 token 的标签 logits","qa":"记录字段：question、context、answer_text、answer_start\nTokenizer：pair + offset_mapping + overflow windows\n对齐：字符区间映射到 token 起止位置\n输出：start/end logits；解码必须约束合法 span","pair":"记录字段：text_a、text_b、label\nTokenizer：tokenizer(text_a, text_b, truncation=True)\n输入：两段文本按 checkpoint 的特殊 token 规则拼接\n输出：[CLS] logits\n损失：CrossEntropyLoss"}</script></div>
+</section>
+
+<section id="ledger"><h2>9. 交互二：标签对齐与更新步数账本</h2>
+<p>下面三个状态演示数据契约中三类可复算的算术：动态 padding 的填充比例、有效 batch 与 optimizer 更新步数、以及词级标签到 sub-token 的对齐。数字均为<strong>教学示意</strong>，不代表任何 checkpoint 的实际配置或实测反馈。</p>
+<div class="demo" data-demo><h3>从样本长度到更新步数</h3><p class="demo-intro">固定教学数字，切换状态查看算术来源。</p><div class="demo-controls"><button type="button" data-demo-action="pad" aria-pressed="true">动态 padding</button><button type="button" data-demo-action="steps" aria-pressed="false">更新步数</button><button type="button" data-demo-action="align" aria-pressed="false">标签对齐</button></div><pre class="demo-output" data-demo-output aria-live="polite">样本长度 8 / 32 / 96，统一按 batch 最长 96 补齐。
+槽位 3×96=288，有效 token 8+32+96=136，空槽 152（152/288≈52.8%）。
+DataCollatorWithPadding 只补到当前 batch 最长，不是全局最大长度。</pre><script type="application/json" data-demo-states>{"pad":"样本长度 8 / 32 / 96，统一按 batch 最长 96 补齐。\n槽位 3×96=288，有效 token 8+32+96=136，空槽 152（152/288≈52.8%）。\nDataCollatorWithPadding 只补到当前 batch 最长，不是全局最大长度。","steps":"每设备 batch 16、设备数 1、累积步数 2 → 有效 batch = 16×1×2 = 32。\n训练集 3200 条、3 个 epoch → 更新步数 = ceil(3200/32)×3 = 100×3 = 300。\nscheduler 按 optimizer 更新步前进；把 micro-batch 数当总步数会错位 warmup。","align":"词级标签 [I,love,Beijing] → [O,O,B-LOC]。\nsub-token [CLS] I love Bei ##jing [SEP]，word_ids = 无/0/1/2/2/无。\ntoken 标签 -100 / O / O / B-LOC / -100 / -100，只在每词首 sub-token 计损失。"}</script></div>
+<p>上述三个算术在 <a href="../examples/finetuning_contract_lab.py">examples/finetuning_contract_lab.py</a> 中分别对应 <code>padding_budget</code>、<code>optimizer_steps</code> 与 <code>align_word_labels</code>，并由 <code>tests/test_finetuning_contract_lab.py</code> 断言具体数值。</p>
 </section>
 
 <section class="article-summary"><h2>关键结论</h2><ul>

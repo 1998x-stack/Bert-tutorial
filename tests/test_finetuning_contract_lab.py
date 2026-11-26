@@ -1,0 +1,47 @@
+"""Calculable-example tests for BERT fine-tuning chapters 07-10 helpers."""
+import sys
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
+from finetuning_contract_lab import (
+    padding_budget, optimizer_steps, align_word_labels,
+)
+
+
+class FinetuningContractTests(unittest.TestCase):
+    def test_padding_budget_matches_article_07(self):
+        ledger = padding_budget([8, 32, 96], 96)
+        self.assertEqual(ledger["slots"], 288)
+        self.assertEqual(ledger["effective"], 136)
+        self.assertEqual(ledger["empty"], 152)
+        self.assertAlmostEqual(ledger["empty_ratio"], 152 / 288, places=9)
+
+    def test_optimizer_steps_match_article_07(self):
+        self.assertEqual(optimizer_steps(3200, 16 * 1 * 2, 3), 300)
+
+    def test_optimizer_steps_round_up_incomplete_batch(self):
+        # 10 samples, batch 4, 1 epoch -> ceil(10/4) = 3 updates.
+        self.assertEqual(optimizer_steps(10, 4, 1), 3)
+
+    def test_align_word_labels_matches_article_07(self):
+        word_ids = [None, 0, 1, 2, 2, None]
+        labels = [0, 0, 3]  # O, O, B-LOC
+        self.assertEqual(
+            align_word_labels(word_ids, labels),
+            [-100, 0, 0, 3, -100, -100],
+        )
+
+    def test_align_rejects_out_of_range_word_id(self):
+        with self.assertRaises(ValueError):
+            align_word_labels([7], [0])
+
+    def test_bad_inputs_raise(self):
+        with self.assertRaises(ValueError):
+            padding_budget([8, 32], 16)
+        with self.assertRaises(ValueError):
+            optimizer_steps(0, 32, 3)
+
+
+if __name__ == "__main__":
+    unittest.main()
