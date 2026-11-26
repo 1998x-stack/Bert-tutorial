@@ -121,3 +121,9 @@
 - New demo: a three-state ledger for Jaccard (3/7, identical copies = 1, unrelated ≈ 0), the 80/10/10 MLM split with the selected-position denominator (100 → 80/10/10) and sequence packing utilisation (1000+300 tokens into 1024-length slots → 1300/2048 ≈ 63.5%). All labelled teaching arithmetic.
 - Calculable example: added `jaccard`, `mlm_replace_counts` and `packing_utilization` to examples/finetuning_contract_lab.py with tests asserting 3/7, 1.0, the 80/10/10 and 12/1/2 splits, and 1300/2048.
 - Validation: validate.py passes chapter 09 (2 figures, inline SVG, 2 demos); quality tests 15/15; python unittest 80/80; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.
+
+### 2026-11-26 — Dual-figure/dual-demo parity for optimization deep dive 10
+- New figure: an inline SVG contrasting the correct vs incorrect placement of `optimizer.step()`/`scheduler.step()` under gradient accumulation A=4 — the scheduler must advance once per optimizer update, not once per micro-batch.
+- New demo: a three-state ledger for effective batch (8×4×4=128, ceil(50000/128)=391 updates), linear warmup/decay (5e-5 at t=5,000; ≈5.05e-5 at t=500,000) and the AdamW per-step factor (1−1e-6 = 0.999999; ≈0.99990 over 100 steps). All labelled teaching arithmetic except the stated scheduler formula.
+- Calculable example: added `effective_batch`, `linear_warmup_lr` and `adamw_decay_factor` to examples/finetuning_contract_lab.py with tests asserting 128/391, the two LR values and the decay factor.
+- Validation: validate.py passes chapter 10 (2 figures, inline SVG, 2 demos, all display MathML in focusable scroll regions); quality tests 15/15; python unittest 83/83; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.

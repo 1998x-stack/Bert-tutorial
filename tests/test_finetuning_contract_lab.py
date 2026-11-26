@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
 from finetuning_contract_lab import (
     padding_budget, optimizer_steps, align_word_labels, tokens_per_update,
     jaccard, mlm_replace_counts, packing_utilization,
+    effective_batch, linear_warmup_lr, adamw_decay_factor,
 )
 
 
@@ -55,6 +56,21 @@ class FinetuningContractTests(unittest.TestCase):
         self.assertEqual(ledger["effective"], 1300)
         self.assertEqual(ledger["slots"], 2048)
         self.assertAlmostEqual(ledger["utilization"], 1300 / 2048, places=9)
+
+    def test_effective_batch_article_10(self):
+        self.assertEqual(effective_batch(8, 4, 4), 128)
+        self.assertEqual(optimizer_steps(50000, effective_batch(8, 4, 4), 1), 391)
+
+    def test_linear_warmup_lr_article_10(self):
+        self.assertAlmostEqual(linear_warmup_lr(1e-4, 5000, 10000, 1000000), 5e-5, places=12)
+        self.assertAlmostEqual(
+            linear_warmup_lr(1e-4, 500000, 10000, 1000000),
+            1e-4 * 500000 / 990000, places=12)
+
+    def test_adamw_decay_factor_article_10(self):
+        factor = adamw_decay_factor(1e-4, 0.01)
+        self.assertAlmostEqual(factor, 0.999999, places=12)
+        self.assertAlmostEqual(factor ** 100, 0.999900, places=5)
 
     def test_bad_inputs_raise(self):
         with self.assertRaises(ValueError):

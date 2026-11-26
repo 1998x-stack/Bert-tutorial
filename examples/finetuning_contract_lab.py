@@ -85,3 +85,27 @@ def packing_utilization(lengths: Sequence[int], target: int) -> dict:
     effective = sum(lengths)
     slots = target * -(-effective // target)
     return {"effective": effective, "slots": slots, "utilization": effective / slots}
+
+
+def effective_batch(micro: int, devices: int, accumulation: int) -> int:
+    """Effective batch B_micro x N x A (article 10)."""
+    for name, value in (("micro", micro), ("devices", devices), ("accumulation", accumulation)):
+        if type(value) is not int or value <= 0:
+            raise ValueError(name + " must be a positive integer")
+    return micro * devices * accumulation
+
+
+def linear_warmup_lr(peak: float, step: int, warmup: int, total: int) -> float:
+    """Linear warmup then linear decay to zero (article 10 schedule)."""
+    if not 0 <= step <= total or warmup <= 0 or total <= warmup:
+        raise ValueError("need 0 <= step <= total and 0 < warmup < total")
+    if step < warmup:
+        return peak * step / warmup
+    return peak * (total - step) / (total - warmup)
+
+
+def adamw_decay_factor(learning_rate: float, weight_decay: float) -> float:
+    """Per-step multiplicative weight-decay factor (1 - lr * wd) (article 10)."""
+    if learning_rate < 0 or weight_decay < 0:
+        raise ValueError("learning_rate and weight_decay must be non-negative")
+    return 1.0 - learning_rate * weight_decay

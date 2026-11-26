@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="从 Adam 一阶二阶矩、AdamW 解耦权重衰减、warmup 与线性衰减、BERT 和 RoBERTa 原始配置到有效 batch 与微调搜索，建立可复现的优化器知识。"><title>BERT 训练优化：AdamW、Warmup、学习率日程与超参数</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="10"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
-<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#optimizer">Adam 如何更新参数</a><a href="#decay">AdamW 与权重衰减</a><a href="#schedule">Warmup 与线性衰减</a><a href="#bert-config">BERT 原始配置</a><a href="#roberta-config">RoBERTa 原始配置</a><a href="#effective">有效 Batch 与总步数</a><a href="#finetune">微调超参数</a><a href="#protocol">实验协议</a><a href="#demo">交互：选择训练阶段</a><a href="#references">原始资料</a></aside>
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#optimizer">Adam 如何更新参数</a><a href="#decay">AdamW 与权重衰减</a><a href="#schedule">Warmup 与线性衰减</a><a href="#bert-config">BERT 原始配置</a><a href="#roberta-config">RoBERTa 原始配置</a><a href="#effective">有效 Batch 与总步数</a><a href="#finetune">微调超参数</a><a href="#protocol">实验协议</a><a href="#demo">交互：选择训练阶段</a><a href="#ledger">交互二：步数与衰减账本</a><a href="#references">原始资料</a></aside>
 <main id="content" class="article-main">
 <header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 10</p><h1>BERT 训练优化：AdamW、Warmup、学习率日程与超参数</h1><p class="article-dek">学习率、batch size、warmup、权重衰减和训练步数并不是可以独立随意填写的参数。它们共同决定每一次优化器更新的尺度、噪声和总预算。本篇从 Adam 的数学更新走到 BERT 与 RoBERTa 的原始配置。</p><div class="article-meta"><span>阅读约 25 分钟</span><span>主题：Adam / AdamW / Scheduler / Batch</span><span>核心问题：如何让训练稳定且可复现</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
 <article class="article-body">
@@ -27,6 +27,32 @@
 <div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="线性 warmup 与 decay 学习率公式"><math display="block" aria-label="warmup 阶段学习率等于峰值学习率乘以当前步数除以 warmup 步数，之后线性下降到零"><mrow><mi>η</mi><mo>(</mo><mi>t</mi><mo>)</mo><mo>=</mo><mo>{</mo><mtable columnalign="left left" rowspacing="0.5em"><mtr><mtd><msub><mi>η</mi><mtext>max</mtext></msub><mfrac><mi>t</mi><msub><mi>T</mi><mtext>warm</mtext></msub></mfrac></mtd><mtd><mtext>if </mtext><mi>t</mi><mo>&lt;</mo><msub><mi>T</mi><mtext>warm</mtext></msub></mtd></mtr><mtr><mtd><msub><mi>η</mi><mtext>max</mtext></msub><mfrac><mrow><msub><mi>T</mi><mtext>total</mtext></msub><mo>−</mo><mi>t</mi></mrow><mrow><msub><mi>T</mi><mtext>total</mtext></msub><mo>−</mo><msub><mi>T</mi><mtext>warm</mtext></msub></mrow></mfrac></mtd><mtd><mtext>otherwise</mtext></mtd></mtr></mtable></mrow></math></div></div>
 <figure><img src="../assets/diagrams/10-learning-rate-schedule.svg" alt="学习率先线性 warmup 到峰值，再线性衰减到零，并比较 BERT 与 RoBERTa 的训练步数和 warmup"><figcaption>图 10. BERT 和 RoBERTa 都使用 warmup 与线性衰减，但 warmup 步数、总步数、batch 和峰值学习率并不相同。</figcaption></figure>
 <p>调度器应按 optimizer update step 计数。若使用梯度累积，micro-batch 前向次数会多于 optimizer 更新次数；把两者混淆会让 warmup 结束得过早或过晚。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-labelledby="c10stepTitle c10stepDesc">
+  <title id="c10stepTitle">梯度累积时 micro-batch 与 optimizer step 的对应关系</title>
+  <desc id="c10stepDesc">教学示意：梯度累积 A=4。正确做法是对 4 个 micro-batch 分别前向反向并累加梯度，然后只执行一次 optimizer.step() 与一次 scheduler.step()；错误做法是每个 micro-batch 都前进一步，使 scheduler 在以 4 倍速前进，warmup 提前结束。</desc>
+  <rect width="900" height="300" rx="20" fill="#f5f7f2"/>
+  <text x="450" y="34" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#203035">梯度累积 A=4：4 个 micro-batch → 1 个 optimizer step</text>
+  <g font-family="system-ui,sans-serif" text-anchor="middle" font-size="12.5">
+    <text x="40" y="86" text-anchor="start" font-size="13" font-weight="700" fill="#147f80">正确</text>
+    <rect x="110" y="66" width="120" height="40" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="170" y="91" fill="#203035">micro 1</text>
+    <rect x="238" y="66" width="120" height="40" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="298" y="91" fill="#203035">micro 2</text>
+    <rect x="366" y="66" width="120" height="40" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="426" y="91" fill="#203035">micro 3</text>
+    <rect x="494" y="66" width="120" height="40" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="554" y="91" fill="#203035">micro 4</text>
+    <path d="M614 86 H650" stroke="#147f80" stroke-width="3"/><path d="M640 78 L652 86 L640 94" fill="none" stroke="#147f80" stroke-width="3"/>
+    <rect x="656" y="60" width="224" height="52" rx="10" fill="#d7eee7" stroke="#147f80" stroke-width="2"/><text x="768" y="82" font-weight="700" fill="#203035">optimizer.step()</text><text x="768" y="101" fill="#53676d">scheduler.step() × 1</text>
+    <text x="40" y="188" text-anchor="start" font-size="13" font-weight="700" fill="#c96c4c">错误</text>
+    <rect x="110" y="168" width="120" height="40" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="170" y="193" fill="#203035">micro 1 → step</text>
+    <rect x="238" y="168" width="120" height="40" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="298" y="193" fill="#203035">micro 2 → step</text>
+    <rect x="366" y="168" width="120" height="40" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="426" y="193" fill="#203035">micro 3 → step</text>
+    <rect x="494" y="168" width="120" height="40" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="554" y="193" fill="#203035">micro 4 → step</text>
+    <text x="768" y="193" font-size="13" font-weight="700" fill="#c96c4c">scheduler 前进 4 次</text>
+  </g>
+  <text x="450" y="252" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#203035">梯度需按累积步数适当缩放；warmup/decay 分母是 optimizer step 总数，不是 micro-batch 总数。</text>
+  <text x="450" y="278" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12.5" fill="#53676d">A 为教学示意；真实实现还应处理最后不完整累积组的梯度归一化。</text>
+</svg>
+<figcaption>图 10B. 有效 batch B_eff = B_micro × N × A，但 scheduler 只在一次 optimizer 更新后前进一步；把 micro-batch 转发次数当 scheduler 步数会压缩 warmup。</figcaption>
+</figure>
 </section>
 
 <section id="bert-config"><h2>4. BERT 原始预训练配置</h2>
@@ -83,6 +109,14 @@ Batch：256 sequences
 Steps：1,000,000；warmup 10,000
 Length：90% steps 使用 128，最后 10% 使用 512
 提醒：256 是序列数，不是 token 数。</pre><script type="application/json" data-demo-states>{"bert":"Optimizer：Adam / 官方实现 AdamWeightDecayOptimizer\nPeak LR：1e-4\nBatch：256 sequences\nSteps：1,000,000；warmup 10,000\nLength：90% steps 使用 128，最后 10% 使用 512\n提醒：256 是序列数，不是 token 数。","roberta":"RoBERTa-Base：peak LR 6e-4；RoBERTa-Large：4e-4\nBatch：8K sequences；Steps：500K\nWarmup：Base 24K；Large 30K\nAdam β₂=0.98；ε=1e-6；weight decay=0.01\n提醒：Base 与 Large 的 peak LR 不同。","finetune":"BERT GLUE：batch 32，3 epochs\nLR grid：5e-5、4e-5、3e-5、2e-5\n按 validation/dev 指标选择配置\n提醒：test set 只做最终评估；小数据任务应多随机种子。","batch":"每设备 micro-batch：8\n设备数：4\n梯度累积：4\n有效 batch：8 × 4 × 4 = 128 sequences\nScheduler：每次 optimizer update 后前进一步，不是每个 micro-batch 都前进一步。"}</script></div>
+</section>
+
+<section id="ledger"><h2>10. 交互二：有效 batch、warmup 与衰减账本</h2>
+<p>三个状态演示梯度累积的有效 batch 与更新步数、线性 warmup/decay 的学习率取值、以及 AdamW 每步的收缩因子。数字均为<strong>教学示意</strong>，不代表某个真实训练运行的实测结果。</p>
+<div class="demo" data-demo><h3>步数与衰减</h3><p class="demo-intro">固定教学数字，切换状态查看算术来源。</p><div class="demo-controls"><button type="button" data-demo-action="accum" aria-pressed="true">有效 batch</button><button type="button" data-demo-action="warmup" aria-pressed="false">warmup/decay</button><button type="button" data-demo-action="adamw" aria-pressed="false">AdamW 衰减</button></div><pre class="demo-output" data-demo-output aria-live="polite">B_micro=8，设备 N=4，累积 A=4 → B_eff = 8×4×4 = 128 sequences。
+训练集 50,000 条、1 epoch → 更新步数 = ceil(50000/128) = 391。
+scheduler 每 4 个 micro-batch 只前进一步。</pre><script type="application/json" data-demo-states>{"accum":"B_micro=8，设备 N=4，累积 A=4 → B_eff = 8×4×4 = 128 sequences。\n训练集 50,000 条、1 epoch → 更新步数 = ceil(50000/128) = 391。\nscheduler 每 4 个 micro-batch 只前进一步。","warmup":"峰值 LR=1e-4，T_warm=10,000，T_total=1,000,000。\nt=5,000（warmup 中）：η=1e-4×5000/10000 = 5e-5。\nt=500,000（decay 中）：η=1e-4×(1,000,000-500,000)/(1,000,000-10,000)≈5.05e-5。","adamw":"η=1e-4，λ=0.01 → 每步参数先乘 (1-ηλ) = 1-1e-6 = 0.999999。\n连续 100 步约为 0.999999^100≈0.99990。\n这里只是权重收缩项；实际更新还包括 Adam 的自适应梯度项。"}</script></div>
+<p>上述算术在 <a href="../examples/finetuning_contract_lab.py">examples/finetuning_contract_lab.py</a> 的 <code>effective_batch</code>、<code>linear_warmup_lr</code> 与 <code>adamw_decay_factor</code> 中实现，并由对应单测断言。</p>
 </section>
 
 <section class="article-summary"><h2>关键结论</h2><ul>
