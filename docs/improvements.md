@@ -115,3 +115,9 @@
 - New demo: a three-state budget ledger for batch (256 vs 8K sequences), the Table 4 dev SQuAD 2.0 F1 staircase (87.3 → 87.7 → 88.7 → 89.4) and the 160GB corpus composition (16 + 76 + 38 + 31 GB). Every value is labelled as a paper-reported dev result.
 - Calculable example: added `tokens_per_update` to examples/finetuning_contract_lab.py, with tests asserting 256×512 = 131,072, 8192×512 = 4,194,304 and the 32× ratio.
 - Validation: validate.py passes chapter 08 (2 figures, inline SVG, 2 demos); quality tests 15/15; python unittest 77/77; HTTP-served Chromium QA shows no JS errors, no broken images, nonzero inline SVG and no horizontal overflow at 1440/390/360 px, both demos changing output.
+
+### 2026-11-26 — Dual-figure/dual-demo parity for pretraining-data deep dive 09
+- New figure: an inline SVG shingle-set ledger with a Jaccard example (A={A1..A5}, B={B1..B5}, three shared shingles, ∩=3, ∪=7, J=3/7≈0.43), explaining why MinHash/LSH is only a candidate-recall step before Jaccard confirmation.
+- New demo: a three-state ledger for Jaccard (3/7, identical copies = 1, unrelated ≈ 0), the 80/10/10 MLM split with the selected-position denominator (100 → 80/10/10) and sequence packing utilisation (1000+300 tokens into 1024-length slots → 1300/2048 ≈ 63.5%). All labelled teaching arithmetic.
+- Calculable example: added `jaccard`, `mlm_replace_counts` and `packing_utilization` to examples/finetuning_contract_lab.py with tests asserting 3/7, 1.0, the 80/10/10 and 12/1/2 splits, and 1300/2048.
+- Validation: validate.py passes chapter 09 (2 figures, inline SVG, 2 demos); quality tests 15/15; python unittest 80/80; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.

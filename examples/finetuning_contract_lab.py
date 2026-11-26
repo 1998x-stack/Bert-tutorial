@@ -56,3 +56,32 @@ def tokens_per_update(batch: int, avg_length: int) -> int:
     if type(batch) is not int or batch <= 0 or type(avg_length) is not int or avg_length <= 0:
         raise ValueError("batch and avg_length must be positive integers")
     return batch * avg_length
+
+
+def jaccard(left: Sequence, right: Sequence) -> float:
+    """Jaccard similarity |A∩B| / |A∪B| for two shingle collections (article 09)."""
+    a, b = set(left), set(right)
+    union = a | b
+    if not union:
+        raise ValueError("at least one set must be non-empty")
+    return len(a & b) / len(union)
+
+
+def mlm_replace_counts(selected: int) -> dict:
+    """Floor 80/10/10 split of selected MLM positions; remainder stays original."""
+    if type(selected) is not int or selected < 0:
+        raise ValueError("selected must be a non-negative integer")
+    mask = (selected * 80) // 100
+    random_tokens = (selected * 10) // 100
+    return {"mask": mask, "random": random_tokens, "keep": selected - mask - random_tokens}
+
+
+def packing_utilization(lengths: Sequence[int], target: int) -> dict:
+    """Token-slot utilisation when packing documents into target-length sequences."""
+    if not lengths or any(type(n) is not int or n <= 0 for n in lengths):
+        raise ValueError("lengths must be positive integers")
+    if type(target) is not int or target <= 0:
+        raise ValueError("target must be a positive integer")
+    effective = sum(lengths)
+    slots = target * -(-effective // target)
+    return {"effective": effective, "slots": slots, "utilization": effective / slots}

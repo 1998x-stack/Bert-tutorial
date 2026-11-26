@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="从数据来源、许可、清洗、去重、文档切分、序列打包到动态遮盖，构建可靠的 BERT 预训练数据流水线。"><title>BERT 预训练数据工程：从原始文档到可训练 Token Batch</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="09"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
-<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#pipeline">数据流水线全景</a><a href="#provenance">来源、许可与隐私</a><a href="#clean">清洗与质量过滤</a><a href="#dedup">精确与近重复去重</a><a href="#split">切分与污染检查</a><a href="#packing">文档边界与序列打包</a><a href="#mask">动态遮盖与 collator</a><a href="#monitor">数据监控与验收</a><a href="#demo">交互：流水线故障定位</a><a href="#references">原始资料</a></aside>
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#pipeline">数据流水线全景</a><a href="#provenance">来源、许可与隐私</a><a href="#clean">清洗与质量过滤</a><a href="#dedup">精确与近重复去重</a><a href="#split">切分与污染检查</a><a href="#packing">文档边界与序列打包</a><a href="#mask">动态遮盖与 collator</a><a href="#monitor">数据监控与验收</a><a href="#demo">交互：流水线故障定位</a><a href="#ledger">交互二：去重与遮盖账本</a><a href="#references">原始资料</a></aside>
 <main id="content" class="article-main">
 <header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 09</p><h1>BERT 预训练数据工程：从原始文档到可训练 Token Batch</h1><p class="article-dek">预训练模型学到的统计规律来自数据分布。文档边界、重复页面、语言过滤、采样权重和 token 打包方式，都会改变模型实际看到的上下文。数据流水线不是模型训练前的杂务，而是模型定义的一部分。</p><div class="article-meta"><span>阅读约 24 分钟</span><span>主题：Corpus / Dedup / Packing / Dynamic Masking</span><span>核心问题：模型究竟在什么数据上学习</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
 <article class="article-body">
@@ -41,7 +41,29 @@ def exact_fingerprint(text: str) -> str:
 <p>这段代码只识别规范化后完全相同的文本；它不会发现改写、模板变化、少量增删或同一新闻的转载版本。</p>
 <h3>4.2 近重复去重</h3>
 <p>近重复检测通常把文档拆成 shingles（例如连续 token n-gram），再用 MinHash/LSH 等近似方法召回候选对，最后计算 Jaccard 或编辑相似度进行确认。阈值越高，误删越少但漏掉的近重复越多；阈值越低，越容易误删主题相似但内容不同的文章。</p><div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="Jaccard 相似度公式"><math display="block" aria-label="Jaccard 相似度等于两个 shingle 集合交集大小除以并集大小"><mrow><mi>J</mi><mo>(</mo><mi>A</mi><mo>,</mo><mi>B</mi><mo>)</mo><mo>=</mo><mfrac><mrow><mo>|</mo><mi>A</mi><mo>∩</mo><mi>B</mi><mo>|</mo></mrow><mrow><mo>|</mo><mi>A</mi><mo>∪</mo><mi>B</mi><mo>|</mo></mrow></mfrac></mrow></math></div></div>
-<p>实践中应同时考虑文档级与段落级重复：新闻转载可能整篇重复，百科页面可能只有模板段落重复。对法律条文、代码、数学定义和常见短语，过度去重可能把有价值的重复结构误删。去重报告应包含阈值、样本抽检、误删估计和被保留的 canonical 文档。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 300" role="img" aria-labelledby="c09jacTitle c09jacDesc">
+  <title id="c09jacTitle">shingle 集合与 Jaccard 相似度的教学账本</title>
+  <desc id="c09jacDesc">教学示意：文档 A 的 shingle 集合为 {A1,A2,A3,A4,A5}，文档 B 为 {B1,B2,B3,B4,B5}，其中 A3=B3、A4=B4、A5=B5 三对相同。交集大小为 3，并集大小为 7，所以 Jaccard 相似度 J=3/7≈0.43，超过阈值则判为近重复候选。</desc>
+  <rect width="900" height="300" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif" text-anchor="middle" font-size="13">
+    <text x="90" y="72" text-anchor="start" font-size="13.5" font-weight="700" fill="#203035">文档 A shingles</text>
+    <rect x="60" y="88" width="130" height="42" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="125" y="114" fill="#203035">A1</text>
+    <rect x="198" y="88" width="130" height="42" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="263" y="114" fill="#203035">A2</text>
+    <rect x="336" y="88" width="130" height="42" rx="8" fill="#fbe3b8" stroke="#c98a2a"/><text x="401" y="114" fill="#203035">A3</text>
+    <rect x="474" y="88" width="130" height="42" rx="8" fill="#fbe3b8" stroke="#c98a2a"/><text x="539" y="114" fill="#203035">A4</text>
+    <rect x="612" y="88" width="130" height="42" rx="8" fill="#fbe3b8" stroke="#c98a2a"/><text x="677" y="114" fill="#203035">A5</text>
+    <text x="90" y="172" text-anchor="start" font-size="13.5" font-weight="700" fill="#203035">文档 B shingles</text>
+    <rect x="60" y="188" width="130" height="42" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="125" y="214" fill="#203035">B1</text>
+    <rect x="198" y="188" width="130" height="42" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="263" y="214" fill="#203035">B2</text>
+    <rect x="336" y="188" width="130" height="42" rx="8" fill="#fbe3b8" stroke="#c98a2a"/><text x="401" y="214" fill="#203035">B3</text>
+    <rect x="474" y="188" width="130" height="42" rx="8" fill="#fbe3b8" stroke="#c98a2a"/><text x="539" y="214" fill="#203035">B4</text>
+    <rect x="612" y="188" width="130" height="42" rx="8" fill="#fbe3b8" stroke="#c98a2a"/><text x="677" y="214" fill="#203035">B5</text>
+  </g>
+  <text x="450" y="268" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13.5" fill="#203035">共享配对 A3=B3、A4=B4、A5=B5：交∩=3，并∪=7，J=3/7≈0.43（教学数字）</text>
+</svg>
+<figcaption>图 9B. shingle 是用于近似比较的连续 token n-gram（此例 5 个框代表 5 个 shingle）；真实系统先用 MinHash/LSH 召回候选对，再用 Jaccard 确认，阈值决定误删与漏删的权衡。</figcaption>
+</figure>
 </section>
 
 <section id="split"><h2>5. 切分与污染检查：按文档隔离，不要先切块再随机分</h2>
@@ -85,6 +107,14 @@ mlm_collator = DataCollatorForLanguageModeling(
 风险：模型反复看到相同文本，训练 token 数被虚增，数据分布偏向重复内容。
 检查：精确 hash + 近重复候选召回 + 人工抽检。
 修复：保留 canonical 文档 ID，记录被合并来源与去重阈值。</pre><script type="application/json" data-demo-states>{"dup":"症状：同一新闻被镜像站点和转载站重复收录。\n风险：模型反复看到相同文本，训练 token 数被虚增，数据分布偏向重复内容。\n检查：精确 hash + 近重复候选召回 + 人工抽检。\n修复：保留 canonical 文档 ID，记录被合并来源与去重阈值。","leak":"症状：同一文档切成多个 chunk 后随机分到 train 与 validation。\n风险：验证集包含训练文档的近邻片段，指标高估泛化能力。\n检查：按 document_id、domain、时间窗口回查 split 交集。\n修复：先按评测目标做组级切分，再执行 tokenize 与 chunk。","boundary":"症状：两个不同网页被直接拼接成一个序列，没有 separator。\n风险：模型把互不相关的文档当作连续上下文。\n检查：抽查 packed sequence 的 source document IDs 与边界标记。\n修复：保留文档边界；跨文档打包时插入明确 separator 并记录策略。","mask":"症状：padding 或 [CLS]/[SEP] 被计入 MLM loss，或未选位置没有设 ignore index。\n风险：模型学习预测填充符或边界符，loss 统计被污染。\n检查：统计 masked positions、special-token masks、labels=-100 的比例。\n修复：按当前 tokenizer 的 special_tokens_mask 构造 eligible positions，并单测 80/10/10。","license":"症状：语料只有下载 URL，没有许可、来源版本或隐私说明。\n风险：训练用途可能超出授权范围，无法响应删除请求或审计数据来源。\n检查：逐来源核对 license、terms、provenance 与敏感数据流程。\n修复：未完成治理审查的来源不进入训练集；保留文档级 lineage。"}</script></div>
+</section>
+
+<section id="ledger"><h2>10. 交互二：去重、遮盖与打包账本</h2>
+<p>三个状态分别演示近重复判定的集合运算、MLM 遮盖计数的分母、以及序列打包的槽位利用率。数字均为<strong>教学示意</strong>，不代表任何真实语料库或 checkpoint 配置。</p>
+<div class="demo" data-demo><h3>集合 / 遮盖 / 打包</h3><p class="demo-intro">固定教学数字，切换状态查看算术来源。</p><div class="demo-controls"><button type="button" data-demo-action="jaccard" aria-pressed="true">Jaccard</button><button type="button" data-demo-action="mask" aria-pressed="false">80/10/10</button><button type="button" data-demo-action="packing" aria-pressed="false">序列打包</button></div><pre class="demo-output" data-demo-output aria-live="polite">A={1,2,3,4,5}，B={3,4,5,6,7}：交∩=3，并∪=7，J=3/7≈0.4286。
+完全相同副本：∩=∪=5，J=5/5=1。
+两篇无关文档 shingle 几乎不重叠，J 接近 0。</pre><script type="application/json" data-demo-states>{"jaccard":"A={1,2,3,4,5}，B={3,4,5,6,7}：交∩=3，并∪=7，J=3/7≈0.4286。\n完全相同副本：∩=∪=5，J=5/5=1。\n两篇无关文档 shingle 几乎不重叠，J 接近 0。","mask":"选中 n=100 个 MLM 目标位置后（教学比例）：\n约 80 个替换为 [MASK]，10 个随机词，10 个保留原词。\n80/10/10 的分母是“被选中的目标位置”，不是整条序列。","packing":"两文档 1000+300=1300 个有效 token，目标长度 1024：\n序列1=1000+24=1024，序列2=276+748 padding。\n总槽位 2×1024=2048，利用率 1300/2048≈63.5%；跨文档处必须显式设边界。"}</script></div>
+<p>上述算术在 <a href="../examples/finetuning_contract_lab.py">examples/finetuning_contract_lab.py</a> 的 <code>jaccard</code>、<code>mlm_replace_counts</code> 与 <code>packing_utilization</code> 中实现，并由对应单测断言。</p>
 </section>
 
 <section class="article-summary"><h2>关键结论</h2><ul>

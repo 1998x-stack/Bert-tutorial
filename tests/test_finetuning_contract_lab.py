@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
 from finetuning_contract_lab import (
     padding_budget, optimizer_steps, align_word_labels, tokens_per_update,
+    jaccard, mlm_replace_counts, packing_utilization,
 )
 
 
@@ -40,6 +41,20 @@ class FinetuningContractTests(unittest.TestCase):
         self.assertEqual(tokens_per_update(256, 512), 131072)
         self.assertEqual(tokens_per_update(8192, 512), 4194304)
         self.assertEqual(tokens_per_update(8192, 512) // tokens_per_update(256, 512), 32)
+
+    def test_jaccard_article_09(self):
+        self.assertAlmostEqual(jaccard([1, 2, 3, 4, 5], [3, 4, 5, 6, 7]), 3 / 7, places=9)
+        self.assertEqual(jaccard([1, 2, 3], [1, 2, 3]), 1.0)
+
+    def test_mlm_replace_counts_use_selected_denominator(self):
+        self.assertEqual(mlm_replace_counts(100), {"mask": 80, "random": 10, "keep": 10})
+        self.assertEqual(mlm_replace_counts(15), {"mask": 12, "random": 1, "keep": 2})
+
+    def test_packing_utilization_article_09(self):
+        ledger = packing_utilization([1000, 300], 1024)
+        self.assertEqual(ledger["effective"], 1300)
+        self.assertEqual(ledger["slots"], 2048)
+        self.assertAlmostEqual(ledger["utilization"], 1300 / 2048, places=9)
 
     def test_bad_inputs_raise(self):
         with self.assertRaises(ValueError):
