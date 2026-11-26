@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
 from finetuning_contract_lab import (
-    padding_budget, optimizer_steps, align_word_labels,
+    padding_budget, optimizer_steps, align_word_labels, tokens_per_update,
 )
 
 
@@ -35,6 +35,11 @@ class FinetuningContractTests(unittest.TestCase):
     def test_align_rejects_out_of_range_word_id(self):
         with self.assertRaises(ValueError):
             align_word_labels([7], [0])
+
+    def test_tokens_per_update_batch_ratio(self):
+        self.assertEqual(tokens_per_update(256, 512), 131072)
+        self.assertEqual(tokens_per_update(8192, 512), 4194304)
+        self.assertEqual(tokens_per_update(8192, 512) // tokens_per_update(256, 512), 32)
 
     def test_bad_inputs_raise(self):
         with self.assertRaises(ValueError):

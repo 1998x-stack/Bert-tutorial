@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="回到 RoBERTa 原始论文，拆解动态遮盖、移除 NSP、输入打包、大 batch、160GB 数据与更长训练，并核对开发集指标。"><title>RoBERTa：同一类 Encoder，为什么训练配方能带来巨大提升</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="08"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
-<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#question">论文真正问了什么</a><a href="#changes">四项训练改动</a><a href="#masking">动态遮盖证据</a><a href="#input">NSP 与输入打包</a><a href="#scale">Batch、数据与步数</a><a href="#results">开发集结果</a><a href="#tokenizer">Byte-level BPE</a><a href="#limits">结论边界</a><a href="#demo">交互：配方拆解</a><a href="#references">原始资料</a></aside>
+<aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#question">论文真正问了什么</a><a href="#changes">四项训练改动</a><a href="#masking">动态遮盖证据</a><a href="#input">NSP 与输入打包</a><a href="#scale">Batch、数据与步数</a><a href="#results">开发集结果</a><a href="#tokenizer">Byte-level BPE</a><a href="#limits">结论边界</a><a href="#demo">交互：配方拆解</a><a href="#budget">交互二：预算阶梯账本</a><a href="#references">原始资料</a></aside>
 <main id="content" class="article-main">
 <header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 08</p><h1>RoBERTa：同一类 Encoder，为什么训练配方能带来巨大提升</h1><p class="article-dek">RoBERTa 并没有发明一个完全不同的 Transformer Encoder。它系统地重新检查 BERT 的遮盖方式、句间目标、输入打包、batch size、语料规模与训练时长，说明训练配方本身就能显著改变结果。</p><div class="article-meta"><span>阅读约 24 分钟</span><span>主题：RoBERTa / Ablation / Scaling</span><span>核心问题：哪些提升来自训练配方</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
 <article class="article-body">
@@ -31,6 +31,47 @@
 <section id="input"><h2>4. 移除 NSP 不是只删一个 loss：输入格式也变了</h2>
 <p>RoBERTa 比较四种样本组织方式：SEGMENT-PAIR+NSP（接近原始 BERT）；SENTENCE-PAIR+NSP（自然句对，序列更短）；FULL-SENTENCES（连续完整句子打包，可跨文档，跨文档时插入额外 separator，不使用 NSP）；DOC-SENTENCES（连续完整句子打包，但不跨文档，也不使用 NSP）。</p>
 <p>论文 Table 2 的控制实验显示，句子级短 pair 会损害一些任务表现；去掉 NSP 的 FULL-SENTENCES 与 DOC-SENTENCES 与或略好于原始 BERT-Base。DOC-SENTENCES 在一些任务略好，但因为文档末尾会产生较短序列、batch 需要动态调整，作者后续采用 FULL-SENTENCES 以便比较和训练。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" role="img" aria-labelledby="c08packTitle c08packDesc">
+  <title id="c08packTitle">四种输入打包方式的 token 序列对比</title>
+  <desc id="c08packDesc">教学示意：SEGMENT-PAIR+NSP 把两个句子分别放进两段并用两个 [SEP] 分隔；FULL-SENTENCES 不使用 NSP，把连续完整句子打包到序列长度，跨文档时插入额外 [SEP]；DOC-SENTENCES 同样不使用 NSP，但绝不跨文档，因此文档末尾会出现较短序列。框内 A₁/B₁ 表示段 A/B 的句子，s₁ 表示同一文档的连续句子。</desc>
+  <rect width="900" height="340" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="20" y="82" font-size="13.5" font-weight="700" fill="#203035">SEGMENT-PAIR</text><text x="20" y="102" font-size="12.5" fill="#53676d">+ NSP loss</text>
+    <text x="20" y="162" font-size="13.5" font-weight="700" fill="#203035">FULL-SENTENCES</text><text x="20" y="182" font-size="12.5" fill="#53676d">无 NSP</text>
+    <text x="20" y="242" font-size="13.5" font-weight="700" fill="#203035">DOC-SENTENCES</text><text x="20" y="262" font-size="12.5" fill="#53676d">无 NSP</text>
+    <g font-size="12.5" text-anchor="middle" fill="#203035">
+      <rect x="150" y="60" width="80" height="36" rx="8" fill="#eef1f2" stroke="#7d918a"/><text x="190" y="83">[CLS]</text>
+      <rect x="238" y="60" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="278" y="83">A1</text>
+      <rect x="326" y="60" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="366" y="83">A2</text>
+      <rect x="414" y="60" width="80" height="36" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="454" y="83">[SEP]</text>
+      <rect x="502" y="60" width="80" height="36" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="542" y="83">B1</text>
+      <rect x="590" y="60" width="80" height="36" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="630" y="83">B2</text>
+      <rect x="678" y="60" width="80" height="36" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="718" y="83">[SEP]</text>
+      <rect x="766" y="60" width="80" height="36" rx="8" fill="#f0f1f2" stroke="#c3cccf" stroke-dasharray="4 3"/><text x="806" y="83" fill="#8a979b">PAD</text>
+      <rect x="150" y="140" width="80" height="36" rx="8" fill="#eef1f2" stroke="#7d918a"/><text x="190" y="163">[CLS]</text>
+      <rect x="238" y="140" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="278" y="163">s1</text>
+      <rect x="326" y="140" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="366" y="163">s2</text>
+      <rect x="414" y="140" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="454" y="163">s3</text>
+      <rect x="502" y="140" width="80" height="36" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="542" y="163">[SEP]</text>
+      <rect x="590" y="140" width="80" height="36" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="630" y="163">s4</text>
+      <rect x="678" y="140" width="80" height="36" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="718" y="163">s5</text>
+      <rect x="766" y="140" width="80" height="36" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="806" y="163">[SEP]</text>
+      <rect x="150" y="220" width="80" height="36" rx="8" fill="#eef1f2" stroke="#7d918a"/><text x="190" y="243">[CLS]</text>
+      <rect x="238" y="220" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="278" y="243">s1</text>
+      <rect x="326" y="220" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="366" y="243">s2</text>
+      <rect x="414" y="220" width="80" height="36" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="454" y="243">s3</text>
+      <rect x="502" y="220" width="80" height="36" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="542" y="243">[SEP]</text>
+      <rect x="590" y="220" width="80" height="36" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="630" y="243">s4</text>
+      <rect x="678" y="220" width="80" height="36" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="718" y="243">s5</text>
+      <rect x="766" y="220" width="80" height="36" rx="8" fill="#f0f1f2" stroke="#c3cccf" stroke-dasharray="4 3"/><text x="806" y="243" fill="#8a979b">文档结束</text>
+    </g>
+  </g>
+  <text x="450" y="300" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#203035">FULL 与 DOC 的差别在文档边界：FULL 可跨文档并用额外 [SEP] 标记，DOC 到边界即止，序列可能变短。</text>
+  <text x="450" y="322" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12.5" fill="#53676d">框内标签为教学示意；四种格式的对比来自 RoBERTa §4.2 与 Table 2。</text>
+</svg>
+<figcaption>图 8B. 移除 NSP 与输入打包是同一项改动：FULL-SENTENCES 允许跨文档并用额外 [SEP] 连接，DOC-SENTENCES 不跨文档但会产生短序列。两者都不使用 NSP loss。</figcaption>
+</figure>
 <div class="callout warning">所以“RoBERTa 证明 NSP 完全没用”过于绝对。更准确的结论是：在 RoBERTa 的重实现与输入打包策略下，移除 NSP 并使用更长连续文本没有损害表现，整体配方反而更强。</div>
 </section>
 
@@ -67,6 +108,14 @@
 解决的问题：离线固定 mask 组合有限，长训练时会重复看到相同遮盖模式。
 证据：RoBERTa Table 1 显示 dynamic 与 static 表现相当或略好。
 边界：不是所有单项任务都出现大幅提升。</pre><script type="application/json" data-demo-states>{"mask":"改变：每次样本进入模型时重新采样遮盖位置。\n解决的问题：离线固定 mask 组合有限，长训练时会重复看到相同遮盖模式。\n证据：RoBERTa Table 1 显示 dynamic 与 static 表现相当或略好。\n边界：不是所有单项任务都出现大幅提升。","nsp":"改变：不再训练 NSP 二分类 loss，并使用连续完整句子打包。\n解决的问题：NSP 负例可能让模型利用跨文档主题差异；短句 pair 也会浪费上下文长度。\n证据：Table 2 对比 SEGMENT-PAIR、FULL-SENTENCES、DOC-SENTENCES。\n边界：不能把它概括成所有句间关系目标都无用。","batch":"改变：把 batch 从 256 提高到 8K 序列，并同步调节学习率和训练步数。\n解决的问题：提升并行效率与训练吞吐。\n证据：RoBERTa Table 4 使用 8K batch；Table 3 单独研究 256、2K、8K。\n边界：大 batch 需要重新调参，不是直接把 batch 放大即可。","data":"改变：语料从 Books+Wiki 扩展到 160GB，训练延长至 500K steps。\n解决的问题：数据多样性和训练不足。\n证据：Table 4 展示 16GB→160GB、100K→300K→500K 的累积改动。\n边界：数据量与数据多样性没有在最终实验中完全解耦。","bpe":"改变：使用约 50K byte-level BPE，而不是 BERT 原始 WordPiece。\n解决的问题：以 byte 作为底层单位，减少未知 token 并简化文本预处理。\n证据：RoBERTa §4.4 Text Encoding。\n边界：tokenizer 和词表不兼容，embedding 参数也随词表变化。"}</script></div>
+</section>
+
+<section id="budget"><h2>10. 交互二：训练预算阶梯账本</h2>
+<p>固定引用 RoBERTa 论文的数字，切换状态核对表格口径。所有指标均为论文 Table 4 的<strong>开发集</strong>结果，不是测试集排行榜成绩；本交互不做任何重新训练。</p>
+<div class="demo" data-demo><h3>预算：batch / 步数 / 语料</h3><p class="demo-intro">数字来自 RoBERTa Table 3、Table 4 与 §4.1，仅做口径核对。</p><div class="demo-controls"><button type="button" data-demo-action="batch" aria-pressed="true">Batch</button><button type="button" data-demo-action="steps" aria-pressed="false">训练步数</button><button type="button" data-demo-action="corpus" aria-pressed="false">语料规模</button></div><pre class="demo-output" data-demo-output aria-live="polite">Table 3 比较 256、2K、8K 序列 batch，并按预算调节步数与学习率。
+Table 4 的 RoBERTa-Large 行统一使用 8K batch。
+每步序列数 8K/256=32×，但这不等于 32× 端到端加速或 32× 有效 token。</pre><script type="application/json" data-demo-states>{"batch":"Table 3 比较 256、2K、8K 序列 batch，并按预算调节步数与学习率。\nTable 4 的 RoBERTa-Large 行统一使用 8K batch。\n每步序列数 8K/256=32×，但这不等于 32× 端到端加速或 32× 有效 token。","steps":"Table 4 dev SQuAD 2.0 F1 阶梯：16GB/100K=87.3 → 160GB/100K=87.7。\n160GB 下继续训练：300K=88.7 → 500K=89.4。\n这是开发集单模型结果，不是测试集集成成绩。","corpus":"160GB 的组成（论文 §4.1）：Books+Wiki 约 16GB、CC-News 约 76GB、OpenWebText 约 38GB、Stories 约 31GB。\nBERT 原论文写 Books+Wiki 共 16GB，RoBERTa 重实现清洗后约 13GB。\n两个数字口径不同，不是简单的数据量矛盾。"}</script></div>
+<p>“每次 update 处理的 token 数”可用 <code>B×L_avg</code> 做一阶估算，在 <a href="../examples/finetuning_contract_lab.py">examples/finetuning_contract_lab.py</a> 的 <code>tokens_per_update</code> 中实现，并由对应单测断言；它未包含 padding 与 packing 的影响。</p>
 </section>
 
 <section class="article-summary"><h2>关键结论</h2><ul>

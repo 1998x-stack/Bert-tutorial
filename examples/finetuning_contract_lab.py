@@ -49,3 +49,10 @@ def align_word_labels(word_ids: Sequence[int | None], word_labels: Sequence[int]
             tokens.append(ignore)
         previous = word_id
     return tokens
+
+
+def tokens_per_update(batch: int, avg_length: int) -> int:
+    """First-order tokens-per-update estimate, ignoring padding/packing (article 08)."""
+    if type(batch) is not int or batch <= 0 or type(avg_length) is not int or avg_length <= 0:
+        raise ValueError("batch and avg_length must be positive integers")
+    return batch * avg_length
