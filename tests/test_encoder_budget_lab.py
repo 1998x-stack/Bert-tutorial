@@ -6,7 +6,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
 from encoder_budget_lab import (token_exposures, language_sampling, rtd_is_replaced,
-                                masked_softmax, flops_order, repeated_exposure)
+                                masked_softmax, flops_order, repeated_exposure,
+                                param_memory_bytes, attention_matrix_elements, scaled_gradient)
 
 
 class EncoderBudgetTests(unittest.TestCase):
@@ -29,6 +30,21 @@ class EncoderBudgetTests(unittest.TestCase):
         ledger = repeated_exposure(10_000_000_000, 2)
         self.assertEqual(ledger["seen"], 20_000_000_000)
         self.assertEqual(ledger["unique"], 10_000_000_000)
+
+    def test_param_memory_article_12(self):
+        self.assertEqual(param_memory_bytes(110_000_000, 16), 1_760_000_000)
+        self.assertEqual(param_memory_bytes(110_000_000, 16) / 1e9, 1.76)
+
+    def test_attention_matrix_elements_quadruple(self):
+        self.assertEqual(attention_matrix_elements(512), 262_144)
+        self.assertEqual(attention_matrix_elements(1024), 1_048_576)
+        self.assertEqual(attention_matrix_elements(2048), 4_194_304)
+        self.assertEqual(attention_matrix_elements(1024) // attention_matrix_elements(512), 4)
+
+    def test_scaled_gradient_roundtrip(self):
+        scaled = scaled_gradient(1e-5, 65536)
+        self.assertAlmostEqual(scaled, 0.65536, places=9)
+        self.assertAlmostEqual(scaled / 65536, 1e-5, places=12)
 
     def test_invalid_batch_rejected(self):
         with self.assertRaises(ValueError):

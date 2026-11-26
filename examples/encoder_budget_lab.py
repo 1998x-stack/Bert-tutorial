@@ -93,3 +93,26 @@ def repeated_exposure(unique_tokens: int, epochs: int) -> dict:
     if type(epochs) is not int or epochs <= 0:
         raise ValueError("epochs must be a positive integer")
     return {"unique": unique_tokens, "seen": unique_tokens * epochs}
+
+
+def param_memory_bytes(n_params: int, bytes_per_param: int) -> int:
+    """Optimiser-state bytes = params x bytes_per_param (article 12; excludes activations)."""
+    if type(n_params) is not int or n_params <= 0:
+        raise ValueError("n_params must be a positive integer")
+    if type(bytes_per_param) is not int or bytes_per_param <= 0:
+        raise ValueError("bytes_per_param must be a positive integer")
+    return n_params * bytes_per_param
+
+
+def attention_matrix_elements(seq_len: int) -> int:
+    """Dense score-matrix elements for one attention head = T**2 (article 12)."""
+    if type(seq_len) is not int or seq_len <= 0:
+        raise ValueError("seq_len must be a positive integer")
+    return seq_len * seq_len
+
+
+def scaled_gradient(grad: float, scale: float) -> float:
+    """Multiply by the AMP loss-scale factor (article 12)."""
+    if scale <= 0:
+        raise ValueError("scale must be positive")
+    return grad * scale

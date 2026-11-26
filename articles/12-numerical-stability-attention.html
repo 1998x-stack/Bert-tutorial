@@ -5,7 +5,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="12"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
 <aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
-<a href="#problem">NaN 从哪里来</a><a href="#formats">FP32、FP16 与 BF16</a><a href="#amp">AMP 的正确更新顺序</a><a href="#accumulation">梯度累积的等价边界</a><a href="#memory">训练显存账本</a><a href="#flash">FlashAttention 优化了什么</a><a href="#test">运行前的数值验收</a><a href="#demo">交互：故障诊断</a><a href="#references">原始资料</a></aside>
+<a href="#problem">NaN 从哪里来</a><a href="#formats">FP32、FP16 与 BF16</a><a href="#amp">AMP 的正确更新顺序</a><a href="#accumulation">梯度累积的等价边界</a><a href="#memory">训练显存账本</a><a href="#flash">FlashAttention 优化了什么</a><a href="#test">运行前的数值验收</a><a href="#demo">交互：故障诊断</a><a href="#ledger">交互二：精度与显存账本</a><a href="#references">原始资料</a></aside>
 <main id="content" class="article-main"><header class="article-header">
 <p class="eyebrow">BERT 系列 · 深度精读 12</p><h1>Encoder 训练稳定性：精度、梯度与 FlashAttention</h1>
 <p class="article-dek">训练 loss 突然变成 NaN，可能是 FP16 梯度溢出、坏样本、错误的 label mask，或者过大的更新；显存不足则可能来自激活值而非模型权重。要先分离故障机制，再决定用哪种工程工具。</p>
@@ -59,6 +59,32 @@ for batch in loader:
 <p>以 AdamW FP32 参数和两个 FP32 动量状态为粗略例子，单个参数在训练中可能占参数 4B、梯度 4B、m 4B、v 4B，合计约 16 bytes/parameter，<strong>不含</strong>激活、临时 kernel workspace、模型副本、分布式分片等。真实混合精度实现可能维护额外权重副本，因此不能将 16B/param 当作通用精确上限。</p>
 <p>激活显存与 batch、序列长度、层数和保存的中间张量有关。激活重计算（gradient checkpointing）不保存全部中间激活，而是在反传时重算一部分前向，交换更多计算以节省显存；它不会减少模型参数量。Zero Redundancy Optimizer / FSDP 等分片技术则在设备之间拆分 optimizer states、梯度或参数，目标不同。</p>
 <p>从 512 增长到 1024 token，标准注意力分数矩阵的元素数增长 4 倍；若实际瓶颈来自 attention score 的物化和 HBM 访问，IO-aware kernel 可带来显存或速度收益。但如果瓶颈来自巨大的 embedding/FFN 激活、数据加载或跨卡通信，替换 attention kernel 可能不是主要解法。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" role="img" aria-labelledby="c12memTitle c12memDesc">
+  <title id="c12memTitle">训练显存的两部分账本：参数状态与注意力矩阵</title>
+  <desc id="c12memDesc">教学示意：左侧为 AdamW 下单个参数可能占用的字节数，FP32 参数 4 字节、梯度 4 字节、一阶矩 4 字节、二阶矩 4 字节，合计 16 字节，不含激活与副本；右侧为单个注意力头分数的元素数，序列长度 512、1024、2048 对应约 0.26M、1.05M、4.19M，长度翻倍则元素数变为 4 倍。</desc>
+  <rect width="900" height="320" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="230" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#203035">每参数 ≈ 16 bytes（教学）</text>
+    <text x="660" y="40" text-anchor="middle" font-size="14" font-weight="700" fill="#203035">单头注意力分数元素数 = T²</text>
+    <g text-anchor="middle">
+      <rect x="30" y="60" width="90" height="52" rx="8" fill="#e4e9e5" stroke="#7d918a"/><text x="75" y="82" font-size="12.5">参数</text><text x="75" y="100" font-size="12.5" fill="#53676d">4 B</text>
+      <rect x="130" y="60" width="90" height="52" rx="8" fill="#e4e9e5" stroke="#7d918a"/><text x="175" y="82" font-size="12.5">梯度</text><text x="175" y="100" font-size="12.5" fill="#53676d">4 B</text>
+      <rect x="230" y="60" width="90" height="52" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="275" y="82" font-size="12.5">m</text><text x="275" y="100" font-size="12.5" fill="#53676d">4 B</text>
+      <rect x="330" y="60" width="90" height="52" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="375" y="82" font-size="12.5">v</text><text x="375" y="100" font-size="12.5" fill="#53676d">4 B</text>
+    </g>
+    <text x="230" y="140" text-anchor="middle" font-size="12.5" fill="#53676d">不含激活、临时 workspace、模型副本与分片；混合精度实现可能另有权重副本。</text>
+    <g>
+      <rect x="510" y="220" width="120" height="36" rx="6" fill="#d7eee7" stroke="#147f80"/><text x="570" y="244" text-anchor="middle" font-size="12.5">T=512 → 0.26M</text>
+      <rect x="510" y="170" width="240" height="36" rx="6" fill="#d7eee7" stroke="#147f80"/><text x="630" y="194" text-anchor="middle" font-size="12.5">T=1024 → 1.05M</text>
+      <rect x="510" y="120" width="360" height="36" rx="6" fill="#fbede7" stroke="#c96c4c"/><text x="690" y="144" text-anchor="middle" font-size="12.5">T=2048 → 4.19M</text>
+      <text x="660" y="282" text-anchor="middle" font-size="12" fill="#53676d">条宽按 T² 比例；长度翻倍，元素数变为 4 倍。</text>
+    </g>
+  </g>
+  <text x="450" y="308" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12.5" fill="#53676d">两项都属于数量级示意；真实峰值以目标设备与实现的实际测量为准。</text>
+</svg>
+<figcaption>图 12B. 左侧是参数状态账本（16 B/参数，不含激活），右侧是注意力矩阵随长度平方增长的账本；两类显存峰值需分别定位。</figcaption>
+</figure>
 </section>
 <section id="flash"><h2>6. FlashAttention：减少数据搬运，而不是把精确注意力改成 O(T)</h2>
 <p>标准全注意力计算 QKᵀ，沿 key 位置 softmax，再乘 V。直接实现常会物化一个 T×T 分数/概率矩阵。FlashAttention 的关键是把 Q/K/V 分块，从 HBM 把块搬进更快的片上 SRAM，在分块计算中维护稳定的在线 softmax 统计，而不必把完整注意力矩阵存回 HBM。</p>
@@ -78,6 +104,14 @@ for batch in loader:
 <div class="demo-controls"><button type="button" data-demo-action="nan" aria-pressed="true">Loss 出现 NaN</button><button type="button" data-demo-action="oom" aria-pressed="false">显存 OOM</button><button type="button" data-demo-action="slow" aria-pressed="false">训练很慢</button><button type="button" data-demo-action="clip" aria-pressed="false">梯度裁剪异常</button></div>
 <pre class="demo-output" data-demo-output aria-live="polite">先复现具体 batch，记录 loss 与 grad norm；排查标签、mask 和非有限输入，再检查学习率与 FP16 scale。不要把所有 NaN 先归结为“学习率太大”。</pre>
 <script type="application/json" data-demo-states>{"nan":"先复现具体 batch，记录 loss 与 grad norm；排查标签、mask 和非有限输入，再检查学习率与 FP16 scale。不要把所有 NaN 先归结为“学习率太大”。","oom":"区分参数/优化器状态与激活显存峰值；记录 batch、长度和 padding。尝试更小 micro-batch、激活重计算或分片优化器，并测量 step-time 变化。","slow":"先测 end-to-end tokens/s；分解数据读取、padding、attention kernel、FFN、跨卡同步。FlashAttention 只能改善与对应 attention kernel 和 IO 有关的瓶颈。","clip":"检查是否在 FP16 反传后先 scaler.unscale_(optimizer)，再 clip_grad_norm_；若未 unscale，裁剪阈值相当于被意外缩小。累积梯度必须在更新前统一裁剪。"}</script></div></section>
+<section id="ledger"><h2>9. 交互二：精度、显存与 loss scaling 账本</h2>
+<p>三个状态演示参数状态字节、注意力矩阵随长度的平方增长、以及 FP16 loss scaling 如何把很小的梯度放大到可表示范围。数值均为<strong>教学数量级示意</strong>，不代表实测峰值显存或某设备的实测值。</p>
+<div class="demo" data-demo><h3>bytes / T² / scale</h3><p class="demo-intro">固定教学数字，切换状态查看算术来源。</p><div class="demo-controls"><button type="button" data-demo-action="bytes" aria-pressed="true">参数状态字节</button><button type="button" data-demo-action="attn" aria-pressed="false">T² 增长</button><button type="button" data-demo-action="scale" aria-pressed="false">loss scaling</button></div><pre class="demo-output" data-demo-output aria-live="polite">110M 参数 × 16 B（参数 4 + 梯度 4 + m 4 + v 4）= 1.76e9 B ≈ 1.76 GB。
+不含激活、临时 workspace、模型副本与分片。
+混合精度实现可能另有权重副本，因此 16 B/param 不是通用精确上限。</pre><script type="application/json" data-demo-states>{"bytes":"110M 参数 × 16 B（参数 4 + 梯度 4 + m 4 + v 4）= 1.76e9 B ≈ 1.76 GB。\n不含激活、临时 workspace、模型副本与分片。\n混合精度实现可能另有权重副本，因此 16 B/param 不是通用精确上限。","attn":"单头注意力分数元素数 = T²：\nT=512 → 262,144；T=1024 → 1,048,576；T=2048 → 4,194,304。\n1024/512 = 4×，2048/1024 = 4×：长度翻倍则元素数变 4 倍。","scale":"原始梯度 g=1e-5 在 FP16 下接近下溢；先乘 scale=65536（2^16）：\ng_scaled = 1e-5×65536 = 0.65536。\n反传后 unscale 恢复 g = 0.65536/65536 = 1e-5；裁剪必须在 unscale 之后。"}</script></div>
+<p>上述算术在 <a href="../examples/encoder_budget_lab.py">examples/encoder_budget_lab.py</a> 的 <code>param_memory_bytes</code>、<code>attention_matrix_elements</code> 与 <code>scaled_gradient</code> 中实现，并由对应单测断言。</p>
+</section>
+
 <section class="article-summary"><h2>关键结论</h2><ul>
 <li>FP16 与 BF16 都是 16-bit，但指数位数不同；AMP 的算子 dtype 与优化器状态需按实现确认。</li>
 <li>FP16 loss scaling 需要在梯度裁剪前 unscale；梯度累积与 scheduler 都按真实 optimizer step 管理。</li>

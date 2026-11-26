@@ -133,3 +133,9 @@
 - New demo: a three-state ledger for the compute order-of-magnitude C≈6ND (110M × 32.768B ≈ 2.162688e19), repeated-epoch D_seen vs D_unique (10B unique, 2 epochs → 20B seen) and equal-compute grid points (50M×20B and 200M×5B both ≈ 6e18). All labelled teaching estimates.
 - Calculable example: added `flops_order` and `repeated_exposure` to examples/encoder_budget_lab.py, and referenced the existing `token_exposures`; tests/test_encoder_budget_lab.py asserts 2.162688e19, the equal-compute equality and 10B/20B.
 - Validation: validate.py passes chapter 11 (2 figures, inline SVG, 2 demos); quality tests 15/15; python unittest 85/85; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.
+
+### 2026-11-26 — Dual-figure/dual-demo parity for stability deep dive 12
+- New figure: an inline SVG memory ledger with two panels — per-parameter AdamW state (4+4+4+4 = 16 B, excluding activations/copies) and one-head attention score elements (T=512/1024/2048 → 262,144/1,048,576/4,194,304, ×4 per doubling).
+- New demo: a three-state ledger for optimiser-state bytes (110M × 16 B ≈ 1.76 GB), the T² growth (×4 per doubling) and AMP loss scaling (1e-5 × 65536 = 0.65536, unscale before clipping). All labelled order-of-magnitude estimates.
+- Calculable example: added `param_memory_bytes`, `attention_matrix_elements` and `scaled_gradient` to examples/encoder_budget_lab.py with tests asserting 1.76e9, the four element counts, the ×4 ratio and the scale round-trip.
+- Validation: validate.py passes chapter 12 (2 figures, inline SVG, 2 demos, display MathML in focusable scroll regions); quality tests 15/15; python unittest 88/88; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.
