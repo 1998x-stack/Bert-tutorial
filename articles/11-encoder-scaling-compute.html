@@ -5,7 +5,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="11"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div>
 <div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
-<a href="#question">真正的资源约束</a><a href="#units">先统一计量单位</a><a href="#axes">模型、数据与计算的三轴</a><a href="#chinchilla">Chinchilla 的适用范围</a><a href="#encoder">Encoder 的独立证据</a><a href="#budget">如何设计受控实验</a><a href="#signals">如何诊断欠训练</a><a href="#demo">交互：token 账本</a><a href="#references">原始资料</a></aside>
+<a href="#question">真正的资源约束</a><a href="#units">先统一计量单位</a><a href="#axes">模型、数据与计算的三轴</a><a href="#chinchilla">Chinchilla 的适用范围</a><a href="#encoder">Encoder 的独立证据</a><a href="#budget">如何设计受控实验</a><a href="#signals">如何诊断欠训练</a><a href="#demo">交互：token 账本</a><a href="#ledger">交互二：计算量与重复暴露</a><a href="#references">原始资料</a></aside>
 <main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 11</p>
 <h1>Encoder 规模效应：数据、参数与计算预算如何权衡</h1>
 <p class="article-dek">模型从 110M 参数扩大到 340M 参数，究竟该把预算花在更大的网络，还是更多训练 token 上？回答之前，必须把“数据集占多少 GB”“模型实际读过多少 token”和“训练消耗多少 FLOPs”区分开来。</p>
@@ -23,6 +23,27 @@
 <div class="math-group"><div class="math-scroll" role="region" aria-label="训练 token 总量估算，可横向滚动" tabindex="0"><math display="block" aria-label="训练中处理的 token 总量约等于更新步数乘有效 batch 的序列条数乘平均序列长度"><mrow><msub><mi>D</mi><mtext>seen</mtext></msub><mo>≈</mo><mi>S</mi><mo>×</mo><mi>B</mi><mo>×</mo><mover><mi>L</mi><mo>¯</mo></mover></mrow></math></div></div>
 <p>这个公式记录的是“被处理的 token 次数”，不是“互不重复的 unique token 数”。假设 10 万步、batch 256、每条有效长度 128，则约处理 32.768 亿 token 次数；假设其余不变而长度 512，则变为约 131.072 亿。<strong>两者都属于教学算术示例</strong>，不表示 BERT 全部训练步骤都使用了某个固定长度。</p>
 <p>对于 BERT 原论文尤其要注意：前 90% 的步骤主要使用 128 长度，最后 10% 使用 512 长度；若忽略这种长度日程，就会高估每步计算。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 320" role="img" aria-labelledby="c11unitTitle c11unitDesc">
+  <title id="c11unitTitle">语料字节、词数、token 数与训练处理量不可直接相等</title>
+  <desc id="c11unitDesc">教学示意：磁盘语料 13 GB（RoBERTa 清洗后 Books+Wiki）与 BERT 报告的 33 亿英语词不是同一单位；词数到 WordPiece token 数依赖具体 tokenizer；token 数到 D_seen 还需乘以步数、平均长度、重复 epoch 与 padding。四个量之间都不能直接用等号连接。</desc>
+  <rect width="900" height="320" rx="20" fill="#f5f7f2"/>
+  <text x="450" y="38" text-anchor="middle" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#203035">四个量、三种换算：不能相等</text>
+  <g font-family="system-ui,sans-serif" text-anchor="middle">
+    <rect x="24" y="96" width="186" height="92" rx="12" fill="#e4e9e5" stroke="#7d918a" stroke-width="1.5"/><text x="117" y="132" font-size="13.5" font-weight="700" fill="#203035">语料字节</text><text x="117" y="156" font-size="12.5" fill="#53676d">13 GB（清洗后）</text>
+    <rect x="246" y="96" width="186" height="92" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="1.5"/><text x="339" y="132" font-size="13.5" font-weight="700" fill="#203035">词数</text><text x="339" y="156" font-size="12.5" fill="#53676d">3.3B 英语词</text>
+    <rect x="468" y="96" width="186" height="92" rx="12" fill="#d7eee7" stroke="#147f80" stroke-width="1.5"/><text x="561" y="132" font-size="13.5" font-weight="700" fill="#203035">token 数</text><text x="561" y="156" font-size="12.5" fill="#53676d">依 tokenizer</text>
+    <rect x="690" y="96" width="186" height="92" rx="12" fill="#fbede7" stroke="#c96c4c" stroke-width="1.5"/><text x="783" y="126" font-size="13.5" font-weight="700" fill="#203035">D_seen</text><text x="783" y="148" font-size="12" fill="#53676d">处理次数</text><text x="783" y="168" font-size="11.5" fill="#53676d">×步数×长度×重复</text>
+    <text x="228" y="130" font-size="20" fill="#c96c4c">≠</text><text x="450" y="130" font-size="20" fill="#c96c4c">≠</text><text x="672" y="130" font-size="20" fill="#c96c4c">≠</text>
+  </g>
+  <g font-family="system-ui,sans-serif" text-anchor="middle" font-size="11.5" fill="#53676d">
+    <text x="117" y="230">编码/清洗不同</text><text x="339" y="230">分词规则</text><text x="561" y="230">重复+padding</text><text x="783" y="230">唯一性丢失</text>
+  </g>
+  <text x="450" y="276" text-anchor="middle" font-family="system-ui,sans-serif" font-size="13" fill="#203035">D_seen 记录被处理的 token 次数，不等于去重后的 unique token；两者应分别报告。</text>
+  <text x="450" y="300" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12.5" fill="#53676d">13GB 与 3.3B 词分别来自 RoBERTa §4 与 BERT §3 的原始描述。</text>
+</svg>
+<figcaption>图 11B. 从磁盘字节到训练处理量要经过分词、长度日程与重复采样；把 13GB 直接当作 13B token 会错估预算量级。</figcaption>
+</figure>
 </section>
 <section id="axes"><h2>3. 三条轴：容量、数据覆盖与计算</h2>
 <p>参数 N 决定模型容量与部署成本，数据 D 决定被优化的经验分布覆盖，计算 C 是实际使用的硬件运算资源。固定 C 时，提高 N 往往意味着必须减少可处理的训练 token 或缩短上下文；反过来固定 N 时可以投入更多优化步骤或更长序列。</p>
@@ -64,6 +85,14 @@
 注意：这是固定长度的反事实示意，不是 BERT 训练的完整实测 token 统计。</pre>
 <script type="application/json" data-demo-states>{"short":"1,000,000 × 256 × 128 = 32.768B token 次数\n注意：这是固定长度的反事实示意，不是 BERT 训练的完整实测 token 统计。","mixed":"(900,000 × 128 + 100,000 × 512) × 256 = 42.5984B token 次数\n接近 BERT 原论文的长度阶段分配，但仍未扣除实际 padding/特殊符号差异。","long":"1,000,000 × 256 × 512 = 131.072B token 次数\n这是全部使用最大长度的反事实情况；不可把它当作 BERT 原始预训练 token 总量。"}</script></div>
 </section>
+<section id="ledger"><h2>9. 交互二：计算量与重复暴露账本</h2>
+<p>三个状态演示数量级计算 C≈6ND、重复 epoch 下 D_seen 与 D_unique 的差异、以及固定计算量下的等值点。数值均为<strong>教学数量级估算</strong>，不代表任何真实训练的实测 FLOPs。</p>
+<div class="demo" data-demo><h3>计算量 / 重复 / 等值线</h3><p class="demo-intro">固定教学数字，切换状态查看算术来源。</p><div class="demo-controls"><button type="button" data-demo-action="compute" aria-pressed="true">C≈6ND</button><button type="button" data-demo-action="repeat" aria-pressed="false">重复 epoch</button><button type="button" data-demo-action="grid" aria-pressed="false">等计算量点</button></div><pre class="demo-output" data-demo-output aria-live="polite">N=110M，D_seen=32.768B：C≈6×1.1e8×3.2768e10 = 2.162688e19 FLOPs。
+这是忽略注意力项与工程开销的数量级估算。
+不可当作实测 FLOPs 或硬件效率结论。</pre><script type="application/json" data-demo-states>{"compute":"N=110M，D_seen=32.768B：C≈6×1.1e8×3.2768e10 = 2.162688e19 FLOPs。\n这是忽略注意力项与工程开销的数量级估算。\n不可当作实测 FLOPs 或硬件效率结论。","repeat":"语料 unique=10B token，训练 2 个 epoch：D_seen=20B，D_unique=10B。\n重复呈现使 token 计数翻倍，但不等于新增了一倍新信息。\n应同时报告 D_seen 与去重后的 D_unique。","grid":"固定 C≈6ND=6e18（教学）：\n点一 N=50M、D=20B → 6×5e7×2e10 = 6e18。\n点二 N=200M、D=5B → 6×2e8×5e9 = 6e18；两点同计算量，构成等值线上的两个候选。"}</script></div>
+<p>上述算术在 <a href="../examples/encoder_budget_lab.py">examples/encoder_budget_lab.py</a> 的 <code>token_exposures</code>、<code>flops_order</code> 与 <code>repeated_exposure</code> 中实现，并由 <code>tests/test_encoder_budget_lab.py</code> 断言；它们只做确定性乘法，不模拟模型质量。</p>
+</section>
+
 <section class="article-summary"><h2>关键结论</h2><ul><li>语料 GB、英语词数、分词后 token 和训练中累计处理 token 是不同单位。</li><li>Chinchilla 来源于自回归模型的固定计算实验，20:1 不能直接用于评判 Encoder 的最优比例。</li><li>跨 BERT、RoBERTa 和 ModernBERT 的差异同时包含数据、目标、架构和工程配方，不能做未经控制的因果归因。</li><li>用受控的 N×D×C 实验、held-out loss 与下游任务指标做决策，并把推理成本纳入预算。</li></ul></section>
 <section id="references"><h2>原始资料与核查定位</h2><ol class="article-references">
 <li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>, §3、Appendix A.2（训练数据、规模与长度阶段）。</li>

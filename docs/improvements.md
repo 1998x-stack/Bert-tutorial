@@ -127,3 +127,9 @@
 - New demo: a three-state ledger for effective batch (8×4×4=128, ceil(50000/128)=391 updates), linear warmup/decay (5e-5 at t=5,000; ≈5.05e-5 at t=500,000) and the AdamW per-step factor (1−1e-6 = 0.999999; ≈0.99990 over 100 steps). All labelled teaching arithmetic except the stated scheduler formula.
 - Calculable example: added `effective_batch`, `linear_warmup_lr` and `adamw_decay_factor` to examples/finetuning_contract_lab.py with tests asserting 128/391, the two LR values and the decay factor.
 - Validation: validate.py passes chapter 10 (2 figures, inline SVG, 2 demos, all display MathML in focusable scroll regions); quality tests 15/15; python unittest 83/83; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.
+
+### 2026-11-26 — Dual-figure/dual-demo parity for scaling deep dive 11
+- New figure: an inline SVG units ledger showing that corpus bytes (13GB cleaned Books+Wiki), words (3.3B English words), WordPiece token count and D_seen (processed-token exposures) are four different quantities connected by three conversions, none of which is an equality.
+- New demo: a three-state ledger for the compute order-of-magnitude C≈6ND (110M × 32.768B ≈ 2.162688e19), repeated-epoch D_seen vs D_unique (10B unique, 2 epochs → 20B seen) and equal-compute grid points (50M×20B and 200M×5B both ≈ 6e18). All labelled teaching estimates.
+- Calculable example: added `flops_order` and `repeated_exposure` to examples/encoder_budget_lab.py, and referenced the existing `token_exposures`; tests/test_encoder_budget_lab.py asserts 2.162688e19, the equal-compute equality and 10B/20B.
+- Validation: validate.py passes chapter 11 (2 figures, inline SVG, 2 demos); quality tests 15/15; python unittest 85/85; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.

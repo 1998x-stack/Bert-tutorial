@@ -5,7 +5,8 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
-from encoder_budget_lab import token_exposures, language_sampling, rtd_is_replaced, masked_softmax
+from encoder_budget_lab import (token_exposures, language_sampling, rtd_is_replaced,
+                                masked_softmax, flops_order, repeated_exposure)
 
 
 class EncoderBudgetTests(unittest.TestCase):
@@ -18,6 +19,16 @@ class EncoderBudgetTests(unittest.TestCase):
 
     def test_length_quadruples_attention_matrix(self):
         self.assertEqual((1024 * 1024) // (512 * 512), 4)
+
+    def test_flops_order_article_11(self):
+        self.assertEqual(flops_order(110_000_000, 32_768_000_000), 21626880000000000000)
+        self.assertEqual(flops_order(50_000_000, 20_000_000_000),
+                         flops_order(200_000_000, 5_000_000_000))
+
+    def test_repeated_exposure_article_11(self):
+        ledger = repeated_exposure(10_000_000_000, 2)
+        self.assertEqual(ledger["seen"], 20_000_000_000)
+        self.assertEqual(ledger["unique"], 10_000_000_000)
 
     def test_invalid_batch_rejected(self):
         with self.assertRaises(ValueError):

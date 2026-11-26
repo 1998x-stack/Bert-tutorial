@@ -68,3 +68,28 @@ def masked_softmax(scores: Sequence[float], allowed: Sequence[bool]) -> list[flo
                   for s, ok in zip(scores, allowed)]
     normalizer = math.fsum(exp_scores)
     return [s / normalizer for s in exp_scores]
+
+
+def flops_order(n_params: int, tokens_seen: int, factor: int = 6) -> int:
+    """Order-of-magnitude training compute C ~= factor * N * D (article 11).
+
+    This is a planning estimate only: it ignores attention terms, output heads,
+    sequence-length details and engineering overhead, and must not be presented
+    as a measured FLOP total.
+    """
+    if type(n_params) is not int or n_params <= 0:
+        raise ValueError("n_params must be a positive integer")
+    if type(tokens_seen) is not int or tokens_seen <= 0:
+        raise ValueError("tokens_seen must be a positive integer")
+    if type(factor) is not int or factor <= 0:
+        raise ValueError("factor must be a positive integer")
+    return factor * n_params * tokens_seen
+
+
+def repeated_exposure(unique_tokens: int, epochs: int) -> dict:
+    """Separate D_seen (repeated passes) from D_unique (distinct tokens)."""
+    if type(unique_tokens) is not int or unique_tokens <= 0:
+        raise ValueError("unique_tokens must be a positive integer")
+    if type(epochs) is not int or epochs <= 0:
+        raise ValueError("epochs must be a positive integer")
+    return {"unique": unique_tokens, "seen": unique_tokens * epochs}
