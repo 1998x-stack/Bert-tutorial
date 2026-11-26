@@ -4,7 +4,7 @@
 <title>多语言 Encoder：共享参数为什么能迁移，也为什么会失败</title>
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="13"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
-<a href="#challenge">跨语言难题</a><a href="#mbert">mBERT：104 语言</a><a href="#sampling">温度式语言采样</a><a href="#xlmr">XLM-R：CommonCrawl</a><a href="#transfer">零样本协议</a><a href="#misconceptions">共享词表不等于对齐</a><a href="#evaluation">怎样做公平评估</a><a href="#demo">交互：采样比例</a><a href="#references">原始资料</a></aside>
+<a href="#challenge">跨语言难题</a><a href="#mbert">mBERT：104 语言</a><a href="#sampling">温度式语言采样</a><a href="#xlmr">XLM-R：CommonCrawl</a><a href="#transfer">零样本协议</a><a href="#misconceptions">共享词表不等于对齐</a><a href="#evaluation">怎样做公平评估</a><a href="#demo">交互：采样比例</a><a href="#protocol">交互二：迁移协议账本</a><a href="#references">原始资料</a></aside>
 <main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 13</p><h1>多语言 Encoder：共享参数为什么能迁移，也为什么会失败</h1>
 <p class="article-dek">英语有 10 万条情感标签，另一种语言几乎没有标注。能否只在英语训练分类头，然后直接用另一种语言做预测？多语言 BERT 提供了一个起点，但共享模型并不保证零样本迁移。</p>
 <div class="article-meta"><span>阅读约 25 分钟</span><span>主题：mBERT / XLM-R / Language Sampling</span><span>核心问题：跨语言共享表示依赖什么</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header>
@@ -21,7 +21,7 @@
 <section id="sampling"><h2>3. 为什么不能按 Wikipedia 字数直接抽样</h2>
 <p>假设英语训练文本比某个低资源语言多 100 倍。若按原始数据比例采样，英语可能在有限训练预算内占据大量更新，低资源语言几乎没有足够的学习机会。mBERT 官方说明采用指数平滑采样，平滑指数 S=0.7：</p>
 <div class="math-group"><div class="math-scroll" tabindex="0" role="region" aria-label="语言采样概率"><math display="block" aria-label="语言 l 的采样概率等于它的数据量占比的 alpha 次方，除以所有语言同样幂次之和"><mrow><msub><mi>p</mi><mi>ℓ</mi></msub><mo>=</mo><mfrac><msubsup><mi>n</mi><mi>ℓ</mi><mi>α</mi></msubsup><mrow><munder><mo>∑</mo><mi>j</mi></munder><msubsup><mi>n</mi><mi>j</mi><mi>α</mi></msubsup></mrow></mfrac><mo>,</mo><mspace width=".6em"/><mi>α</mi><mo>=</mo><mn>0.7</mn></mrow></math></div></div>
-<p>其中 n_ℓ 表示该语言训练数据量，分母让所有语言采样概率归一化。若只有两种语言，数据量比 100:1，在 α=1 的不平滑采样下比例仍是 100:1；用 α=0.7 后约为 25.1:1；若 α=0 则趋近 1:1。<strong>这些比例是数学算例，不是 mBERT 对某两种语言的真实数据份额。</strong></p>
+<p>其中 n_ℓ 表示该语言训练数据量，分母让所有语言采样概率归一化。若只有两种语言，数据量比 100:1，在 α=1 的不平滑采样下比例仍是 100:1；用 α=0.7 后约为 25.1:1；若 α=0 则趋近 1:1。<strong>这些比例是数学算例，不是 mBERT 对某两种语言的真实数据份额。</strong>它们由 <a href="../examples/encoder_budget_lab.py">examples/encoder_budget_lab.py</a> 的 <code>language_sampling</code> 计算，并由 <code>tests/test_encoder_budget_lab.py</code> 断言。</p>
 <p>平滑的代价也明显：小语种虽然被更多采样，却可能反复看到同一批文档；过度提升小语种采样会增加过拟合和训练分布偏差。因此采样温度应结合有效语料量、语言覆盖和下游质量调节。</p>
 </section>
 <section id="xlmr"><h2>4. XLM-R：比 mBERT 更大的多语言语料与新的 tokenizer</h2>
@@ -50,6 +50,34 @@ inputs = tokenizer(
 )
 print(inputs["input_ids"].shape)  # [3, padded_length]</code></pre>
 <p>直接加载未微调的 <code>AutoModelForSequenceClassification</code> 可能只得到随机初始化的分类头。上面代码仅展示输入编码，不是 XNLI 零样本性能复现。实际实验还需要正确的 3 类标签映射、数据预处理、固定 checkpoint revision 和每种语言的评估脚本。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 330" role="img" aria-labelledby="c13protoTitle c13protoDesc">
+  <title id="c13protoTitle">零样本、translate-train 与 translate-test 的数据流向</title>
+  <desc id="c13protoDesc">教学示意：零样本用源语言标签微调并在目标语言原文上推理；translate-train 先把源语言训练样本翻译成目标语言再训练；translate-test 把目标语言测试句翻译到源语言再预测。三者的训练/测试输入分布与目标语言标签使用情况不同，不能合并为一个零样本分数。</desc>
+  <rect width="900" height="330" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif" font-size="12.5" text-anchor="middle">
+    <text x="70" y="40" text-anchor="start" font-size="14" font-weight="700" fill="#203035">协议</text>
+    <text x="330" y="40" font-size="13" font-weight="700" fill="#53676d">训练输入</text>
+    <text x="600" y="40" font-size="13" font-weight="700" fill="#53676d">测试输入</text>
+    <text x="820" y="40" font-size="13" font-weight="700" fill="#53676d">目标语言标签</text>
+    <text x="70" y="98" text-anchor="start" font-size="13" font-weight="700" fill="#147f80">Zero-shot</text>
+    <rect x="200" y="74" width="260" height="40" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="330" y="99" fill="#203035">源语言标签样本</text>
+    <rect x="470" y="74" width="260" height="40" rx="8" fill="#e2f0eb" stroke="#147f80"/><text x="600" y="99" fill="#203035">目标语言原文</text>
+    <text x="820" y="99" font-weight="700" fill="#147f80">否</text>
+    <text x="70" y="168" text-anchor="start" font-size="13" font-weight="700" fill="#7461ba">Translate-train</text>
+    <rect x="200" y="144" width="260" height="40" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="330" y="169" fill="#203035">英文标签→目标语言翻译</text>
+    <rect x="470" y="144" width="260" height="40" rx="8" fill="#eeeafa" stroke="#7461ba"/><text x="600" y="169" fill="#203035">目标语言原文</text>
+    <text x="820" y="169" font-weight="700" fill="#7461ba">否</text>
+    <text x="70" y="238" text-anchor="start" font-size="13" font-weight="700" fill="#c96c4c">Translate-test</text>
+    <rect x="200" y="214" width="260" height="40" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="330" y="239" fill="#203035">源语言标签样本</text>
+    <rect x="470" y="214" width="260" height="40" rx="8" fill="#fbede7" stroke="#c96c4c"/><text x="600" y="239" fill="#203035">目标语言→源语言翻译</text>
+    <text x="820" y="239" font-weight="700" fill="#c96c4c">否</text>
+  </g>
+  <text x="450" y="294" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12.5" fill="#203035">三列均不使用目标语言标签；差别在于翻译发生在训练端还是测试端。</text>
+  <text x="450" y="316" text-anchor="middle" font-family="system-ui,sans-serif" font-size="12" fill="#53676d">若用目标语言 dev 标签选择 checkpoint，则应写为多语言 dev selection，而不是严格零样本。</text>
+</svg>
+<figcaption>图 13B. 三种协议的差异不在“是否翻译”，而在训练/测试哪一端引入了目标语言；报告时必须分别标注评估口径。</figcaption>
+</figure>
 </section>
 <section id="misconceptions"><h2>6. 共享词表不等于语言对齐</h2>
 <p>共享子词词表降低了建立多套模型的工程成本，但它也可能形成<strong>容量竞争</strong>：当不同语言、文字系统与领域都要共享有限参数时，低资源语言可能得不到足够表示容量。XLM-R 论文讨论了训练语言数量增加时的 curse of multilinguality，以及适当扩大容量与平衡采样的作用。</p>
@@ -70,6 +98,13 @@ print(inputs["input_ids"].shape)  # [3, padded_length]</code></pre>
 大语种约占 99.01%，小语种约占 0.99%。</pre>
 <script type="application/json" data-demo-states>{"raw":"原始比例 100:1；α=1.0 时采样比仍为 100:1。\n大语种约占 99.01%，小语种约占 0.99%。","smooth":"平滑后：100^0.7:1 ≈ 25.12:1。\n大语种约占 96.17%，小语种约占 3.83%。\n注意：小语种出现更频繁，但可能重复抽到有限文档。","flat":"α=0.0 时：100^0:1^0 = 1:1。\n两种语言各占 50%。\n注意：这会使小语种文档重复概率远高于原始比例。"}</script></div>
 </section>
+<section id="protocol"><h2>9. 交互二：迁移协议与语料单位账本</h2>
+<p>三个状态分别核对零样本、translate-train 与 XLM-R 论文报告的数字口径。它们只是把论文给定条件重新列出，不重新运行任何多语言训练。</p>
+<div class="demo" data-demo><h3>协议与报告数字</h3><p class="demo-intro">固定引用论文条件，切换查看口径。</p><div class="demo-controls"><button type="button" data-demo-action="zeroshot" aria-pressed="true">Zero-shot</button><button type="button" data-demo-action="ttrain" aria-pressed="false">Translate-train</button><button type="button" data-demo-action="xlmr" aria-pressed="false">XLM-R 增益</button></div><pre class="demo-output" data-demo-output aria-live="polite">Zero-shot：仅源语言标签做微调，目标语言人工标签数为 0。
+测试输入为目标语言原文；若用目标语言 dev 选 checkpoint，则不再是严格零样本。
+这是协议定义，不是某语言的准确率。</pre><script type="application/json" data-demo-states>{"zeroshot":"Zero-shot：仅源语言标签做微调，目标语言人工标签数为 0。\n测试输入为目标语言原文；若用目标语言 dev 选 checkpoint，则不再是严格零样本。\n这是协议定义，不是某语言的准确率。","ttrain":"Translate-train：把源语言训练样本翻译成目标语言后再训练。\n目标语言人工标签仍为 0，但训练输入分布已是目标语言。\n翻译噪声与成本进入流程，不能与零样本混为一个分数。","xlmr":"XLM-R 论文摘要报告相较 mBERT：XNLI 平均准确率 +14.6 pts、MLQA 平均 F1 +13 pts、NER F1 +2.4 pts。\n这些是在论文指定比较与评测协议下的结果。\n语料约为 2.5 TB 文本（字节），不是 2.5T tokens。"}</script></div>
+</section>
+
 <section class="article-summary"><h2>关键结论</h2><ul><li>mBERT 和 XLM-R 依靠共享参数进行多语言 MLM 预训练；共享词表本身不保证跨语言语义完全对齐。</li><li>语言采样指数能平衡高低资源语言，但也改变重复采样风险。</li><li>XLM-R 的 2.5 TB 指语料字节，不可误读为 2.5T token。</li><li>Zero-shot、translate-train、translate-test 的评估协议与目标语言标签使用情况必须分别说明。</li></ul></section>
 <section id="references"><h2>原始资料与实现</h2><ol class="article-references">
 <li>Google Research, <a href="https://github.com/google-research/bert/blob/master/multilingual.md" target="_blank" rel="noopener noreferrer">Multilingual BERT README</a>（104 语言和 S=0.7 采样）。</li>

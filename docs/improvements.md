@@ -139,3 +139,9 @@
 - New demo: a three-state ledger for optimiser-state bytes (110M × 16 B ≈ 1.76 GB), the T² growth (×4 per doubling) and AMP loss scaling (1e-5 × 65536 = 0.65536, unscale before clipping). All labelled order-of-magnitude estimates.
 - Calculable example: added `param_memory_bytes`, `attention_matrix_elements` and `scaled_gradient` to examples/encoder_budget_lab.py with tests asserting 1.76e9, the four element counts, the ×4 ratio and the scale round-trip.
 - Validation: validate.py passes chapter 12 (2 figures, inline SVG, 2 demos, display MathML in focusable scroll regions); quality tests 15/15; python unittest 88/88; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.
+
+### 2026-11-26 — Dual-figure/dual-demo parity for multilingual deep dive 13
+- New figure: an inline SVG comparing zero-shot, translate-train and translate-test data flow, showing which end (training or test) introduces the target language and that no protocol uses target-language labels.
+- New demo: a three-state protocol ledger for zero-shot, translate-train and the XLM-R reported gains (XNLI +14.6 pts, MLQA F1 +13 pts, NER F1 +2.4 pts, all per the paper's protocol) plus the 2.5 TB-vs-tokens unit clarification. Also referenced the existing `language_sampling` helper in the temperature-sampling section.
+- Calculable example: the sampling ratios (100:1, 25.12:1, 1:1) are computed by examples/encoder_budget_lab.py `language_sampling` and covered by tests/test_encoder_budget_lab.py.
+- Validation: validate.py passes chapter 13 (2 figures, inline SVG, 2 demos); quality tests 15/15; python unittest 88/88; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.
