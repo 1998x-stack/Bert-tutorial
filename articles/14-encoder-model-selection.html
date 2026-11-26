@@ -5,7 +5,7 @@
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="14"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout">
 <aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
-<a href="#question">为什么排行榜会误导</a><a href="#axes">四条选择轴</a><a href="#families">六种设计路线</a><a href="#task">任务与输出头</a><a href="#benchmark">准确率与速度的公平比较</a><a href="#cost">显存、延迟与能耗</a><a href="#workflow">可复现的选型实验</a><a href="#demo">交互：场景化判断</a><a href="#references">原始资料</a></aside>
+<a href="#question">为什么排行榜会误导</a><a href="#axes">四条选择轴</a><a href="#families">六种设计路线</a><a href="#task">任务与输出头</a><a href="#benchmark">准确率与速度的公平比较</a><a href="#cost">显存、延迟与能耗</a><a href="#workflow">可复现的选型实验</a><a href="#demo">交互：场景化判断</a><a href="#ledger">交互二：成本与 Pareto 账本</a><a href="#references">原始资料</a></aside>
 <main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 14</p>
 <h1>Encoder 模型选型：不要把论文分数排成一张错误的排行榜</h1>
 <p class="article-dek">看到 BERT、RoBERTa、ELECTRA、ALBERT、DeBERTa、DistilBERT 和 ModernBERT 的模型卡，应该先问：任务是什么？语种和最大长度是多少？推理跑在什么设备上？而不是先把不同论文里的 GLUE 分数和延迟复制到同一张表里。</p>
@@ -60,6 +60,27 @@
 <p>先定义最低质量阈值，例如 macro-F1≥0.88（<strong>此处为示例阈值</strong>，不是任何论文的实测结果），以及 p95 latency≤60ms（同样仅为示例约束）。固定任务数据和部署硬件，选出 3–5 个候选 checkpoint；统一微调预算，然后只保留满足精度/延迟/内存约束的候选。</p>
 <p>当候选 A 精度高、延迟慢，候选 B 精度略低、延迟快，二者可能构成 Pareto frontier：没有一方在所有关心的维度上都不差于另一方。业务选择应由用户体验和错误成本决定，而不是机械指定“排行榜第一”。</p>
 <p>报告应留下：checkpoint revision、tokenizer、训练数据版本、测试集 hash、学习率搜索、种子、设备环境、部署精度、输入长度分布、测量代码与原始日志。无法复现的“300 samples/s”“8ms/条”等具体数值不应进入教程默认比较表。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" role="img" aria-labelledby="c14paretoTitle c14paretoDesc">
+  <title id="c14paretoTitle">准确率与 p95 延迟的 Pareto 选择示意</title>
+  <desc id="c14paretoDesc">教学示意：横轴为 p95 延迟、纵轴为 macro-F1。候选 A 的 F1 高但延迟更大，候选 B 的 F1 略低但延迟更小，两者都在前沿上；候选 C 的 F1 低于 B 且延迟大于 B，因此被 B 支配。坐标仅为示意，代表未在共同硬件上实测的占位值。</desc>
+  <rect width="900" height="340" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif">
+    <line x1="140" y1="280" x2="800" y2="280" stroke="#7d918a" stroke-width="2"/>
+    <line x1="140" y1="280" x2="140" y2="50" stroke="#7d918a" stroke-width="2"/>
+    <text x="470" y="322" text-anchor="middle" font-size="13" fill="#53676d">p95 延迟（越大越右）</text>
+    <text x="70" y="165" text-anchor="middle" font-size="13" fill="#53676d" transform="rotate(-90 70 165)">macro-F1（越高越上）</text>
+    <path d="M284 176 L620 115" stroke="#147f80" stroke-width="2.5" stroke-dasharray="7 5"/>
+    <circle cx="620" cy="115" r="8" fill="#147f80"/><text x="620" y="96" text-anchor="middle" font-size="13" font-weight="700" fill="#203035">A（F1 高）</text>
+    <circle cx="284" cy="176" r="8" fill="#147f80"/><text x="284" y="158" text-anchor="middle" font-size="13" font-weight="700" fill="#203035">B（F1 略低·快）</text>
+    <circle cx="316" cy="225" r="8" fill="#c96c4c"/><text x="316" y="250" text-anchor="middle" font-size="13" fill="#c96c4c">C（被 B 支配）</text>
+    <text x="452" y="140" text-anchor="middle" font-size="12.5" fill="#147f80">Pareto frontier</text>
+    <text x="450" y="60" text-anchor="middle" font-size="12.5" fill="#53676d">A 与 B 各在一端；C 在两端都不占优，应被淘汰。</text>
+    <text x="450" y="300" text-anchor="middle" font-size="12" fill="#53676d">坐标为教学示意，非实测数据；真实前沿必须在同一协议与硬件下测量。</text>
+  </g>
+</svg>
+<figcaption>图 14B. Pareto 选择把“准确率”与“成本”放在同一平面：候选 C 在两个维度上都不优于 B，而 A 与 B 之间的取舍取决于业务对错误成本与延迟的偏好。</figcaption>
+</figure>
 </section>
 <section id="demo"><h2>8. 交互：四种场景，先筛选适配条件</h2><div class="demo" data-demo><h3>选择一个业务约束</h3><p class="demo-intro">展示候选方向和必要实验，不提供未测量的速度排名。</p>
 <div class="demo-controls"><button type="button" data-demo-action="baseline" aria-pressed="true">一般文本分类</button><button type="button" data-demo-action="multi" aria-pressed="false">多语言零样本</button><button type="button" data-demo-action="long" aria-pressed="false">长文分类</button><button type="button" data-demo-action="edge" aria-pressed="false">CPU 端侧</button></div>
@@ -67,6 +88,14 @@
 先做：固定 split 与 tokenizer，统一微调预算。
 再测：macro-F1、p95 latency、峰值内存；无法只靠论文排行榜定夺。</pre>
 <script type="application/json" data-demo-states>{"baseline":"候选：同语言域适配 BERT/RoBERTa/ELECTRA 等 Base 模型。\n先做：固定 split 与 tokenizer，统一微调预算。\n再测：macro-F1、p95 latency、峰值内存；无法只靠论文排行榜定夺。","multi":"候选：mBERT、XLM-R 或任务专用多语言 checkpoint。\n先做：严格区分英语单语训练与目标语言标注使用情况。\n再测：逐语言 accuracy/F1、脚本覆盖、截断率，不只报告平均数。","long":"候选：原生长上下文 Encoder，如 ModernBERT；也可评估 chunk + aggregator 基线。\n先做：统计 P95/P99 输入长度以及需要跨 chunk 推理的比例。\n再测：长输入质量、峰值内存、延迟；8192 上下文不保证线性成本。","edge":"候选：DistilBERT、蒸馏或量化后的语言专用模型。\n先做：锁定 CPU 型号、运行时、线程数、batch=1 与长度分布。\n再测：p95 latency、权重体积、内存峰值及精度回退。不要照搬 GPU 延迟表。"}</script></div></section>
+<section id="ledger"><h2>9. 交互二：权重字节、吞吐与 Pareto 账本</h2>
+<p>三个状态演示纯权重字节、稳态吞吐与 Pareto 支配关系。字节与吞吐为<strong>教学算术</strong>；Pareto 坐标是示意占位值，未在共同硬件上实测。</p>
+<div class="demo" data-demo><h3>bytes / 吞吐 / 支配</h3><p class="demo-intro">固定教学数字，切换状态查看算术来源。</p><div class="demo-controls"><button type="button" data-demo-action="bytes" aria-pressed="true">权重字节</button><button type="button" data-demo-action="throughput" aria-pressed="false">稳态吞吐</button><button type="button" data-demo-action="pareto" aria-pressed="false">Pareto</button></div><pre class="demo-output" data-demo-output aria-live="polite">100M 参数 FP32：100e6×4 B = 400 MB 权重。
+INT8：100e6×1 B = 100 MB 权重，约 4× 更小。
+这只是权重存储，不含激活、workspace 与 batch 开销。</pre><script type="application/json" data-demo-states>{"bytes":"100M 参数 FP32：100e6×4 B = 400 MB 权重。\nINT8：100e6×1 B = 100 MB 权重，约 4× 更小。\n这只是权重存储，不含激活、workspace 与 batch 开销。","throughput":"稳态吞吐 = 完成样本数 / 总耗时。\n1,000 条 / 20 s = 50 samples/s；2,000 条 / 20 s = 100 samples/s。\n需固定硬件、batch、长度分布与测量窗口；单次冷启动不能代表稳态。","pareto":"候选 (macro-F1, p95 ms)（教学示意）：A=(0.900,60)、B=(0.878,18)、C=(0.860,22)。\nB 优于 C：F1 更高且延迟更低，故 C 被 B 支配。\nA 与 B 各在一端，取舍取决于业务对错误成本与延迟的偏好。"}</script></div>
+<p>上述算术在 <a href="../examples/encoder_budget_lab.py">examples/encoder_budget_lab.py</a> 的 <code>param_memory_bytes</code>、<code>throughput</code> 与 <code>dominates</code> 中实现，并由对应单测断言。</p>
+</section>
+
 <section class="article-summary"><h2>关键结论</h2><ul><li>不同论文中的 dev/test、single/ensemble、指标和硬件环境不能混成一个排行榜。</li><li>任务、语种、长度和部署预算先于模型名称；任务头与 tokenizer 必须配套。</li><li>参数量、训练效率与推理速度是不同指标，ALBERT、DistilBERT 等模型不能只用“更小”解释。</li><li>统一训练/测试/部署协议后，以准确率、p95 latency、吞吐和峰值内存共同做 Pareto 选择。</li></ul></section>
 <section id="references"><h2>原始资料</h2><ol class="article-references">
 <li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>, §4（下游微调）。</li>

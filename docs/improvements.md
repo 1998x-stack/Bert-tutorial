@@ -145,3 +145,9 @@
 - New demo: a three-state protocol ledger for zero-shot, translate-train and the XLM-R reported gains (XNLI +14.6 pts, MLQA F1 +13 pts, NER F1 +2.4 pts, all per the paper's protocol) plus the 2.5 TB-vs-tokens unit clarification. Also referenced the existing `language_sampling` helper in the temperature-sampling section.
 - Calculable example: the sampling ratios (100:1, 25.12:1, 1:1) are computed by examples/encoder_budget_lab.py `language_sampling` and covered by tests/test_encoder_budget_lab.py.
 - Validation: validate.py passes chapter 13 (2 figures, inline SVG, 2 demos); quality tests 15/15; python unittest 88/88; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.
+
+### 2026-11-26 — Dual-figure/dual-demo parity for model-selection deep dive 14
+- New figure: an inline SVG Pareto diagram (macro-F1 vs p95 latency) with candidates A and B on the frontier and C dominated by B. Coordinates are explicitly labelled as schematic placeholders, not measured values.
+- New demo: a three-state ledger for weight-only bytes (100M × 4 B = 400 MB FP32; ×1 B = 100 MB INT8; 4× ratio; excludes activations/workspace), steady-state throughput (1000/20 s = 50, 2000/20 s = 100 samples/s) and Pareto dominance for A/B/C. All labelled teaching arithmetic/schematic.
+- Calculable example: added `throughput` and `dominates` to examples/encoder_budget_lab.py (reusing `param_memory_bytes`), with tests asserting 50/100 samples/s and the A/B/C dominance relations.
+- Validation: validate.py passes chapter 14 (2 figures, inline SVG, 2 demos, display MathML in a focusable scroll region); quality tests 15/15; python unittest 90/90; HTTP-served Chromium QA: no JS errors, no broken images, nonzero inline SVG, no overflow at 1440/390/360 px, both demos change output.

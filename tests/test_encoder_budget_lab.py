@@ -7,7 +7,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "examples"))
 from encoder_budget_lab import (token_exposures, language_sampling, rtd_is_replaced,
                                 masked_softmax, flops_order, repeated_exposure,
-                                param_memory_bytes, attention_matrix_elements, scaled_gradient)
+                                param_memory_bytes, attention_matrix_elements, scaled_gradient,
+                                throughput, dominates)
 
 
 class EncoderBudgetTests(unittest.TestCase):
@@ -45,6 +46,17 @@ class EncoderBudgetTests(unittest.TestCase):
         scaled = scaled_gradient(1e-5, 65536)
         self.assertAlmostEqual(scaled, 0.65536, places=9)
         self.assertAlmostEqual(scaled / 65536, 1e-5, places=12)
+
+    def test_throughput_article_14(self):
+        self.assertAlmostEqual(throughput(1000, 20), 50.0, places=9)
+        self.assertAlmostEqual(throughput(2000, 20), 100.0, places=9)
+
+    def test_pareto_dominance_article_14(self):
+        A, B, C = (0.900, 60.0), (0.878, 18.0), (0.860, 22.0)
+        self.assertTrue(dominates(B, C))
+        self.assertFalse(dominates(C, B))
+        self.assertFalse(dominates(A, B))
+        self.assertFalse(dominates(B, A))
 
     def test_invalid_batch_rejected(self):
         with self.assertRaises(ValueError):

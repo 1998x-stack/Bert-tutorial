@@ -116,3 +116,19 @@ def scaled_gradient(grad: float, scale: float) -> float:
     if scale <= 0:
         raise ValueError("scale must be positive")
     return grad * scale
+
+
+def throughput(completed: int, elapsed_seconds: float) -> float:
+    """Steady-state samples per second (article 14)."""
+    if type(completed) is not int or completed <= 0:
+        raise ValueError("completed must be a positive integer")
+    if elapsed_seconds <= 0:
+        raise ValueError("elapsed_seconds must be positive")
+    return completed / elapsed_seconds
+
+
+def dominates(candidate: tuple[float, float], other: tuple[float, float]) -> bool:
+    """Pareto dominance for (quality_higher_better, latency_lower_better) pairs (article 14)."""
+    qa, la = candidate
+    qb, lb = other
+    return qa >= qb and la <= lb and (qa > qb or la < lb)
