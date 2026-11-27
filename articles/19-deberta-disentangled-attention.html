@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="以三项 attention score 拆解 content-to-content、content-to-position 和 position-to-content，解释相对位置方向、增强 Mask Decoder 与不同版本边界。"><title>DeBERTa：让词内容与相对位置分别参与注意力打分</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head><body data-chapter-id="19"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#problem">位置与词内容为什么分开</a><a href="#components">三项注意力分数</a><a href="#indices">相对位置和方向</a><a href="#softmax">分数归一化与形状</a><a href="#decoder">增强掩码解码器</a><a href="#variants">训练版本和代码配置</a><a href="#debug">消融与实现审计</a><a href="#demo">交互：分数贡献</a><a href="#references">原始资料</a></aside><main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 19</p><h1>DeBERTa：让词内容与相对位置分别参与注意力打分</h1><p class="article-dek">词与词相似，不代表词应该关注同一个位置；相对位置的偏好也取决于发出查询的词是什么。把两类信息分开打分，才能看到 DeBERTa 的核心设计。</p><div class="article-meta"><span>阅读约 29 分钟</span><span>主题：c2c / c2p / p2c</span><span>核心问题：相对距离有方向</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header><article class="article-body">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="以三项 attention score 拆解 content-to-content、content-to-position 和 position-to-content，解释相对位置方向、增强 Mask Decoder 与不同版本边界。"><title>DeBERTa：让词内容与相对位置分别参与注意力打分</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head><body data-chapter-id="19"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#problem">位置与词内容为什么分开</a><a href="#components">三项注意力分数</a><a href="#indices">相对位置和方向</a><a href="#softmax">分数归一化与形状</a><a href="#decoder">增强掩码解码器</a><a href="#variants">训练版本和代码配置</a><a href="#debug">消融与实现审计</a><a href="#demo">交互：分数贡献</a><a href="#demo2">交互：方向与形状账</a><a href="#references">原始资料</a></aside><main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 19</p><h1>DeBERTa：让词内容与相对位置分别参与注意力打分</h1><p class="article-dek">词与词相似，不代表词应该关注同一个位置；相对位置的偏好也取决于发出查询的词是什么。把两类信息分开打分，才能看到 DeBERTa 的核心设计。</p><div class="article-meta"><span>阅读约 29 分钟</span><span>主题：c2c / c2p / p2c</span><span>核心问题：相对距离有方向</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header><article class="article-body">
 <section id="problem"><h2>1. “哪个词”与“它相距多远”是两种信号</h2>
 <p>标准 Transformer 的 self-attention 让一个查询 token 与其他 key token 计算相关性。若在输入端把词 embedding 和位置 embedding 直接相加，后续投影获得一个混合的向量。模型当然可以从中学习相对位置信息，但词的语义内容与位置关系没有被显式解耦。对于句子 <em>the dog chased the cat</em>，<code>chased</code> 既需要判断哪个词是动作相关的参与者，也需要利用“主体通常位于前方”等结构性距离线索。</p>
 <p>DeBERTa 的思路是把 token 的<strong>内容表示</strong>与<strong>相对位置表示</strong>分开，让注意力分数明确包含内容对内容、内容对位置、位置对内容三个通道。这里的位置表示是 token i 与 token j 的<strong>相对距离</strong>，而非简单让每个 token 的输入加一个绝对序号。</p>
@@ -16,7 +16,41 @@
 <p>考虑 batch <code>B</code>、长度 <code>T</code>、头数 <code>h</code>、单头维度 <code>dₕ</code>。内容 <code>Q,K,V</code> 分头后形状通常为 <code>[B,h,T,dₕ]</code>，三项共同产生 <code>[B,h,T,T]</code> logits。第 3 维对应 query 索引 i，第 4 维对应 key 索引 j；对 j 维做 masked softmax，再得到 <code>[B,h,T,dₕ]</code> 的 weighted values，最后拼回 <code>[B,T,H]</code>。</p>
 <div class="math-group"><div class="math-scroll" role="region" tabindex="0" aria-label="DeBERTa 注意力沿 key 轴归一化"><math display="block" aria-label="每个查询 i 对候选 j 的权重等于该分数的指数除以所有合法候选的分数指数之和"><mrow><msub><mi>α</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo>=</mo><mfrac><msup><mi>e</mi><msub><mi>S</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub></msup><mrow><munder><mo>∑</mo><mi>k</mi></munder><msup><mi>e</mi><msub><mi>S</mi><mrow><mi>i</mi><mi>k</mi></mrow></msub></msup></mrow></mfrac></mrow></math></div></div>
 <p>上式为说明归一化轴而省略了 padding mask 与多项缩放。Microsoft 官方 DeBERTa 源代码以 <code>scale_factor</code> 统计启用的额外 position score 项；例如仅 c2p+p2c 时有三项整体缩放，典型因子与 <code>√(3dₕ)</code> 相关。实际实现还要特别注意屏蔽位置、数值稳定 softmax 与 half precision 精度。</p>
-<p>所谓解耦不表示位置 embedding 每层都要按序列长度创建不同的完整矩阵；实现往往共享一个小的相对距离表，并对 query/key 位置对 gather 相应投影。</p></section>
+<p>所谓解耦不表示位置 embedding 每层都要按序列长度创建不同的完整矩阵；实现往往共享一个小的相对距离表，并对 query/key 位置对 gather 相应投影。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 348" role="img" aria-labelledby="c19dirTitle c19dirDesc">
+  <title id="c19dirTitle">相对位置方向与三项 score 的形状账</title>
+  <desc id="c19dirDesc">序列位置 1 到 5，查询 i=4 关注候选 j=2。c2p 使用 j 相对 i 的距离，约定的 δ(i,j)=j 减 i = 减 2；p2c 需要相反方向视角，δ(j,i)=i 减 j = 加 2。右侧列出内容 Q K 分头形状 B 乘 h 乘 T 乘 d，相对位置表，三项 score 与加权输出 B 乘 h 乘 T 乘 d，并强调 softmax 沿 key 轴。</desc>
+  <rect width="940" height="348" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="32" y="38" font-size="18" fill="#203035" font-weight="700">同一对 token，两个方向的相对位置</text>
+    <g text-anchor="middle" font-size="13"><circle cx="70" cy="150" r="20" fill="#eef1f2" stroke="#7d918a"/><text x="70" y="155" fill="#203035">1</text>
+      <circle cx="140" cy="150" r="20" fill="#eeeafa" stroke="#7461ba"/><text x="140" y="155" fill="#203035">2</text>
+      <circle cx="210" cy="150" r="20" fill="#eef1f2" stroke="#7d918a"/><text x="210" y="155" fill="#203035">3</text>
+      <circle cx="280" cy="150" r="20" fill="#e2f0eb" stroke="#147f80"/><text x="280" y="155" fill="#203035">4</text>
+      <circle cx="350" cy="150" r="20" fill="#eef1f2" stroke="#7d918a"/><text x="350" y="155" fill="#203035">5</text></g>
+    <g font-size="12" fill="#53676d"><text x="140" y="118" text-anchor="middle" fill="#7461ba">候选 j=2</text><text x="280" y="118" text-anchor="middle" fill="#147f80">查询 i=4</text></g>
+    <path d="M262 138 C 220 110, 180 110, 156 138" fill="none" stroke="#147f80" stroke-width="2"/>
+    <path d="M158 138 L152 126 L166 130 Z" fill="#147f80"/>
+    <text x="205" y="98" text-anchor="middle" font-size="12.5" fill="#147f80">c2p：key 用 δ(i,j)=j−i=−2</text>
+    <path d="M158 162 C 200 190, 240 190, 264 162" fill="none" stroke="#d09d3c" stroke-width="2"/>
+    <path d="M262 162 L268 174 L254 170 Z" fill="#d09d3c"/>
+    <text x="205" y="212" text-anchor="middle" font-size="12.5" fill="#a9772a">p2c：query 用 δ(j,i)=i−j=+2</text>
+    <text x="32" y="262" font-size="12.5" fill="#53676d">反方向不是把符号抄一遍：p2c 需要以相反方向的距离视角形成 query。</text>
+    <g font-size="12.5" fill="#203035"><rect x="520" y="66" width="388" height="252" rx="12" fill="#fff" stroke="#dce5df"/>
+      <text x="540" y="94" font-weight="700" font-size="13">形状账</text>
+      <text x="540" y="124" fill="#53676d">内容 Q,K,V 分头：[B,h,T,dₕ]</text>
+      <text x="540" y="152" fill="#53676d">相对位置表：[R,dₕ]（R 为桶数，非 T·T）</text>
+      <text x="540" y="180" fill="#53676d">三项 score 广播/gather 后：[B,h,T,T]</text>
+      <text x="540" y="208" fill="#53676d">softmax 沿第 4 维（key j）归一化</text>
+      <text x="540" y="236" fill="#53676d">加权输出：[B,h,T,dₕ] → 拼接 [B,T,H]</text>
+      <text x="540" y="272" fill="#c96c4c" font-size="12">位置表大小与 T 无关，但 score 仍是 T×T；</text>
+      <text x="540" y="294" fill="#c96c4c" font-size="12">全局 attention 的时间仍是二次规模。</text></g>
+  </g>
+</svg>
+<figcaption>图 19B. 左边把“方向反转”画成两条方向不同的箭头，右边说明这些位置信号落在哪些张量上、归一化沿哪一维。</figcaption>
+</figure>
+</section>
 <section id="decoder"><h2>5. Enhanced Mask Decoder：什么时候使用绝对位置</h2>
 <p>DeBERTa 原论文的第二个主要机制是 enhanced mask decoder。Encoder 注意力主要以内容与相对位置建模，而在预训练 MLM 预测阶段，解码器额外利用绝对位置信息来帮助恢复被 mask 的 token。这是<strong>在预测头/解码阶段引入位置线索</strong>，不是把上文每一项 c2p/p2c 都改写成绝对位置。</p>
 <p>为什么需要这种路径？例如一个句子中的 “the” 可能出现很多次，仅有相对结构不一定足以区分哪一个空格对应当前输出槽位；绝对位置可帮助预训练预测目标定位。是否在下游输出任务中保留相同解码头，应看 checkpoint 与 forward 定义，不应假设 EMD 是所有推理场景必选的额外 Transformer Encoder。</p></section>
@@ -32,5 +66,13 @@
 原始总分 S = 0.8 + 0.4 − 0.1 = 1.1。
 真实实现还需缩放、mask 与沿候选 key 维 softmax。</pre>
 <script type="application/json" data-demo-states>{"all":"教学 scores：c2c = 0.8，c2p = 0.4，p2c = −0.1。\n原始总分 S = 0.8 + 0.4 − 0.1 = 1.1。\n真实实现还需缩放、mask 与沿候选 key 维 softmax。","direction":"交换 query/key 的位置方向：δ(i,j) 的符号变成 δ(j,i)。\nc2p 和 p2c 使用不同相对方向下的投影/索引。\n不能把上一例的两个位置项无条件照搬成相同数值。\n这项演示不计算新的真实网络 score。","only":"仅 content-to-content：S_c2c = 0.8。\n模型仍可能从其他层输入学到位置相关性，\n但没有显式的 c2p / p2c 条件项。\n该输出不是任何真实 DeBERTa 消融实验指标。"}</script></div></section>
+<section id="demo2"><h2>9. 交互：形状与归一化轴账</h2>
+<div class="demo" data-demo><h3>三项 score 在实现中各走哪条路径</h3><p class="demo-intro">描述形状与 gather/归一化，不算模型概率。</p>
+<div class="demo-controls"><button type="button" data-demo-action="content" aria-pressed="true">内容项</button><button type="button" data-demo-action="position" aria-pressed="false">位置项</button><button type="button" data-demo-action="softmax" aria-pressed="false">归一化轴</button></div>
+<pre class="demo-output" data-demo-output aria-live="polite">c2c：Q_c [B,h,T,dₕ] · K_cᵀ → score_c2c [B,h,T,T]。
+第 3 维是 query i，第 4 维是 key j。
+c2c 不依赖相对位置表。</pre>
+<script type="application/json" data-demo-states>{"content":"c2c：Q_c [B,h,T,dₕ] · K_cᵀ → score_c2c [B,h,T,T]。\n第 3 维是 query i，第 4 维是 key j。\nc2c 不依赖相对位置表。","position":"c2p/p2c：从相对位置表 [R,dₕ] gather 到 [B,h,T,T]。\nc2p 用 δ(i,j)，p2c 用反方向 δ(j,i)。\n方向不同 → gather 的索引不同，形状却相同。","softmax":"softmax 沿第 4 维（key j）归一化。\npadding key 的权重必须为 0，每行合法权重和 ≈ 1。\n归一化轴错误（例如沿 i）是常见实现 bug。"}</script></div></section>
+
 <section class="article-summary"><h2>关键结论</h2><ul><li>DeBERTa 的基础机制用 c2c、c2p、p2c 三类 score 表达内容与相对位置的不同关系。</li><li>p2c 依赖与 c2p 相反方向的相对距离视角；符号约定可选但索引必须自洽。</li><li>Enhanced Mask Decoder 在 MLM 预测阶段引入绝对位置线索；与 Encoder 相对位置打分是不同层面的机制。</li><li>模型家族各版本、配置项与下游训练不等于一个固定的 DeBERTa 实现，实验应记录具体 checkpoint。</li></ul></section>
 <section id="references"><h2>原始论文、官方源码与变体边界</h2><ol class="article-references"><li>He et al., <a href="https://arxiv.org/abs/2006.03654" target="_blank" rel="noopener noreferrer">DeBERTa: Decoding-enhanced BERT with Disentangled Attention</a>，§3.1–3.2、Figure 2、§4 消融。</li><li>Microsoft, <a href="https://github.com/microsoft/DeBERTa/blob/master/DeBERTa/deberta/disentangled_attention.py" target="_blank" rel="noopener noreferrer">disentangled_attention.py</a>（<code>c2p</code> / <code>p2c</code> / 可选 <code>p2p</code> 计算）。</li><li><a href="https://github.com/microsoft/DeBERTa" target="_blank" rel="noopener noreferrer">DeBERTa 官方仓库</a>（checkpoint、训练设置与版本说明）。</li><li>He et al., <a href="https://arxiv.org/abs/2111.09543" target="_blank" rel="noopener noreferrer">DeBERTaV3</a>（后续版本与训练目标差异）。</li></ol></section></article><nav class="article-nav" aria-label="专题文章导航"><a href="18-albert-factorized-sharing.html">← 上一篇：ALBERT</a><a href="20-chinese-bert-whole-word-masking.html">下一篇：中文 BERT →</a></nav><p class="article-footer">分数示例是教学数据，不是 DeBERTa 训练结果；三项公式展示逻辑分解，具体权重请对照 checkpoint 配置。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>
