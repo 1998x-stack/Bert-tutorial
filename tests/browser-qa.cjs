@@ -143,7 +143,7 @@ async function main() {
         if (before === after) throw new Error(articlePath + ': demo interaction did not change output');
       }
 
-      if (articlePages.indexOf(articlePath) >= 20) {
+      if (articlePages.indexOf(articlePath) >= 14) {
         const demos = page.locator('[data-demo]');
         if (await demos.count() !== 2) throw new Error(articlePath + ': expected two demonstrations');
         for (let idx = 0; idx < 2; idx++) {
@@ -159,7 +159,7 @@ async function main() {
           const after = await demo.locator('[data-demo-output]').textContent();
           if (before === after) throw new Error(articlePath + ': demo ' + idx + ' did not respond');
         }
-        if (await page.locator('.article-body figure img').count() < 2) {
+        if (await page.locator('.article-body figure').count() < 2) {
           throw new Error(articlePath + ': second illustration missing');
         }
         await page.locator('[data-demo-action]').first().focus();

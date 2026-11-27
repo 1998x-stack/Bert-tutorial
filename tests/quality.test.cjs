@@ -320,3 +320,32 @@ test('foundational deep dives 01–06 carry two complementary figures with acces
     }
   }
 });
+
+test('chapters 04 and 15–20 carry two complementary figures and two independent three-state demos', () => {
+  const pages = [
+    'articles/04-bert-finetuning-evidence.html',
+    'articles/15-electra-replaced-token-detection.html',
+    'articles/16-xlnet-permutation-language-model.html',
+    'articles/17-mpnet-masked-permuted.html',
+    'articles/18-albert-factorized-sharing.html',
+    'articles/19-deberta-disentangled-attention.html',
+    'articles/20-chinese-bert-whole-word-masking.html',
+  ];
+  for (const page of pages) {
+    const html = read(page);
+    assert.ok((html.match(/<figure>/g) || []).length >= 2, page + ': expected two figures');
+    assert.match(html, /<svg[^>]+viewBox="[^"]+"[^>]*>/, page + ': missing inline SVG with viewBox');
+    assert.match(html, /<title id="[^"]+"/, page + ': SVG title missing');
+    assert.match(html, /aria-labelledby="[^"]+"/, page + ': SVG accessible label missing');
+    for (const [, caption] of html.matchAll(/<figcaption>([^<]*)<\/figcaption>/g)) {
+      assert.ok(caption.trim().length > 0, page + ': empty figcaption');
+    }
+    const demonstrations = [...html.matchAll(/<script type="application\/json" data-demo-states>([\s\S]*?)<\/script>/g)];
+    assert.equal(demonstrations.length, 2, page + ': expected two separate demos');
+    for (const [, json] of demonstrations) {
+      const states = JSON.parse(json);
+      assert.ok(Object.keys(states).length >= 3, page);
+      assert.equal(new Set(Object.values(states)).size, Object.values(states).length, page);
+    }
+  }
+});
