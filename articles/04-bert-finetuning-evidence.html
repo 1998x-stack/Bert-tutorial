@@ -16,6 +16,7 @@
       <a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a>
       <p class="toc-label">本篇导航</p>
       <a href="#transfer">预训练模型如何迁移</a>
+      <a href="#shapes">三种读取形状</a>
       <a href="#classification">单句分类</a>
       <a href="#pair">句对任务</a>
       <a href="#tagging">序列标注</a>
@@ -24,6 +25,7 @@
       <a href="#ablation">NSP 消融实验</a>
       <a href="#reproduce">复现边界与检查清单</a>
       <a href="#demo">交互：选择任务头</a>
+      <a href="#demo2">交互：数字的条件账</a>
       <a href="#references">原始资料</a>
     </aside>
     <main id="content" class="article-main">
@@ -45,8 +47,45 @@
           </figure>
         </section>
 
+        <section id="shapes">
+          <h2>2. 同一组隐藏状态，三种读取形状</h2>
+          <p>把三种接口写成张量账会更清楚。encoder 输出 <code>H ∈ R^[B,T,H]</code>；分类只读取 [CLS] 一行得到一个序列级向量，序列标注与问答则保留 <code>T</code> 个位置。形状不同，意味着同一份隐藏状态被不同的任务头解释。</p>
+          <figure>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 392" role="img" aria-labelledby="c04shapeTitle c04shapeDesc">
+              <title id="c04shapeTitle">共享 Encoder 到三种任务头的张量形状账</title>
+              <desc id="c04shapeDesc">编码器输出 H 为 B 乘 T 乘 H。序列分类取 CLS 位置得 B 乘 H，再经线性层得 B 乘 K；序列标注对每个位置用同一线性层得 B 乘 T 乘 K；抽取式问答用 S 与 E 向量对每个位置打分，得两个 B 乘 T 分布，并要求起点不晚于终点。</desc>
+              <rect width="960" height="392" rx="20" fill="#f5f7f2"/>
+              <g font-family="system-ui,sans-serif">
+                <text x="32" y="42" font-size="20" fill="#203035" font-weight="700">同一个 Encoder，三种读取形状</text>
+                <text x="32" y="66" font-size="13" fill="#53676d">H = encoder(token_ids, attention_mask)，形状 [B, T, H]。以下运算共享同一组隐藏状态。</text>
+                <g text-anchor="middle"><rect x="24" y="96" width="252" height="230" rx="14" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/>
+                  <text x="150" y="140" fill="#203035" font-weight="700" font-size="16">Encoder 输出</text>
+                  <text x="150" y="172" fill="#203035" font-size="17">H ∈ R^[B,T,H]</text>
+                  <text x="150" y="202" fill="#53676d" font-size="12">每个位置一个上下文向量</text>
+                  <text x="150" y="226" fill="#53676d" font-size="12">[CLS] 与 [SEP] 也是位置</text>
+                  <text x="150" y="262" fill="#c96c4c" font-size="12">padding 位置需 mask</text>
+                  <text x="150" y="292" fill="#53676d" font-size="12">预训练参数继续参与微调</text></g>
+                <g text-anchor="start" font-size="13"><rect x="316" y="96" width="620" height="66" rx="12" fill="#fff" stroke="#dce5df"/>
+                  <text x="336" y="124" fill="#203035" font-weight="700">① 单句分类：读取 [CLS]</text>
+                  <text x="336" y="148" fill="#53676d">C = H[:,0,:] ∈ R^[B,H] → Linear(H→K) → logits ∈ R^[B,K]</text>
+                  <rect x="316" y="176" width="620" height="66" rx="12" fill="#fff" stroke="#dce5df"/>
+                  <text x="336" y="204" fill="#203035" font-weight="700">② 序列标注：逐位置共享分类器</text>
+                  <text x="336" y="228" fill="#53676d">H ∈ R^[B,T,H] → 同一 Linear(H→K) → 标签分布 ∈ R^[B,T,K]</text>
+                  <rect x="316" y="256" width="620" height="66" rx="12" fill="#fff" stroke="#dce5df"/>
+                  <text x="336" y="284" fill="#203035" font-weight="700">③ 抽取式问答：两个位置分布</text>
+                  <text x="336" y="308" fill="#53676d">start = Softmax(H·S) ∈ R^[B,T]；end = Softmax(H·E) ∈ R^[B,T]</text></g>
+                <path d="M276 210 H316" stroke="#147f80" stroke-width="3"/>
+                <text x="32" y="360" font-size="13" fill="#53676d">形状相同不代表监督相同：分类每序列一个标签，标注与问答依赖 token 级对齐与 span 约束（j ≥ i）。</text>
+                <text x="32" y="380" font-size="13" fill="#53676d">K 是类别数；问答的起点/终点是同一长度 T 上的两个分布，不是两段文本各自的分类。</text>
+              </g>
+            </svg>
+            <figcaption>图 4B. 形状账：分类是每序列一个标签，标注是每位置一个标签，问答是两个长度为 T 的位置分布。形状来自同一 encoder，但不等于监督相同。</figcaption>
+          </figure>
+          <p>注意问答任务里的 <code>S·T_i</code> 与 <code>E·T_i</code> 都是在<strong>同一条序列</strong>的 <code>T</code> 个位置上打分，不是对两段文本各做一次分类；<code>j ≥ i</code> 的 span 约束和最大答案长度属于解码/后处理，而不是编码器本身的结构。</p>
+        </section>
+
         <section id="classification">
-          <h2>2. 单句分类：使用 [CLS] 表示</h2>
+          <h2>3. 单句分类：使用 [CLS] 表示</h2>
           <p>对情感分类或句子可接受性判断，输入通常写成：</p>
           <pre><code>[CLS] 句子 token ... [SEP]</code></pre>
           <p>取最终层 [CLS] 位置的隐藏向量 <code>C ∈ R^H</code>，再接一个分类矩阵 <code>W ∈ R^K ×  H</code>，得到 <code>K</code> 个类别的 logits：</p>
@@ -61,7 +100,7 @@
         </section>
 
         <section id="pair">
-          <h2>3. 句对任务：把两段文本放进同一个序列</h2>
+          <h2>4. 句对任务：把两段文本放进同一个序列</h2>
           <p>自然语言推断、释义识别和问答等任务需要同时处理两段文本。BERT 把它们拼接为一个输入序列：</p>
           <pre><code>[CLS] 句子 A ... [SEP] 句子 B ... [SEP]</code></pre>
           <p>第一段通常使用 token type ID 0，第二段使用 token type ID 1。双向 self-attention 允许 A 中的 token 读取 B 中的 token，也允许 B 读取 A。模型因此可以在编码过程中直接建立跨段交互，而不必先独立编码两个句子再额外运行一个 cross-attention 模块。</p>
@@ -69,13 +108,13 @@
         </section>
 
         <section id="tagging">
-          <h2>4. 序列标注：每个 token 都有输出</h2>
+          <h2>5. 序列标注：每个 token 都有输出</h2>
           <p>命名实体识别（NER）和词性标注属于 token-level 任务。编码器输出 <code>H=[h_1,…,h_T]</code>，对每个位置应用同一个分类器，得到该位置的标签分布。若词被拆成多个 WordPiece，训练和评测必须定义子词与原始词标签之间的对齐策略。</p>
           <p>BERT 原始论文的 CoNLL-2003 NER 设置使用每个词的第一个 sub-token 表示作为该词的分类输入，并且没有在输出端增加 CRF 层。这是论文实验的具体设置，不应被写成所有 NER 实现唯一正确的方案。</p>
         </section>
 
         <section id="qa">
-          <h2>5. 抽取式问答：预测答案的起点与终点</h2>
+          <h2>6. 抽取式问答：预测答案的起点与终点</h2>
           <p>给定问题和段落，BERT 将二者拼接成一条序列。对每个 token 的最终表示 <code>T_i</code>，模型分别计算答案起点与终点分数。论文用两个可学习向量 <code>S,E ∈ R^H</code> 表示起点和终点查询：</p>
           <div class="math-group">
             <div class="math-scroll" tabindex="0" role="region" aria-label="答案起点与终点概率公式，可横向滚动">
@@ -92,7 +131,7 @@
         </section>
 
         <section id="results">
-          <h2>6. 原始论文结果：数字必须带上实验条件</h2>
+          <h2>7. 原始论文结果：数字必须带上实验条件</h2>
           <p>BERT 论文报告在 11 项 NLP 任务上取得新的最佳结果。以下数字来自论文摘要和实验表格，展示的是论文报告值，不是本教程重新训练或复现的结果。</p>
           <div class="table-wrap">
             <table>
@@ -111,7 +150,7 @@
         </section>
 
         <section id="ablation">
-          <h2>7. NSP 消融实验：读懂对照组才知道结论是什么</h2>
+          <h2>8. NSP 消融实验：读懂对照组才知道结论是什么</h2>
           <p>原始论文 Table 5 比较完整 BERT-Base、移除 NSP 的双向 MLM，以及同时移除 NSP 并改成左到右语言模型的设置。下面列出其中的开发集指标：</p>
           <div class="table-wrap">
             <table>
@@ -127,7 +166,7 @@
         </section>
 
         <section id="reproduce">
-          <h2>8. 复现边界与检查清单</h2>
+          <h2>9. 复现边界与检查清单</h2>
           <p>复现论文结果不等于搭出相同的网络层数。至少要记录以下变量：</p>
           <ul>
             <li><strong>模型：</strong>Base / Large、cased / uncased、checkpoint 版本、tokenizer 与词表。</li>
@@ -140,7 +179,7 @@
         </section>
 
         <section id="demo">
-          <h2>9. 交互：同一编码器，任务头怎样变化</h2>
+          <h2>10. 交互：同一编码器，任务头怎样变化</h2>
           <p>切换任务，观察同一个 encoder 输出如何被不同读取方式使用。输出维度是概念示意，具体值取决于 batch、序列长度和类别数。</p>
           <div class="demo" data-demo>
             <h3>选择下游任务</h3>
@@ -155,6 +194,23 @@ Encoder 输出：H ∈ R[B,T,H]
 任务头：Linear(H → K) + Softmax
 输出：每条文本一个类别分布，shape [B,K]</pre>
             <script type="application/json" data-demo-states>{"classification":"输入：一条文本\nEncoder 输出：H ∈ R[B,T,H]\n读取方式：[CLS] 最终隐藏状态\n任务头：Linear(H → K) + Softmax\n输出：每条文本一个类别分布，shape [B,K]","ner":"输入：一条待标注文本\nEncoder 输出：H ∈ R[B,T,H]\n读取方式：每个 token 的最终隐藏状态\n任务头：共享 Linear(H → K) + Token-level Softmax\n输出：每个 token 一个标签分布，shape [B,T,K]","qa":"输入：问题 + 段落，拼成一个序列\nEncoder 输出：H ∈ R[B,T,H]\n读取方式：每个 token 的最终隐藏状态\n任务头：两个投影分别得到 start / end logits\n输出：两个位置分布，shape [B,T] × 2"}</script>
+          </div>
+        </section>
+
+        <section id="demo2">
+          <h2>11. 交互：同一个 F1 数字背后的条件</h2>
+          <p>选择论文中一个被引用的 SQuAD 数字，查看它附带的模型规模、指标、切分和出处。把条件不同的数字并排比大小是常见误读。</p>
+          <div class="demo" data-demo>
+            <h3>引用一个数字前，先看它的条件账</h3>
+            <div class="demo-controls">
+              <button type="button" data-demo-action="v1ens" aria-pressed="true">v1.1 ensemble</button>
+              <button type="button" data-demo-action="v1single" aria-pressed="false">v1.1 单模型</button>
+              <button type="button" data-demo-action="v2" aria-pressed="false">v2.0 单模型</button>
+            </div>
+            <pre class="demo-output" data-demo-output aria-live="polite">SQuAD v1.1 · BERT-Large ensemble + TriviaQA：test F1 = 93.2（论文 Table 2）
+这是集成模型再加外部 TriviaQA 数据，不是裸单模型。
+不要与 v2.0 或单模型结果直接合并或平均。</pre>
+            <script type="application/json" data-demo-states>{"v1ens":"SQuAD v1.1 · BERT-Large ensemble + TriviaQA：test F1 = 93.2（论文 Table 2）\n这是集成模型再加外部 TriviaQA 数据，不是裸单模型。\n不要与 v2.0 或单模型结果直接合并或平均。","v1single":"SQuAD v1.1 · BERT-Large single + TriviaQA：test F1 = 91.8（论文 Table 2）\n同为 v1.1，但模型数量不同，因此 91.8 与 93.2 不可直接对比。","v2":"SQuAD v2.0 · BERT-Large single：test F1 = 83.1（论文 Table 3）\n数据集与 Table 都不同，v2.0 含无答案问题。\n83.1 与 93.2 属于不同任务设置，不能横向比较。"}</script>
           </div>
         </section>
 
