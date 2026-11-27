@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="逐项推导词嵌入分解与跨层参数共享的规模，解释共享权重如何反复计算，以及 SOP 如何替代 BERT 的 NSP。"><title>ALBERT：更少参数不等于更少计算</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head><body data-chapter-id="18"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#problem">BERT 的参数存在哪里</a><a href="#factorize">分解词表嵌入矩阵</a><a href="#sharing">跨层共享的真实含义</a><a href="#cost">参数、FLOPs 与延迟</a><a href="#sop">Sentence Order Prediction</a><a href="#comparison">消融实验的正确读法</a><a href="#practice">实现与迁移风险</a><a href="#demo">交互：参数预算</a><a href="#references">论文和官方实现</a></aside><main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 18</p><h1>ALBERT：更少参数不等于更少计算</h1><p class="article-dek">为什么一套权重重复执行 12 次，比每层独立存一套权重更省内存，却不相当于把 12 层的计算砍成 1 层？从矩阵尺寸开始分清“参数”与“算力”。</p><div class="article-meta"><span>阅读约 28 分钟</span><span>主题：Factorization / Sharing / SOP</span><span>核心问题：轻量究竟轻在哪里</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header><article class="article-body">
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="description" content="逐项推导词嵌入分解与跨层参数共享的规模，解释共享权重如何反复计算，以及 SOP 如何替代 BERT 的 NSP。"><title>ALBERT：更少参数不等于更少计算</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head><body data-chapter-id="18"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#problem">BERT 的参数存在哪里</a><a href="#factorize">分解词表嵌入矩阵</a><a href="#sharing">跨层共享的真实含义</a><a href="#cost">参数、FLOPs 与延迟</a><a href="#sop">Sentence Order Prediction</a><a href="#comparison">消融实验的正确读法</a><a href="#practice">实现与迁移风险</a><a href="#demo">交互：参数预算</a><a href="#demo2">交互：优化器状态账</a><a href="#references">论文和官方实现</a></aside><main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 18</p><h1>ALBERT：更少参数不等于更少计算</h1><p class="article-dek">为什么一套权重重复执行 12 次，比每层独立存一套权重更省内存，却不相当于把 12 层的计算砍成 1 层？从矩阵尺寸开始分清“参数”与“算力”。</p><div class="article-meta"><span>阅读约 28 分钟</span><span>主题：Factorization / Sharing / SOP</span><span>核心问题：轻量究竟轻在哪里</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header><article class="article-body">
 <section id="problem"><h2>1. 一个模型为什么既占内存，又难继续变大</h2>
 <p>深度预训练 Encoder 的成本至少有四种不同来源：存储可训练权重的<strong>参数内存</strong>、训练时为反向传播保存的<strong>激活内存</strong>、优化器状态，以及真正执行的矩阵乘法 FLOPs。BERT 的词表 embedding 通常直接映射到隐藏维度；每个 Transformer 层又有一组独立的 attention/FFN 参数。扩大隐藏维度或深度，容易使参数和优化器状态明显增长。</p>
 <p>ALBERT（A Lite BERT）提出两种参数削减手段：让词 embedding 的宽度不必等于 Transformer 隐藏宽度，以及让不同深度的 Transformer block 使用同一组或分组共享的权重。第三项改动 SOP（Sentence Order Prediction）是训练目标设计，用来加强跨句连贯性，不是进一步减少矩阵大小的技巧。</p>
@@ -15,7 +15,30 @@
 <p>ALBERT 论文也研究只共享 attention、只共享 FFN 或按组共享。这里的权衡非常重要：如果全共享性能下降，增加部分独立参数有时比盲目增大隐藏宽度更有效。</p></section>
 <section id="cost"><h2>4. 对“轻量”的三种不同回答</h2>
 <p><strong>磁盘文件和参数内存：</strong>共享同一组 tensor 的 checkpoint 往往更小；但序列化框架如何保存、是否真正复用存储，需要看权重对象与导出格式。<strong>训练优化器状态：</strong>Adam 类优化器通常为每个独立参数维护动量和二阶矩，参数少往往有利于优化器内存。<strong>推理算力与延迟：</strong>仍经过多个 attention/FFN 调用，理论 FLOPs 不按参数减少比例同步下降；实际速度还受 memory bandwidth、kernel launch 和 batch size 等影响。</p>
-<p>不应把“ALBERT-base 参数远少于 BERT-base”直接转译为“相同硬件、相同输入长度下推理必然快相同比例”。原论文强调参数与可扩展性的效果，延迟需要独立实测。</p></section>
+<p>不应把“ALBERT-base 参数远少于 BERT-base”直接转译为“相同硬件、相同输入长度下推理必然快相同比例”。原论文强调参数与可扩展性的效果，延迟需要独立实测。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 372" role="img" aria-labelledby="c18budgetTitle c18budgetDesc">
+  <title id="c18budgetTitle">词嵌入分解的参数量与三本账</title>
+  <desc id="c18budgetDesc">教学配置 V 等于 30000，H 等于 768，E 等于 128。传统词嵌入 V 乘 H 约 23,040,000 个权重，分解为 V 乘 E 加 E 乘 H 约 3,938,304，约为原来百分之十七。下方三本账说明：可训练参数与 Adam 优化器状态随独立参数下降，但前向 FLOPs 与激活仍执行 L 次 block，基本不变。</desc>
+  <rect width="940" height="372" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="32" y="38" font-size="18" fill="#203035" font-weight="700">词嵌入参数条与三本账（教学示意）</text>
+    <text x="60" y="72" font-size="12.5" fill="#53676d">V=30,000, H=768, E=128</text>
+    <rect x="60" y="80" width="560" height="26" rx="6" fill="#fbede7" stroke="#c96c4c"/>
+    <text x="76" y="98" font-size="12.5" fill="#203035">传统 V×H = 23,040,000</text>
+    <rect x="60" y="112" width="96" height="26" rx="6" fill="#e2f0eb" stroke="#147f80"/>
+    <text x="166" y="130" font-size="12.5" fill="#203035">分解 V×E+E×H = 3,938,304（约 17.1%）</text>
+    <g font-size="13"><rect x="60" y="166" width="820" height="38" rx="8" fill="#eef1f2"/>
+      <text x="80" y="191" fill="#203035" font-weight="700">账目</text><text x="440" y="191" fill="#203035" font-weight="700">全共享配置</text><text x="720" y="191" fill="#203035" font-weight="700">是否随参数下降</text></g>
+    <g font-size="12.5"><rect x="60" y="208" width="820" height="36" fill="#fff" stroke="#dce5df"/><text x="80" y="231" fill="#203035">可训练参数</text><text x="440" y="231" fill="#53676d">约 P_block（而非 L·P_block）</text><text x="740" y="231" fill="#147f80" font-weight="700">下降</text>
+      <rect x="60" y="244" width="820" height="36" fill="#f7faf8" stroke="#dce5df"/><text x="80" y="267" fill="#203035">Adam 优化器状态</text><text x="440" y="267" fill="#53676d">随独立参数减少</text><text x="740" y="267" fill="#147f80" font-weight="700">下降</text>
+      <rect x="60" y="280" width="820" height="36" fill="#fff" stroke="#dce5df"/><text x="80" y="303" fill="#203035">前向 FLOPs / 激活</text><text x="440" y="303" fill="#53676d">仍执行 L 次 block</text><text x="740" y="303" fill="#d09d3c" font-weight="700">基本不变</text></g>
+    <text x="60" y="344" font-size="12.5" fill="#53676d">峰值显存还取决于激活、batch、精度与 checkpointing，不能按参数量比例直接缩放估算。</text>
+  </g>
+</svg>
+<figcaption>图 18B. 上面一条对比词嵌入的参数量，下面三本账把“参数内存”与“前向计算”分开：共享压低前者，却不自动压低后者。</figcaption>
+</figure>
+</section>
 <section id="sop"><h2>5. SOP 关注相邻片段的先后关系，而非主题不同</h2>
 <p>原始 BERT 的 Next Sentence Prediction（NSP）正例是相邻片段，负例通常来自不相邻、常来自其他文档的片段。这样一来模型可能只利用主题不一致便完成分类，而不一定学到真正的文本连贯性。</p>
 <p>ALBERT 的 Sentence Order Prediction（SOP）从文档取两个连续片段 <code>A</code> 和 <code>B</code>：正例保留 <code>A→B</code>；负例使用<strong>同一对连续片段</strong>，只交换成 <code>B→A</code>。两个类别在主题内容上天然接近，模型必须更重视顺序与衔接。注意“连续片段”未必等于精确的一句自然语言，实际数据生成依 segmentation 策略而定。</p>
@@ -35,5 +58,13 @@
 本部分减少约 82.9% 的可训练权重。
 不包含位置嵌入、Transformer block、bias 或预测头。</pre>
 <script type="application/json" data-demo-states>{"embed":"传统 token embedding: 30,000 × 768 = 23,040,000\n分解：30,000 × 128 + 128 × 768 = 3,938,304\n本部分减少约 82.9% 的可训练权重。\n不包含位置嵌入、Transformer block、bias 或预测头。","shared":"假设一个 Transformer block 有 P 个独立参数。\n12 层非共享主干：约 12P；12 层全共享主干：约 P。\n每一层前向都调用同一个权重对象 W：f_W ∘ … ∘ f_W。\n激活与每层计算并没有因此消失。","compute":"在同样 12 层、同样 H 和序列长度下：\n两类模型仍执行约 12 次注意力和 FFN block。\n参数量与优化器状态内存能显著下降，但 FLOPs 与延迟不能按同样比例计算。\n实际加速须用真实硬件的 p50/p95 延迟、吞吐测量。"}</script></div></section>
+<section id="demo2"><h2>9. 交互：优化器状态账也能省，但计算不省</h2>
+<div class="demo" data-demo><h3>Adam 状态随独立参数变化（教学取值 P=1,000,000，L=12）</h3><p class="demo-intro">只按独立参数计优化器状态，不含激活、梯度缓冲与通信开销。</p>
+<div class="demo-controls"><button type="button" data-demo-action="nonshared" aria-pressed="true">12 层非共享</button><button type="button" data-demo-action="shared" aria-pressed="false">12 层全共享</button><button type="button" data-demo-action="caveat" aria-pressed="false">边界</button></div>
+<pre class="demo-output" data-demo-output aria-live="polite">12 层非共享：独立主干参数 ≈ 12 × 1,000,000 = 12,000,000。
+Adam 为每个独立参数存 m、v 两个张量 → 状态 ≈ 24,000,000。
+参数越多，优化器状态内存越大。</pre>
+<script type="application/json" data-demo-states>{"nonshared":"12 层非共享：独立主干参数 ≈ 12 × 1,000,000 = 12,000,000。\nAdam 为每个独立参数存 m、v 两个张量 → 状态 ≈ 24,000,000。\n参数越多，优化器状态内存越大。","shared":"12 层全共享：独立主干参数 ≈ 1,000,000。\nAdam 状态 ≈ 2,000,000。\n优化器内存随独立参数下降，但前向仍执行 12 次 block。","caveat":"优化器状态只是峰值显存的一部分：激活、梯度缓冲、batch 与精度同样影响显存。\n参数下降比例 ≠ 峰值显存下降比例，也不等于延迟下降比例。\n部署前应实测不同 batch 下的内存与 p95 延迟。"}</script></div></section>
+
 <section class="article-summary"><h2>关键结论</h2><ul><li>嵌入分解从 <code>V·H</code> 改成 <code>V·E+E·H</code>，只影响该 embedding 模块的参数，而非整个网络。</li><li>跨层共享是一套权重反复调用，各深度状态仍不同；参数显著下降并不代表同样比例的 FLOPs 下降。</li><li>SOP 的负例是同一对连续片段交换顺序，和 BERT 的 NSP 随机其他片段负例不同。</li><li>Table 4/5 的消融支持参数与表现存在权衡，比较时要注明任务、设置和指标含义。</li></ul></section>
 <section id="references"><h2>论文与官方训练代码</h2><ol class="article-references"><li>Lan et al., <a href="https://arxiv.org/abs/1909.11942" target="_blank" rel="noopener noreferrer">ALBERT: A Lite BERT for Self-supervised Learning of Language Representations</a>，§3.1–3.3、§4.4–4.6、Tables 3–5。</li><li>Google Research, <a href="https://github.com/google-research/albert/blob/master/create_pretraining_data.py" target="_blank" rel="noopener noreferrer">ALBERT create_pretraining_data.py</a>（SOP 正负对构造）。</li><li>Google Research, <a href="https://github.com/google-research/albert/blob/master/run_pretraining.py" target="_blank" rel="noopener noreferrer">run_pretraining.py</a>（MLM+SOP 目标）。</li><li><a href="https://huggingface.co/docs/transformers/model_doc/albert" target="_blank" rel="noopener noreferrer">Transformers ALBERT 配置与输出接口</a>。</li></ol></section></article><nav class="article-nav" aria-label="专题文章导航"><a href="17-mpnet-masked-permuted.html">← 上一篇：MPNet</a><a href="19-deberta-disentangled-attention.html">下一篇：DeBERTa →</a></nav><p class="article-footer">参数计算器使用教学输入，不包含全部模型权重；论文消融数字按原文 Table 4/5 标记。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>
