@@ -4,7 +4,7 @@
 <title>ELECTRA：让判别器识别被替换的 Token</title>
 <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
 <body data-chapter-id="15"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p>
-<a href="#question">MLM 的监督位置</a><a href="#architecture">Generator 与 Discriminator</a><a href="#labels">“替换”标签的精确定义</a><a href="#loss">两个损失如何联合</a><a href="#sampling">为什么要采样</a><a href="#efficiency">样本效率与计算成本</a><a href="#finetune">训练与推理接口</a><a href="#limits">失败与适用边界</a><a href="#demo">交互：RTD 标签</a><a href="#references">原始论文</a></aside>
+<a href="#question">MLM 的监督位置</a><a href="#architecture">Generator 与 Discriminator</a><a href="#labels">“替换”标签的精确定义</a><a href="#loss">两个损失如何联合</a><a href="#sampling">为什么要采样</a><a href="#efficiency">样本效率与计算成本</a><a href="#finetune">训练与推理接口</a><a href="#limits">失败与适用边界</a><a href="#demo">交互：RTD 标签</a><a href="#demo2">交互：不平衡账</a><a href="#references">原始论文</a></aside>
 <main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 15</p>
 <h1>ELECTRA：让判别器识别被替换的 Token</h1>
 <p class="article-dek">BERT 的 MLM 只在选中的位置预测原始 token，但未选中的位置并没有“白白浪费”——它们仍为上下文建模和梯度传播服务。ELECTRA 进一步改变监督信号：不要求主模型恢复原词，而是判断每个 token 是否来自原文。</p>
@@ -43,6 +43,41 @@
 <p>MLM 在约 15% 位置承担直接词表预测损失；RTD 对绝大多数有效位置都有二分类监督。监督位置更多并不代表梯度信息或计算收益按 1/0.15 线性增加。判别目标更简单、类别不平衡、Generator 的额外计算和样本质量都影响真实效率。</p>
 <p>ELECTRA 原论文在不同计算预算与规模上报告 RTD 特别适合预算受限的文本 Encoder 预训练，并将模型与相近计算预算的 MLM baseline 比较。但论文结论的正确表述是“在指定训练/下游评估协议下有更高样本/计算效率”，不是“每个 token 都直接训练，因此所有任务必然提升 6.7 倍”。</p>
 <p>另一个重要的成本事实：预训练时需要同时运行 Generator 与 Discriminator，<strong>下游推理</strong>则只保留 Discriminator。这是为什么不能把预训练双网络成本直接当作部署模型的推理成本。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 372" role="img" aria-labelledby="c15shapeTitle c15shapeDesc">
+  <title id="c15shapeTitle">ELECTRA 的监督形状与部署账</title>
+  <desc id="c15shapeDesc">Generator 输入 B 乘 T，输出词表分布 B 乘 T 乘 V，只在选中的掩码位置计算损失；采样得到的 token 组成 Discriminator 的输入 B 乘 T；Discriminator 对每个有效位置输出两个 logit，形状 B 乘 T 乘 2。预训练同时运行两套网络，微调与推理只保留 Discriminator 的 encoder 与任务头。</desc>
+  <rect width="940" height="372" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="32" y="40" font-size="20" fill="#203035" font-weight="700">两套监督的形状账，与部署时的单网络账</text>
+    <g text-anchor="middle" font-size="13">
+      <rect x="30" y="70" width="250" height="86" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/>
+      <text x="155" y="100" fill="#203035" font-weight="700">Generator（小）</text>
+      <text x="155" y="124" fill="#53676d">输入 [B,T] → MLM logits [B,T,V]</text>
+      <text x="155" y="144" fill="#c96c4c" font-size="12">只在选中掩码位置算损失</text>
+      <rect x="345" y="70" width="250" height="86" rx="12" fill="#fff2db" stroke="#d09d3c" stroke-width="2"/>
+      <text x="470" y="100" fill="#203035" font-weight="700">采样 x̃</text>
+      <text x="470" y="124" fill="#53676d">按词表分布抽样 token</text>
+      <text x="470" y="144" fill="#53676d" font-size="12">可能采回原词</text>
+      <rect x="660" y="70" width="250" height="86" rx="12" fill="#eeeafa" stroke="#7461ba" stroke-width="2"/>
+      <text x="785" y="100" fill="#203035" font-weight="700">Discriminator（主）</text>
+      <text x="785" y="124" fill="#53676d">输入 [B,T] → RTD logits [B,T,2]</text>
+      <text x="785" y="144" fill="#53676d" font-size="12">每个有效位置一个二分类</text>
+    </g>
+    <path d="M280 113 H345 M595 113 H660" stroke="#147f80" stroke-width="3"/>
+    <path d="M292 106 L302 113 L292 120 M607 106 L617 113 L607 120" fill="none" stroke="#147f80" stroke-width="2"/>
+    <rect x="30" y="196" width="425" height="78" rx="12" fill="#fbede7" stroke="#c96c4c" stroke-width="2"/>
+    <text x="242" y="224" text-anchor="middle" font-size="14" fill="#203035" font-weight="700">预训练：两套前向</text>
+    <text x="242" y="248" text-anchor="middle" font-size="12.5" fill="#53676d">Generator MLM + Discriminator RTD 一起训练</text>
+    <rect x="485" y="196" width="425" height="78" rx="12" fill="#e2f0eb" stroke="#147f80" stroke-width="2"/>
+    <text x="697" y="224" text-anchor="middle" font-size="14" fill="#203035" font-weight="700">微调 / 推理：单套网络</text>
+    <text x="697" y="248" text-anchor="middle" font-size="12.5" fill="#53676d">仅保留 Discriminator encoder + 下游任务头</text>
+    <text x="32" y="318" font-size="13" fill="#53676d">形状是接口账，不是质量证明：V 为词表大小；RTD 的 B×T×2 中 T 只统计有效 token，padding 不计损失。</text>
+    <text x="32" y="344" font-size="13" fill="#53676d">预算比较时要把预训练双网络成本与下游单网络成本分开报告，否则会把两个阶段混为一谈。</text>
+  </g>
+</svg>
+<figcaption>图 15B. 同一批 token 依次经过“选位置—采样—判别”三种形状；部署阶段只剩最右侧那条路径。</figcaption>
+</figure>
 </section>
 <section id="finetune"><h2>7. 下游微调与普通 BERT 有什么不同</h2>
 <p>预训练结束后取 Discriminator 的 encoder 参数，按照具体任务安装序列级分类头、每 token 标签头或 QA 起止头，并端到端微调。与 BERT 微调的总体流程相似：输入仍是 token IDs、attention mask 等，输出由任务头决定。</p>
@@ -59,6 +94,13 @@
 cooked 所在位置被真正替换，RTD 标签 y=1（replaced）。
 其他有效位置与原文相同，标签 y=0（original）。</pre>
 <script type="application/json" data-demo-states>{"different":"原词 cooked → Generator 采样 ate\n判别器输入：the chef ate the meal\ncooked 所在位置被真正替换，RTD 标签 y=1（replaced）。\n其他有效位置与原文相同，标签 y=0（original）。","same":"原词 cooked → Generator 恰好采样 cooked\n判别器输入：the chef cooked the meal\n尽管该位置曾被选为 MLM 目标，RTD 标签仍为 y=0（original）。\n所以 RTD 不是“猜哪个位置曾被选中”。","none":"原句其他位置（the / chef / the / meal）没有被选为生成器替换目标。\n判别器仍然为这些有效位置预测 y=0（original）。\n未选中的有效位置照样产生二分类损失。"}</script></div></section>
+<section id="demo2"><h2>10. 交互：类别不平衡下的准确率陷阱</h2><div class="demo" data-demo><h3>8 个有效位置，2 个被选为生成目标（教学示意）</h3><p class="demo-intro">toy 输入：8 个真实 token，其中 2 个位置被选入 MLM 子集；真实选词比例约 15%，这里取整数便于核算。</p>
+<div class="demo-controls"><button type="button" data-demo-action="one" aria-pressed="true">替换 1 个</button><button type="button" data-demo-action="two" aria-pressed="false">替换 2 个</button><button type="button" data-demo-action="zero" aria-pressed="false">采回原词</button></div>
+<pre class="demo-output" data-demo-output aria-live="polite">有效位置 8 个；replaced = 1，original = 7。
+若模型永远预测 original：accuracy = 7/8 = 87.5%；
+但 replaced 类召回率 = 0/1 = 0%。单看 accuracy 会掩盖漏检。</pre>
+<script type="application/json" data-demo-states>{"one":"有效位置 8 个；replaced = 1，original = 7。\n若模型永远预测 original：accuracy = 7/8 = 87.5%；\n但 replaced 类召回率 = 0/1 = 0%。单看 accuracy 会掩盖漏检。","two":"有效位置 8 个；replaced = 2，original = 6。\n全预测 original 的 accuracy = 6/8 = 75%，replaced 召回仍为 0%。\n类别不平衡下应同时报告 replaced 的 precision 与 recall。","zero":"Generator 在 2 个选中位置都采回原词 → replaced = 0，original = 8。\n全预测 original 的 accuracy = 100%，但模型没学到任何判别能力。\n这对应生成器过弱 / 采回原词的失败模式。"}</script></div></section>
+
 <section class="article-summary"><h2>关键结论</h2><ul><li>Generator 用 MLM 采样替换候选；Discriminator 对全部有效位置做 real/replaced 二分类。</li><li>RTD 标签取决于采样后 token 是否真的不同于原 token；被选中但采回原词应标 original。</li><li>生成器 MLM 与判别器 RTD 联合训练，官方实现默认 <code>gen_weight=1</code>、<code>disc_weight=50</code>；实现的 loss 约定必须核对。</li><li>预训练需要两个网络，微调/推理一般仅保留 Discriminator，不能把它当作自回归语言模型。</li></ul></section>
 <section id="references"><h2>原始论文与官方代码</h2><ol class="article-references">
 <li>Clark et al., <a href="https://arxiv.org/abs/2003.10555" target="_blank" rel="noopener noreferrer">ELECTRA: Pre-training Text Encoders as Discriminators Rather Than Generators</a>, §2–4、Figure 2。</li>
