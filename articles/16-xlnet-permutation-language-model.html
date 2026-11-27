@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="description" content="从固定序列上的多种预测顺序出发，解释排列语言模型、two-stream attention、目标信息泄漏与 Transformer-XL 记忆机制的边界。"><title>XLNet：排列分解怎样获得双向上下文，却不泄漏答案</title><link rel="icon" type="image/svg+xml" href="../assets/favicon.svg"><link rel="stylesheet" href="../assets/css/course.css"></head>
-<body data-chapter-id="16"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#question">自回归为何受方向约束</a><a href="#permutation">排列的是预测顺序</a><a href="#objective">目标函数与预测位置</a><a href="#leakage">目标泄漏与双流注意力</a><a href="#shapes">计算图与张量形状</a><a href="#memory">Transformer-XL 与记忆</a><a href="#tradeoffs">结果解释与代价</a><a href="#demo">交互：目标可见上下文</a><a href="#references">原始资料</a></aside><main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 16</p><h1>XLNet：排列分解怎样获得双向上下文，却不泄漏答案</h1><p class="article-dek">同一句话，换一种预测顺序就能看到不同的上下文。关键是让模型知道“要猜哪里”，同时永远不把“被猜的词”直接交给它。</p><div class="article-meta"><span>阅读约 28 分钟</span><span>主题：Permutation LM / Two-Stream</span><span>核心问题：目标信息如何隔离</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header><article class="article-body">
+<body data-chapter-id="16"><a class="skip-link" href="#content">跳转至正文</a><div class="article-progress" aria-hidden="true"><span></span></div><div class="article-layout"><aside class="article-toc" aria-label="文章目录"><a class="toc-back" href="../index.html">← 返回 BERT 课程首页</a><p class="toc-label">本篇导航</p><a href="#question">自回归为何受方向约束</a><a href="#permutation">排列的是预测顺序</a><a href="#objective">目标函数与预测位置</a><a href="#leakage">目标泄漏与双流注意力</a><a href="#shapes">计算图与张量形状</a><a href="#memory">Transformer-XL 与记忆</a><a href="#tradeoffs">结果解释与代价</a><a href="#demo">交互：目标可见上下文</a><a href="#demo2">交互：两条流输入</a><a href="#references">原始资料</a></aside><main id="content" class="article-main"><header class="article-header"><p class="eyebrow">BERT 系列 · 深度精读 16</p><h1>XLNet：排列分解怎样获得双向上下文，却不泄漏答案</h1><p class="article-dek">同一句话，换一种预测顺序就能看到不同的上下文。关键是让模型知道“要猜哪里”，同时永远不把“被猜的词”直接交给它。</p><div class="article-meta"><span>阅读约 28 分钟</span><span>主题：Permutation LM / Two-Stream</span><span>核心问题：目标信息如何隔离</span></div><div class="article-actions"><button class="article-complete" type="button" data-mark-complete aria-pressed="false">标记本篇已完成</button></div></header><article class="article-body">
 <section id="question"><h2>1. 从“下一个词”只能看左边开始</h2>
 <p>传统从左到右的自回归语言模型把一句话分解成一连串条件概率：预测第 <code>t</code> 个词时只能使用左边的已知词。它很适合逐词生成，却让预训练中的同一位置无法直接依赖右侧上下文。BERT 的 Masked Language Modeling（MLM）采用另一条路线：同时暴露双向上下文，遮住部分 token 再恢复原词；但被预测 token 之间的联合依赖在基本 MLM 目标中并未以自回归方式显式展开。</p>
 <p>XLNet 的想法不是简单“把句子反过来再训练一次”，而是给<strong>同一组原位置</strong>选择多种概率分解顺序，让某个位置有时先预测，有时最后预测。这样，一个位置在不同训练样本和不同分解顺序下可以利用来自其左边或右边的其他词，同时仍保持逐项条件概率的自回归形式。</p>
@@ -23,7 +23,38 @@
 <section id="shapes"><h2>5. 具体算一次 attention 可见性</h2>
 <p>以四词 <em>the chef cooked dinner</em> 为例，原位置按 1–4 编号。排列 <code>z=(3,1,4,2)</code>，当预测原位置 2 的 <code>chef</code> 时，合法上下文位置为 <code>{3,1,4}</code>，即 <code>cooked / the / dinner</code>。Query stream 的该行 mask 允许访问这些 content states，但必须排除位置 2。</p>
 <p>假设单头 <code>Q∈ℝ[B,1,dₕ]</code>，前缀的 <code>K,V∈ℝ[B,3,dₕ]</code>，attention score 为 <code>[B,1,3]</code>。当实现为了高效而用完整长度的张量 <code>[B,T,H]</code> 运算时，依赖关系由布尔/加性 mask 保证，而不是简单将所有不可见位置删出张量。</p>
-<p>对于 content stream，位置 2 的 query 在自己已作为内容参加后续因子时可访问本位置内容；它的 hidden state 不能被误用为预测自己这一因子的 query，否则目标 token 会通过 residual/self-attention 等路径流回 logits。</p></section>
+<p>对于 content stream，位置 2 的 query 在自己已作为内容参加后续因子时可访问本位置内容；它的 hidden state 不能被误用为预测自己这一因子的 query，否则目标 token 会通过 residual/self-attention 等路径流回 logits。</p>
+<figure>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 366" role="img" aria-labelledby="c16maskTitle c16maskDesc">
+  <title id="c16maskTitle">排列 z 下 Query 流的可见性矩阵与张量形状</title>
+  <desc id="c16maskDesc">以四位置、排列 z 等于 3,1,4,2 为例：行是预测次序，列是原始位置。Query 流每一行只能读取排列中早于当前目标的内容位置，目标自身的位置必须标为禁止。右侧列出 content 流与 query 流的隐藏状态、注意力分数矩阵和目标位置 logits 的形状。</desc>
+  <rect width="940" height="366" rx="20" fill="#f5f7f2"/>
+  <g font-family="system-ui,sans-serif">
+    <text x="32" y="38" font-size="19" fill="#203035" font-weight="700">排列 z=(3,1,4,2)：Query 流每行的可见性账</text>
+    <g font-size="12.5" text-anchor="middle" fill="#53676d"><text x="233" y="70">原1</text><text x="299" y="70">原2</text><text x="365" y="70">原3</text><text x="431" y="70">原4</text></g>
+    <g font-size="12.5" text-anchor="end" fill="#53676d"><text x="190" y="100">t1→原3</text><text x="190" y="166">t2→原1</text><text x="190" y="232">t3→原4</text><text x="190" y="298">t4→原2</text></g>
+    <g stroke="#dce5df" stroke-width="1">
+      <rect x="200" y="78" width="66" height="66" fill="#eef1f2"/><rect x="266" y="78" width="66" height="66" fill="#eef1f2"/><rect x="332" y="78" width="66" height="66" fill="#fbede7"/><rect x="398" y="78" width="66" height="66" fill="#eef1f2"/>
+      <rect x="200" y="144" width="66" height="66" fill="#fbede7"/><rect x="266" y="144" width="66" height="66" fill="#eef1f2"/><rect x="332" y="144" width="66" height="66" fill="#e2f0eb"/><rect x="398" y="144" width="66" height="66" fill="#eef1f2"/>
+      <rect x="200" y="210" width="66" height="66" fill="#e2f0eb"/><rect x="266" y="210" width="66" height="66" fill="#eef1f2"/><rect x="332" y="210" width="66" height="66" fill="#e2f0eb"/><rect x="398" y="210" width="66" height="66" fill="#fbede7"/>
+      <rect x="200" y="276" width="66" height="66" fill="#e2f0eb"/><rect x="266" y="276" width="66" height="66" fill="#fbede7"/><rect x="332" y="276" width="66" height="66" fill="#e2f0eb"/><rect x="398" y="276" width="66" height="66" fill="#e2f0eb"/>
+    </g>
+    <text x="233" y="345" font-size="12.5" text-anchor="middle" fill="#53676d">绿=可读 content 前缀・红=目标自身内容（禁止）・灰=排列未出现</text>
+    <g font-size="13" fill="#203035"><rect x="520" y="78" width="388" height="264" rx="12" fill="#fff" stroke="#dce5df"/>
+      <text x="540" y="108" font-weight="700">张量形状账</text>
+      <text x="540" y="140" fill="#53676d">Content H ∈ R^[B,T,H]（含本位置词内容）</text>
+      <text x="540" y="172" fill="#53676d">Query G ∈ R^[B,T,H]（用目标位置编码初始化）</text>
+      <text x="540" y="204" fill="#53676d">Attention score ∈ R^[B,h,T,T]（靠 mask 约束）</text>
+      <text x="540" y="236" fill="#53676d">Logits（仅目标位置）∈ R^[B,T_tgt,V]</text>
+      <text x="540" y="278" fill="#c96c4c" font-size="12.5">Query 行读取的是前缀 content 的 K/V；</text>
+      <text x="540" y="300" fill="#c96c4c" font-size="12.5">目标自身的词身份永远不进入该行的可见集。</text>
+      <text x="540" y="326" fill="#53676d" font-size="12">教学示意：实际实现常保留完整 T 长度并用加性 mask 屏蔽。</text>
+    </g>
+  </g>
+</svg>
+<figcaption>图 16B. 左矩阵把“每个预测次序能看到哪些原始位置”逐格画出来；右侧说明这些可见性最终落在哪些张量上。</figcaption>
+</figure>
+</section>
 <section id="memory"><h2>6. Transformer-XL 记忆属于另一维设计</h2>
 <p>论文把排列预测和 Transformer-XL 的 segment recurrence、相对位置建模结合起来。缓存之前片段的隐藏状态为后续片段提供更长上下文，属于序列长度/跨 segment 机制，而非排列预测本身天然自带的能力。缓存的梯度截断、不同长度的 mask 和训练/评测配置需要依实现核实。</p>
 <p>因此，“XLNet 是 BERT 换一种 MLM 方式”不精确：其核心是自回归排列分解与两流注意力；它在工程上还借用了 Transformer-XL，并非直接保留标准 BERT Encoder 结构与损失。</p></section>
@@ -38,5 +69,13 @@
 Query 可见位置：{1} → the
 禁止访问：自身位置 2 的词身份。</pre>
 <script type="application/json" data-demo-states>{"forward":"原始序列：the | chef | cooked | dinner\n排列 z = (1,2,3,4)；目标 chef 是第二个预测因子\nQuery 可见位置：{1} → the\n禁止访问：自身位置 2 的词身份。","mixed":"原始序列不移动：the | chef | cooked | dinner\n排列 z = (3,1,4,2)；目标 chef 是第四个预测因子\nQuery 可见位置：{3,1,4} → cooked / the / dinner\n仍禁止从目标本身读取 chef。","early":"原始序列不移动：the | chef | cooked | dinner\n排列 z = (2,3,4,1)；目标 chef 是第一个预测因子\nQuery 可见位置：空集合（可依赖目标位置编码与模型参数）\n这不是文本的自然从左到右顺序。"}</script></div></section>
+<section id="demo2"><h2>9. 交互：两条流的输入与 K/V 来源</h2>
+<div class="demo" data-demo><h3>同一位置 i，两条流各自拿到什么</h3><p class="demo-intro">只描述输入组成与可见关系，不算模型概率。</p>
+<div class="demo-controls"><button type="button" data-demo-action="content" aria-pressed="true">Content 流</button><button type="button" data-demo-action="query" aria-pressed="false">Query 流</button><button type="button" data-demo-action="share" aria-pressed="false">两者关系</button></div>
+<pre class="demo-output" data-demo-output aria-live="polite">Content 流位置 i：输入 = token embedding(x_i) + 位置编码
+它可作后续目标因子的 K/V。
+它可以读取本位置内容（用于为非目标位置提供信息）。</pre>
+<script type="application/json" data-demo-states>{"content":"Content 流位置 i：输入 = token embedding(x_i) + 位置编码\n它可作后续目标因子的 K/V。\n它可以读取本位置内容（用于为非目标位置提供信息）。","query":"Query 流位置 i：输入 = 目标位置编码（不含 x_i 的词内容）\n它作为预测自己的 Q；K/V 只来自排列前缀的 content states。\n保留目标位置信息是为了知道“要猜哪个槽位”，而非允许看到词身份。","share":"两条流共享同一套 Transformer 权重。\n区别在 attention mask 与 query 输入端，不是两个独立模型。\n下游生成通常只用 content 流，不必保留训练期的两流预测接口。"}</script></div></section>
+
 <section class="article-summary"><h2>关键结论</h2><ul><li>置换作用于概率分解次序，不是随机打乱文本坐标；不同条件集合让目标得以看见左右两侧内容。</li><li>Query stream 必须排除当前目标的词身份；Content stream 可以保存已允许词的内容以供后续因子使用。</li><li>Transformer-XL 记忆、相对位置、部分预测是原始方案的工程组成，不能与 PLM 概念本身混为一谈。</li><li>改动目标函数与训练成本时，应做受控比较而不是从单张任务表推出普适优劣。</li></ul></section>
 <section id="references"><h2>原始论文与实现</h2><ol class="article-references"><li>Yang et al., <a href="https://arxiv.org/abs/1906.08237" target="_blank" rel="noopener noreferrer">XLNet: Generalized Autoregressive Pretraining for Language Understanding</a>，§2.1–2.3，§3，Figure 1。</li><li>Dai et al., <a href="https://arxiv.org/abs/1901.02860" target="_blank" rel="noopener noreferrer">Transformer-XL</a>，§3（segment recurrence 与相对位置）。</li><li>官方实现 <a href="https://github.com/zihangdai/xlnet" target="_blank" rel="noopener noreferrer">zihangdai/xlnet</a>（训练设置与预训练输入生成）。</li><li>Devlin et al., <a href="https://arxiv.org/abs/1810.04805" target="_blank" rel="noopener noreferrer">BERT</a>，§3.1（MLM 对照）。</li></ol></section></article><nav class="article-nav" aria-label="专题文章导航"><a href="15-electra-replaced-token-detection.html">← 上一篇：ELECTRA</a><a href="17-mpnet-masked-permuted.html">下一篇：MPNet →</a></nav><p class="article-footer">可见性示例用于验证排列 mask 的逻辑，不代表官方 XLNet 的完整训练配置。</p></main></div><script src="../assets/js/site.js" defer></script></body></html>
